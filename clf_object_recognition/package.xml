@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>clf_object_recognition</name>
+  <version>0.0.0</version>
+  <description>Metapackage</description>
+  <maintainer email="lruegeme@techfak.uni-bielefeld.de">Leroy Ruegemer</maintainer>
+  <license>Apache 2.0</license>
+
+  <author>Leroy Ruegemer</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <exec_depend>clf_object_recognition_msgs</exec_depend>
+
+  <export>
+    <metapackage />
+  </export>
+</package>
