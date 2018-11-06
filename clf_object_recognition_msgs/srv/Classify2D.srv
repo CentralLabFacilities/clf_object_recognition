@@ -1,0 +1,6 @@
+
+sensor_msgs/Image[] images
+
+---
+
+vision_msgs/Classification2D[] classifications
