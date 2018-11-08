@@ -1,0 +1,349 @@
+#!/usr/bin/env python
+
+# System
+import os
+import sys
+
+import time
+import datetime
+
+# ROS
+import rospy
+
+# OpenCV
+from cv_bridge import CvBridge, CvBridgeError
+import cv2
+
+# object recognition
+from clf_object_recognition_tensorflow import detect
+from clf_object_recognition_tensorflow import recognize
+
+# srv
+from clf_object_recognition_msgs.srv import Detect2D
+
+# msgs
+from vision_msgs.msg import Detection2D, ObjectHypothesisWithPose, BoundingBox2D, Detection2DArray
+from sensor_msgs.msg import Image
+
+
+class TensorflowDetectionNode:
+    """ Performs object detection using Tensorflow neural networks """
+    def __init__(self, graph_path, labels_path, rec_path, save_images_folder,num_classes=99,detection_threshold=0.5,
+                 image_topic="/usb_cam/image_raw",show_results=True):
+        """ Constructor
+        :param graph_path: string with path + filename (incl. extension) indicating the database location
+        :param labels_path: string with path + filename (incl. extension) indicating the location of the text file
+        with labels etc.
+        :param save_images_folder: Where to store images for debugging or data collection
+        """
+
+        # Check if the parameters are correct
+        if not (os.path.isfile(graph_path) and os.path.isfile(labels_path)):
+            err_msg = "DB file {} or models file {} does not exist".format(graph_path, labels_path)
+            rospy.logerr(err_msg)
+            sys.exit(err_msg)
+        if not (int(num_classes) > 0):
+            err_msg = "invalid number of classes".format(num_classes)
+            rospy.logerr(err_msg)
+            sys.exit(err_msg)
+
+        self._unknown_prob = 0.1
+
+        #init detector
+        self._detector = detect.Detector(num_classes, detection_threshold)
+        self._recognizer = recognize.TensorflowRecognition()
+
+        self._detectionArray = Detection2DArray()
+        self._bridge = CvBridge()
+        self._detect_srv = rospy.Service('detect', Detect2D, self._detect_srv_callback)
+        self._do_detection = False  # Indicates whether a new request has been received and thus detection must
+        # be performed
+
+        self._filename = "/tmp/tf_obj_detect.jpg"  # Temporary file name
+        self._size = {'width': 0, 'height': 0}
+        self._save_images_folder = save_images_folder
+        self._bgr_image = None
+        self._cv_image = None
+
+        self._recognition_threshold = 0.09
+
+        self._roi_path = "/tmp/"
+        graph_r = rec_path + "/output_graph.pb"
+        labels_r = rec_path + "/output_labels.txt"
+
+        rospy.loginfo("show_results: {}".format(show_results))
+        self._show_results = show_results
+        self._topic_name = image_topic
+        self._sub = None
+
+        rospy.loginfo("TensorflowDetectionNode initialized:")
+        rospy.loginfo(" - graph_path=%s", graph_path)
+        rospy.loginfo(" - labels_path=%s", labels_path)
+        rospy.loginfo(" - save_images_folder=%s", save_images_folder)
+        rospy.loginfo(" - num_classes=%s", num_classes)
+        rospy.loginfo(" - detection_threshold=%s", detection_threshold)
+        rospy.loginfo(" - rec_graph=%s",graph_r)
+        rospy.loginfo(" - rec_labels=%s",labels_r)
+
+        """1. Load graph from saved GraphDef file """
+        self._detector.load_graph(graph_path, labels_path)
+        rospy.loginfo("detection graph successfully loaded")
+
+        label_list = self._recognizer.load_graph(graph_r, labels_r)
+        rospy.loginfo("recognition graph successfully loaded")
+
+        rospy.loginfo("waiting for rostopic: %s...", self._topic_name)
+        while (not self._sub):
+            self._sub = rospy.Subscriber(self._topic_name, Image, self._image_callback)
+            time.sleep(1)
+
+        rospy.loginfo("subsribed to %s...", self._topic_name)
+
+        # publish id-label mapping via rosparam
+        id_list = [str(i) for i in range(0, len(label_list))]
+        self._id_label_dict = dict(zip(id_list, label_list))
+        rospy.set_param('object_labels', self._id_label_dict)
+
+
+    def _image_callback(self, msg):
+        """
+        Called when a new sensor_msgs/Image is coming in
+        :param msg: The image message
+        """
+        try:
+            self._cv_image = self._bridge.imgmsg_to_cv2(msg, "bgr8")
+        except CvBridgeError as e:
+            rospy.logerr(e)
+
+    def _detect_srv_callback(self, req):
+        """ Callback function for the detection. It saves the image on a temporary location and sets _do_detection
+        to True. Subsequently, it waits until the image has been processed (i.e., until _do_detection is False again)
+        and then returns the result
+        :param req: object_tracking_msgs.srv.DetectRequest
+        :return: object_tracking_msgs.srv.DetectResponse
+        """
+        self._detectionArray.detections = []
+        self._detectionArray.header.stamp = rospy.get_rostime()
+        self._detectionArray.header.frame_id = "0"
+
+        try:
+            self._bgr_image = self._bridge.imgmsg_to_cv2(req.image, "bgr8")
+        except CvBridgeError as e:
+            #error_msg = "Could not convert to opencv image: %s" % e
+            #rospy.logerr(error_msg)
+            #raise Exception(error_msg)
+            print("No image in service request. Get image by rostopic.")
+
+            # take last image from ros topic
+            if self._cv_image is not None:
+                self._bgr_image = self._cv_image
+            else:
+                # alternative?
+                return {"detections": self._detectionArray}
+
+        size = self._bgr_image.shape[:2]
+        self._size['height'] = size[0]
+        self._size['width'] = size[1]
+        self._do_detection = True
+
+        # Wait until the request has been processed and return the result
+        r = rospy.Rate(1000.0)  # Not a problem to spin quickly
+        while not rospy.is_shutdown():
+            if not self._do_detection:
+                detectRes = {"detections": self._detectionArray}
+                return detectRes
+        # Return an empty result if rospy has been shutdown
+        return {"detections": self._detectionArray}
+
+    def update(self):
+        """ Do the actual work: if _do_detection is True, it retrieves the saved image and tries to classify it.
+        The result is stored in the _detection member and afterwards _do_detection is set to False. This function
+        is called at a fixed frequency in the mean thread, hence NOT from the service callback. """
+
+        if self._bgr_image is not None:
+            self.show_image(self._bgr_image)
+            time.sleep(0.05)
+
+        if not self._do_detection:
+            return
+
+        # detection
+        classes, scores, boxes = self._detector.detect(self._bgr_image)
+        height, width, _ = self._bgr_image.shape
+
+        # recognition based on bboxes
+        label_hypotheses_list = []
+        score_hypotheses_list = []
+        for i in range(0,len(classes)):
+            label_hypotheses = []
+            score_hypotheses = []
+
+            xmin = int(boxes[i][1] * width)
+            xmax = int(boxes[i][3] * width)
+            ymin = int(boxes[i][0] * height)
+            ymax = int(boxes[i][2] * height)
+            roi = self._bgr_image[ymin:ymax, xmin:xmax]
+            if (abs(ymin-ymax) <= 0 or abs(xmin-xmax) <= 0):
+                rospy.logerr("roi size is 0")
+            #TODO: directly from memory
+            imgpath = "{}/img{}.jpg".format(self._roi_path, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S_%f"))
+            cv2.imwrite(filename=imgpath, img=roi)
+            #recognize
+            sorted_result = self._recognizer.recognize(imgpath)
+            if sorted_result:
+                for j in range(0,len(sorted_result)):
+                    label_hypotheses.insert(0,sorted_result[j][0])
+                    score_hypotheses.insert(0,sorted_result[j][1])
+            #TODO: unknown probability?
+            label_hypotheses_list.append(label_hypotheses)
+            score_hypotheses_list.append(score_hypotheses)
+
+        # add results
+        for i in range(0,len(classes)):
+            # TODO: use a threshold?
+
+            detection2D = Detection2D()
+            #detection2D.header.stamp
+            #detection2D.header.frame_id
+
+            detection2D.results = []
+
+            # all floats [0,1] normalized regarding image size
+            detection2D.bbox.center.x = (boxes[i][3] + boxes[i][1])/2
+            detection2D.bbox.center.y = (boxes[i][2] + boxes[i][0])/2
+            #detection2D.bbox.center.theta = # not necessary?
+            detection2D.bbox.size_x = boxes[i][3] - boxes[i][1]
+            detection2D.bbox.size_y = boxes[i][2] - boxes[i][0]
+
+            # detection2D.source_img # leave empty?
+            # copy hypotheses list for each detection
+            for j in range(0,len(label_hypotheses_list[i])):
+                hypothesis = ObjectHypothesisWithPose()
+                hypothesis.id = label_hypotheses_list[i][j]
+                hypothesis.score = score_hypotheses_list[i][j]
+                # hypothesis.pose.pose.position.x
+                # hypothesis.pose.pose.position.y
+                # hypothesis.pose.pose.position.z
+                # hypothesis.pose.pose.quaternion.x
+                # hypothesis.pose.pose.quaternion.y
+                # hypothesis.pose.pose.quaternion.z
+                # hypothesis.pose.pose.quaternion.w
+                # hypothesis.pose.covariante # float[36]
+                detection2D.results.append(hypothesis)
+
+                self._detectionArray.detections.append(detection2D)
+
+        # show results
+        if (self._show_results):
+            self.visualize_bounding_boxes(self._detectionArray.detections, self._bgr_image)
+
+        self._do_detection = False
+
+    def visualize_bounding_boxes(self, detections, image):
+        # visualization of detection results
+        for i in range(0, len(detections)):
+            prob = detections[i].results[0].score
+            prob = round(prob, 2)
+            obj_id = detections[i].results[0].id
+            bbox = detections[i].bbox
+
+            xmin = int((bbox.center.x - bbox.size_x/2)*self._size['width'])
+            xmax = int((bbox.center.x + bbox.size_x/2)*self._size['width'])
+            ymin = int((bbox.center.y - bbox.size_y/2)*self._size['height'])
+            ymax = int((bbox.center.y + bbox.size_y/2)*self._size['height'])
+            cv2.rectangle(image, (xmin, ymin),
+                          (xmax, ymax), (0, 100, 200), 2)
+            label = self._id_label_dict[str(obj_id)]
+            image_label = '%s %s' % (label, str(prob))
+
+            if ymin < 40:
+                cv2.putText(image, image_label, (xmin, ymax), 0, 0.8, (0, 40, 255), 3)
+            else:
+                cv2.putText(image, image_label, (xmin, ymin), 0, 0.8, (0, 40, 255), 3)
+            self.show_image(image)
+
+    def show_image(self, image):
+        cv2.imshow('tf detection', cv2.resize(image, (1280, 960)))
+        cv2.waitKey(1)
+
+    def matchBoundingBoxes(self, detected, annotated, max_ratio=2):
+
+        # Detected vars
+        xmax_det = detected.bbox.xmax
+        xmin_det = detected.bbox.xmin
+        ymax_det = detected.bbox.ymax
+        ymin_det = detected.bbox.ymin
+        width_det = xmax_det - xmin_det
+        height_det = ymax_det - ymin_det
+        area_det = width_det * height_det
+
+        # Annotated vars
+        xmax_an = annotated.bbox.xmax
+        xmin_an = annotated.bbox.xmin
+        ymax_an = annotated.bbox.ymax
+        ymin_an = annotated.bbox.ymin
+        width_an = xmax_an - xmin_an
+        height_an = ymax_an - ymin_an
+        area_an = width_an * height_an
+
+        innerArea = max(0, min(xmax_det, xmax_an) - max(xmin_det, xmin_an)) * max(0,
+                                                                                  min(ymax_det, ymax_an) - max(ymin_det,
+                                                                                                               ymin_an))
+        outerArea = area_an + area_det - (2 * innerArea)
+        if (innerArea == 0):
+            ratio = 5
+        else:
+            ratio = outerArea / float(innerArea)  # the smaller the better
+
+        # relative distances
+        maxDistX = area_an * 0.5
+        maxDistY = area_an * 0.5
+        # alternatively match centroids of bboxes
+        # or evaluate overlapping area of bboxes
+
+        if (ratio < max_ratio):
+            return True
+
+        if (inRange(xmin_det, xmin_an, maxDistX) and inRange(ymin_det, ymin_an, maxDistY)
+                and inRange(xmax_det, xmax_an, maxDistX) and inRange(ymax_det, ymax_an, maxDistY)):
+            return True
+        else:
+            return False
+
+
+if __name__ == '__main__':
+
+    # Start ROS node
+    rospy.init_node('clf_object_detection_node')
+
+    try:
+        _graph_path = os.path.expanduser(rospy.get_param("~graph_path"))
+        _labels_path = os.path.expanduser(rospy.get_param("~labels_path"))
+        num_classes = rospy.get_param("~num_classes", 99)
+        detection_threshold = rospy.get_param("~detection_threshold", 0.5)
+        save_images = rospy.get_param("~save_images", True)
+        image_topic = rospy.get_param("~image_topic", "/pepper_robot/sink/front/image_raw")
+        _rec_path = os.path.expanduser(rospy.get_param("~rec_path"))
+        _show_results = rospy.get_param("~show_results", True)
+
+        save_images_folder = None
+        if save_images:
+            save_images_folder = os.path.expanduser(rospy.get_param("~save_images_folder", "/tmp/clf_object_detection"))
+    except KeyError as e:
+        rospy.logerr("Parameter %s not found" % e)
+        sys.exit(1)
+
+    # Create object
+    object_detection = TensorflowDetectionNode(graph_path=_graph_path,
+                                               labels_path=_labels_path,
+                                               rec_path=_rec_path,
+                                               save_images_folder=save_images_folder,
+                                               num_classes=num_classes,
+                                               detection_threshold=detection_threshold,
+                                               image_topic=image_topic,
+                                               show_results=_show_results)
+    # Start update loop
+    r = rospy.Rate(100.0)
+    while not rospy.is_shutdown():
+        object_detection.update()
+        r.sleep()
