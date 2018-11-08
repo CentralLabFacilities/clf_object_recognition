@@ -11,5 +11,6 @@ catkin_package()
 
 install(PROGRAMS
   scripts/object_recognition_node
+  scripts/object_detection_node
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
