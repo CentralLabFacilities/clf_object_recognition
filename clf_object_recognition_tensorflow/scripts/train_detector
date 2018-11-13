@@ -1,0 +1,287 @@
+#!/usr/bin/env python
+
+# this script trains a classifier for tf detection and exports several trainings steps as inference graph
+
+# Copyright 2017 The TensorFlow Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
+"""Training executable for detection models.
+
+This executable is used to train DetectionModels. There are two ways of
+configuring the training job:
+
+1) A single pipeline_pb2.TrainEvalPipelineConfig configuration file
+can be specified by --pipeline_config_path.
+
+Example usage:
+    ./train \
+        --logtostderr \
+        --train_dir=path/to/train_dir \
+        --pipeline_config_path=pipeline_config.pbtxt
+        --train_steps=number_of_train_steps
+        --to_keep=number_of_checkpoints_to_keep
+        --save_steps=save_after_every_n_seconds
+
+2) Three configuration files can be provided: a model_pb2.DetectionModel
+configuration file to define what type of DetectionModel is being trained, an
+input_reader_pb2.InputReader file to specify what training data will be used and
+a train_pb2.TrainConfig file to configure training parameters.
+
+Example usage:
+    ./train \
+        --logtostderr \
+        --train_dir=path/to/train_dir \
+        --model_config_path=model_config.pbtxt \
+        --train_config_path=train_config.pbtxt \
+        --input_config_path=train_input_config.pbtxt
+"""
+
+import functools
+import json
+import os
+import tensorflow as tf
+
+import clf_object_recognition_tensorflow.trainer
+import clf_object_recognition_tensorflow.create_tf_record as creator
+
+from google.protobuf import text_format
+
+from object_detection.builders import input_reader_builder
+from object_detection.builders import model_builder
+from object_detection.utils import config_util
+from object_detection import exporter
+from object_detection.protos import pipeline_pb2
+
+tf.logging.set_verbosity(tf.logging.INFO)
+
+flags = tf.app.flags
+
+# select train mode
+flags.DEFINE_integer('train_mode',0,'0: complete, 1: create configs, 2: train, 3: export graph')
+
+# all modes
+flags.DEFINE_string('model_dir', None,
+                    'Directory to save configs, checkpoints and training summaries.')
+flags.DEFINE_string('data_dir', None,
+                    'Directory to input data.')
+flags.DEFINE_string('default_config_path', None,
+                    'Path to a pipeline_pb2.TrainEvalPipelineConfig config template')
+flags.DEFINE_string('pipeline_config_path', None,
+                    'Path to a pipeline_pb2.TrainEvalPipelineConfig config')
+flags.DEFINE_string('fine_tune_checkpoint', None,
+                    'Path to finetune checkpoin. Must be compatible with config file!')
+
+# strucure:
+
+# data-dir
+# - (classNames.txt)
+# - obj1
+#   ...
+# - objn
+
+# train-dir
+# - pipeline-config.config
+# - labelMap.pbtxt
+# - test.record
+# - train.record
+# - eval-dir
+# - checkpoints
+# - exported-graphs
+#   - exported-graph-1
+#   ...
+#   - exported-graph-n
+
+
+# train
+flags.DEFINE_string('master', '', 'Name of the TensorFlow master to use.')
+flags.DEFINE_integer('task', 0, 'task id')
+flags.DEFINE_integer('num_clones', 1, 'Number of clones to deploy per worker.')
+flags.DEFINE_boolean('clone_on_cpu', False,
+                     'Force clones to be deployed on CPU.  Note that even if '
+                     'set to False (allowing ops to run on gpu), some ops may '
+                     'still be run on the CPU if they have no GPU kernel.')
+flags.DEFINE_integer('worker_replicas', 1, 'Number of worker+trainer '
+                     'replicas.')
+flags.DEFINE_integer('ps_tasks', 0,
+                     'Number of parameter server tasks. If None, does not use '
+                     'a parameter server.')
+flags.DEFINE_string('train_config_path', '',
+                    'Path to a train_pb2.TrainConfig config file.')
+flags.DEFINE_string('input_config_path', '',
+                    'Path to an input_reader_pb2.InputReader config file.')
+flags.DEFINE_string('model_config_path', '',
+                    'Path to a model_pb2.DetectionModel config file.')
+flags.DEFINE_integer('train_steps', 40000, 'perform training for n steps')
+flags.DEFINE_integer('to_keep', 50, 'keep n checkpoints')
+flags.DEFINE_integer('save_steps', 600, 'save every n seconds')
+flags.DEFINE_integer('batch_size', 12, 'batch size')
+
+# export relevant flags #TODO: those needed?
+flags.DEFINE_string('input_type', 'image_tensor', 'Type of input node. Can be '
+                    'one of [`image_tensor`, `encoded_image_string_tensor`, '
+                    '`tf_example`]')
+flags.DEFINE_string('input_shape', None,
+                    'If input_type is `image_tensor`, this can explicitly set '
+                    'the shape of this input tensor to a fixed size. The '
+                    'dimensions are to be provided as a comma-separated list '
+                    'of integers. A value of -1 can be used for unknown '
+                    'dimensions. If not specified, for an `image_tensor, the '
+                    'default shape will be partially specified as '
+                    '`[None, None, None, 3]`.')
+
+tf.app.flags.mark_flag_as_required('model_dir')
+#only for config/ tf record generation
+#tf.app.flags.mark_flag_as_required('data_dir')
+#tf.app.flags.mark_flag_as_required('default_config_path')
+
+FLAGS = flags.FLAGS
+
+
+def main(_):
+
+    # check flags
+    if(FLAGS.train_mode == 0 or FLAGS.train_mode == 1):
+        if not FLAGS.data_dir or not os.path.exists(FLAGS.data_dir):
+            print("error: input data directory doesn't exist!")
+            exit(0)
+
+        if not FLAGS.default_config_path or not os.path.isfile(FLAGS.default_config_path):
+            print("error: default config doesn't exist!")
+            exit(0)
+    else:
+        configs = config_util.get_configs_from_pipeline_file(FLAGS.pipeline_config_path)
+
+    if not os.path.exists(FLAGS.model_dir):
+        os.makedirs(FLAGS.model_dir)
+
+    if (FLAGS.train_mode == 0 or FLAGS.train_mode == 1):
+        # create config and tf records
+        pipeline_config_path = creator.create_config_and_records(FLAGS.data_dir, FLAGS.model_dir,
+                                                                 FLAGS.default_config_path,FLAGS.fine_tune_checkpoint,
+                                                                 FLAGS.batch_size)
+        configs = config_util.get_configs_from_pipeline_file(pipeline_config_path)
+        if FLAGS.train_mode == 1:
+            print("Created config and tf records. Done.")
+            exit(0)
+
+    train_dir = FLAGS.model_dir + "/checkpoints"
+    if not os.path.exists(train_dir):
+        os.makedirs(train_dir)
+
+
+    if (FLAGS.train_mode == 0 or FLAGS.train_mode == 2):
+        # training
+
+        model_config = configs['model']
+        train_config = configs['train_config']
+        input_config = configs['train_input_config']
+
+        model_fn = functools.partial(
+            model_builder.build,
+            model_config=model_config,
+            is_training=True)
+
+        create_input_dict_fn = functools.partial(
+            input_reader_builder.build, input_config)
+
+        env = json.loads(os.environ.get('TF_CONFIG', '{}'))
+        cluster_data = env.get('cluster', None)
+        cluster = tf.train.ClusterSpec(cluster_data) if cluster_data else None
+        task_data = env.get('task', None) or {'type': 'master', 'index': 0}
+        task_info = type('TaskSpec', (object,), task_data)
+
+        # Parameters for a single worker.
+        ps_tasks = 0
+        worker_replicas = 1
+        worker_job_name = 'lonely_worker'
+        task = 0
+        is_chief = True
+        master = ''
+
+        if cluster_data and 'worker' in cluster_data:
+            # Number of total worker replicas include "worker"s and the "master".
+            worker_replicas = len(cluster_data['worker']) + 1
+        if cluster_data and 'ps' in cluster_data:
+            ps_tasks = len(cluster_data['ps'])
+
+        if worker_replicas > 1 and ps_tasks < 1:
+            raise ValueError('At least 1 ps task is needed for distributed training.')
+
+        if worker_replicas >= 1 and ps_tasks > 0:
+            # Set up distributed training.
+            server = tf.train.Server(tf.train.ClusterSpec(cluster), protocol='grpc',
+                                     job_name=task_info.type,
+                                     task_index=task_info.index)
+            if task_info.type == 'ps':
+                server.join()
+                return
+
+            worker_job_name = '%s/task:%d' % (task_info.type, task_info.index)
+            task = task_info.index
+            is_chief = (task_info.type == 'master')
+            master = server.target
+
+        if (not FLAGS.train_steps):
+            print("warning: training steps are not defined, set to 99999")
+            train_steps = 99999
+        else:
+            train_steps = FLAGS.train_steps
+
+        clf_object_recognition_tensorflow.trainer.train(create_input_dict_fn,
+                                                          model_fn, train_config,
+                                                          master, task,
+                                                          FLAGS.num_clones,
+                                                          worker_replicas,
+                                                          FLAGS.clone_on_cpu,
+                                                          ps_tasks,
+                                                          worker_job_name, is_chief,
+                                                          train_dir, train_steps,
+                                                          FLAGS.to_keep,
+                                                          FLAGS.save_steps)
+
+    if (FLAGS.train_mode == 0 or FLAGS.train_mode == 3):
+        # export the graph
+        print("export the graph...")
+        print(pipeline_config_path)
+
+        if not pipeline_config_path:
+            pipeline_config_path = FLAGS.pipeline_config_path
+
+        pipeline_config = pipeline_pb2.TrainEvalPipelineConfig()
+        with tf.gfile.GFile(pipeline_config_path, 'r') as f:
+            text_format.Merge(f.read(), pipeline_config)
+
+        # TODO: needed?
+        if FLAGS.input_shape:
+            input_shape = [
+                int(dim) if dim != '-1' else None
+                for dim in FLAGS.input_shape.split(',')
+            ]
+        else:
+            input_shape = None
+
+        # TODO: export all checkpoints that are available? optional?
+        checkpoint_prefix = train_dir+"/model.ckpt-"+str(train_steps)
+        export_dir = FLAGS.model_dir+"/export"
+        if not os.path.exists(export_dir):
+            os.makedirs(export_dir)
+        export_dir2 = export_dir+str(train_steps) # for each export graph (~ train steps), directory must not exists!
+
+        exporter.export_inference_graph(FLAGS.input_type, pipeline_config,
+                                        checkpoint_prefix,
+                                        export_dir2, input_shape)
+
+if __name__ == '__main__':
+  tf.app.run()
