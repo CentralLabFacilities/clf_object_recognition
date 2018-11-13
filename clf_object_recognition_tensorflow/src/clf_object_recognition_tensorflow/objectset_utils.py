@@ -1,8 +1,7 @@
 import os
 import sys
 import cv2
-from image_recognition_util.object import Object
-from image_recognition_util.object import BoundingBox
+from clf_object_recognition_tensorflow.object import BoundingBox, Object
 
 class ObjectsetUtils():
 
