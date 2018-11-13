@@ -18,5 +18,6 @@ install(FILES plugin.xml
 install(PROGRAMS
   scripts/annotation_gui
   scripts/test_gui
+  scripts/train_gui
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
