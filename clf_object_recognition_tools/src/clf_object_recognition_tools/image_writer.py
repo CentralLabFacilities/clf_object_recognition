@@ -21,11 +21,7 @@ def write_roi(dir_path, image, label, bbox):
         return False
     filename = "{}-{}".format(label, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S_%f"))
 
-    tensor_path = dir_path + "/tensorset"
-    if not os.path.exists(tensor_path):
-        os.makedirs(tensor_path)
-
-    image_dir_tensor = tensor_path + "/" + label
+    image_dir_tensor = dir_path + "/" + label + "/rois/"
     if not os.path.exists(image_dir_tensor):
         os.makedirs(image_dir_tensor)
 
@@ -48,14 +44,8 @@ def write_annotated(dir_path, image, mask, labels, cls_ids, bboxes, test=False):
     else:
         label = labels[0]
 
-    darknet_path = dir_path + "/darkset"
-
-    # Check if path exists, otherwise created it
-    if not os.path.exists(darknet_path):
-        os.makedirs(darknet_path)
-
     # Main directory for files of class <label>
-    class_dir = darknet_path + "/" + label
+    class_dir = dir_path + "/" + label
 
     # Directory for label files
     label_dir = class_dir + "/labels"
@@ -70,6 +60,7 @@ def write_annotated(dir_path, image, mask, labels, cls_ids, bboxes, test=False):
     # write image in image_dir
     filename = "{}-{}".format(label, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S_%f"))
     cv2.imwrite("{}/{}.jpg".format(image_dir, filename), image)
+    print("save image at: "+image_dir)
     if not test:
     	cv2.imwrite("{}/{}_mask.jpg".format(image_dir, filename), mask)
 
@@ -96,9 +87,9 @@ def write_annotated(dir_path, image, mask, labels, cls_ids, bboxes, test=False):
 
     # safe image path to list for training/test set
     if not test:
-        file_list = open("{}/train.txt".format(darknet_path),'a')
+        file_list = open("{}/train.txt".format(dir_path),'a')
     else:
-        file_list = open("{}/test.txt".format(darknet_path),'a')
+        file_list = open("{}/test.txt".format(dir_path),'a')
 
     file_list.write("{}/{}.jpg\n".format(image_dir, filename))
     file_list.close()
