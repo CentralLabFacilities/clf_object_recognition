@@ -263,7 +263,7 @@ class TensorflowDetectionNode:
             self.show_image(image)
 
     def show_image(self, image):
-        cv2.imshow('tf detection', cv2.resize(image, (1280, 960)))
+        cv2.imshow('tf detection', cv2.resize(image, (640, 480)))
         cv2.waitKey(1)
 
     def matchBoundingBoxes(self, detected, annotated, max_ratio=2):
@@ -322,7 +322,7 @@ if __name__ == '__main__':
         num_classes = rospy.get_param("~num_classes", 99)
         detection_threshold = rospy.get_param("~detection_threshold", 0.5)
         save_images = rospy.get_param("~save_images", True)
-        image_topic = rospy.get_param("~image_topic", "/pepper_robot/sink/front/image_raw")
+        image_topic = rospy.get_param("~image_topic", "/xtion/rgb/image_raw")
         _rec_path = os.path.expanduser(rospy.get_param("~rec_path"))
         _show_results = rospy.get_param("~show_results", True)
 
