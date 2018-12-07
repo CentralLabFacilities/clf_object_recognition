@@ -231,7 +231,7 @@ class TensorflowDetectionNode:
                 # hypothesis.pose.covariante # float[36]
                 detection2D.results.append(hypothesis)
 
-                self._detectionArray.detections.append(detection2D)
+            self._detectionArray.detections.append(detection2D)
 
         # show results
         if (self._show_results):
