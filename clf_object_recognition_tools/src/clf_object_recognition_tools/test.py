@@ -122,6 +122,10 @@ class TestPlugin(Plugin):
             warning_dialog("No service specified!",
                            "Please first specify a service via the options button (top-right gear wheel)")
             return
+        height, width = roi_image.shape[:2]
+        if(roi_image is None or height == 0 or width == 0):
+            warning_dialog("ROI too small", "draw a larger ROI")
+            return
 
         if self._srv.service_class == Classify2D:
             self.classify_srv_call(roi_image)

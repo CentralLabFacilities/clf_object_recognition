@@ -134,23 +134,8 @@ class AnnotationPlugin(Plugin):
         Create an annotation
         :param image: The image we want to annotate
         """
-        #self.annotate_srv(image)
-	#print(bbox)
         self.store_image(image, bbox)
 
-    def annotate_srv(self, roi_image):
-        """
-        :param roi_image: The full opencv image we want to annotate
-        """
-        if roi_image is not None and self.label is not None and self._srv is not None:
-            height, width = roi_image.shape[:2]
-            try:
-                self._srv(image=self.bridge.cv2_to_imgmsg(roi_image, "bgr8"),
-                          annotations=[Annotation(label=self.label,
-                                                  roi=RegionOfInterest(x_offset=0, y_offset=0,
-                                                                       width=width, height=height))])
-            except Exception as e:
-                warning_dialog("Service Exception", str(e))
 
     def store_image(self, image, bbox):
         """
@@ -158,6 +143,10 @@ class AnnotationPlugin(Plugin):
         :param image: Image we would like to store
         """
         if image is not None and self.label is not None and self.output_directory is not None:
+            if (bbox[2] == bbox[3] or bbox[1] == bbox[0]):
+                warning_dialog("ROI is too small",
+                               "Draw a larger ROI")
+                return
             image_writer.write_roi(self.output_directory, image, self.label, bbox)
             self.bboxes.append(bbox)
             self.idList.append(self.cls_id)
