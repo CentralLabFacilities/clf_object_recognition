@@ -1,0 +1,21 @@
+<pointcloudfilter>
+    <primitivegroup id="leftrobot" regex="la_\w" padding="50" />
+    <primitivegroup id="lefttool" regex="lh_\w" padding="20" />
+    <primitivegroup id="rightrobot" regex="ra_\w" padding="50" />
+    <primitivegroup id="righttool" regex="rh_\w" padding="30" />
+
+    <setpos  x="40.8684" y="-440.326" z="1313.88">
+    <!--remove-- if removed makes the app crash-->
+        <group  id="leftrobot" part="inner" />
+        <group  id="lefttool" part="inner" />
+        <group  id="rightrobot" part="inner" />
+        <group  id="righttool" part="inner" />
+    <!--/remove-->
+    </setpos>
+    <filterdepthimg value="2047">
+        <group  id="leftrobot" part="inner" />
+        <group  id="lefttool" part="inner" />
+        <group  id="rightrobot" part="inner" />
+        <group  id="righttool" part="inner" />
+    </filterdepthimg>
+</pointcloudfilter>
