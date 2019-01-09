@@ -203,9 +203,7 @@ class TensorflowDetectionNode:
             # TODO: use a threshold?
 
             detection2D = Detection2D()
-            #detection2D.header.stamp
-            #detection2D.header.frame_id
-
+            detection2D.source_img = self._bridge.cv2_to_imgmsg(self._bgr_image, "bgr8")
             detection2D.results = []
 
             # all floats [0,1] normalized regarding image size
