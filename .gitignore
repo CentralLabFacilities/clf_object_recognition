@@ -1,6 +1,10 @@
+*.user
+*.pyc
+
 #IDEs
 
-.idea /.vscode /.kdev4 /.kdev5 /
+.idea
+/.vscode /.kdev4 /.kdev5 /
         *.kdev4
 
              cmake -
