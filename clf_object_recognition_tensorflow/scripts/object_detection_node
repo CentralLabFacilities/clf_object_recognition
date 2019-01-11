@@ -229,11 +229,11 @@ class TensorflowDetectionNode:
                 # hypothesis.pose.covariante # float[36]
                 detection2D.results.append(hypothesis)
 
-            self._detectionArray.detections.append(detection2D)
+            self._detectionArray.append(detection2D)
 
         # show results
         if (self._show_results):
-            self.visualize_bounding_boxes(self._detectionArray.detections, self._bgr_image)
+            self.visualize_bounding_boxes(self._detectionArray, self._bgr_image)
 
         self._do_detection = False
 

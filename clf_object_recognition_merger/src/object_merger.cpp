@@ -34,13 +34,13 @@ bool detectObjectsCallback(clf_object_recognition_msgs::Detect3D::Request &req, 
     // call segmentation (3d)
     clf_object_recognition_msgs::Detect3D segmentCall;
     segmentationClient.call(segmentCall);
-    std::vector<vision_msgs::Detection3D> detections3D = segmentCall.response.detections.detections;
+    std::vector<vision_msgs::Detection3D> detections3D = segmentCall.response.detections;
     ROS_INFO_STREAM("segmented "<<detections3D.size()<<" objects");
 
     // call object detection (2d)
     clf_object_recognition_msgs::Detect2D detect2DCall;
     detection2DClient.call(detect2DCall);
-    std::vector<vision_msgs::Detection2D> detections2D = detect2DCall.response.detections.detections;
+    std::vector<vision_msgs::Detection2D> detections2D = detect2DCall.response.detections;
     ROS_INFO_STREAM("detected "<<detections2D.size()<<" objects in 2d");
 
     if (detections2D.size() == 0) {
@@ -55,7 +55,7 @@ bool detectObjectsCallback(clf_object_recognition_msgs::Detect3D::Request &req, 
             detection.results = detections2D.at(i).results;
             detections3D.push_back(detection);
         }
-        res.detections.detections = detections3D;
+        res.detections = detections3D;
         return true;
     }
 
@@ -202,7 +202,7 @@ bool detectObjectsCallback(clf_object_recognition_msgs::Detect3D::Request &req, 
         }
     }
 
-    res.detections.detections = detections3D;
+    res.detections = detections3D;
 
     return true;
 }
