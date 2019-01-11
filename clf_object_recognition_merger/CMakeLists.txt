@@ -7,7 +7,6 @@ find_package(catkin REQUIRED COMPONENTS
   clf_object_recognition_msgs
   vision_msgs
   cv_bridge
-  tf
 )
 
 catkin_package(CATKIN_DEPENDS
@@ -15,7 +14,6 @@ catkin_package(CATKIN_DEPENDS
   clf_object_recognition_msgs
   vision_msgs
   cv_bridge
-  tf
 )
 
 FIND_PACKAGE(OpenCV REQUIRED COMPONENTS highgui
@@ -37,3 +35,9 @@ add_executable(object_merger src/object_merger.cpp)
 target_link_libraries(object_merger ${catkin_LIBRARIES} ${OpenCV_LIBS})
 #add_dependencies(object_merger clf_object_recognition_merger)
 
+
+install(
+  TARGETS object_merger
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION} )
