@@ -23,7 +23,7 @@ ros::ServiceClient segmentationClient;
 ros::ServiceClient detection2DClient;
 
 //TODO: read as param
-bool visualize = true;
+bool visualize = false;
 double threshold = 0.3; // threshold for matching boxes, TODO: find appropriate value
 
 
@@ -210,11 +210,17 @@ bool detectObjectsCallback(clf_object_recognition_msgs::Detect3D::Request &req, 
 
 int main(int argc, char* argv[]){
   ros::init(argc, argv, "object_merger");
-  nh = new ros::NodeHandle();
+  nh = new ros::NodeHandle("~");
 
   ros::ServiceServer objectDetectionService = nh->advertiseService("detect_objects", detectObjectsCallback);
   segmentationClient = nh->serviceClient<clf_object_recognition_msgs::Detect3D>("segment");
   detection2DClient = nh->serviceClient<clf_object_recognition_msgs::Detect2D>("detect");
+
+
+  nh->getParam("show_image", visualize);
+  nh->getParam("threshold", threshold);
+  ROS_INFO_STREAM("show images: "<<visualize);
+  ROS_INFO_STREAM("threshold: "<<threshold);
 
   ros::spin();
   return 0;
