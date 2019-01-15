@@ -1,0 +1,8 @@
+prefix=/home/lruegeme/projects/robo/clf_object_recognition/clf_object_recognition_rviz/cmake-build-debug/devel
+
+Name: clf_object_recognition_rviz
+Description: Description of clf_object_recognition_rviz
+Version: 0.0.1
+Cflags: -I/home/lruegeme/projects/robo/clf_object_recognition/clf_object_recognition_rviz/include
+Libs: -L/home/lruegeme/projects/robo/clf_object_recognition/clf_object_recognition_rviz/cmake-build-debug/devel/lib 
+Requires: clf_object_recognition_msgs
