@@ -231,8 +231,16 @@ int main(int argc, char* argv[])
   nh = new ros::NodeHandle("~");
 
   ros::ServiceServer objectDetectionService = nh->advertiseService("detect_objects", detectObjectsCallback);
-  segmentationClient = nh->serviceClient<clf_object_recognition_msgs::Detect3D>("segment");
-  detection2DClient = nh->serviceClient<clf_object_recognition_msgs::Detect2D>("detect");
+
+  auto srv_seg = "/segment";
+  auto srv_detect = "/detect";
+
+  ROS_INFO_STREAM("waiting for service: " << srv_seg);
+  ros::service::waitForService(srv_seg, -1);
+  ROS_INFO_STREAM("waiting for service: " << srv_detect);
+  ros::service::waitForService(srv_detect, -1);
+  segmentationClient = nh->serviceClient<clf_object_recognition_msgs::Detect3D>(srv_seg);
+  detection2DClient = nh->serviceClient<clf_object_recognition_msgs::Detect2D>(srv_detect);
 
   nh->getParam("show_image", visualize);
   nh->getParam("threshold", threshold);
