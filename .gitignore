@@ -1,7 +1,12 @@
 #IDEs
 
-.idea /.vscode /.kdev4 /.kdev5 /
-        *.kdev4
+*.pyc
+
+.idea 
+.vscode
+.kdev4
+.kdev5
+*.kdev4
 
              cmake -
     build -
