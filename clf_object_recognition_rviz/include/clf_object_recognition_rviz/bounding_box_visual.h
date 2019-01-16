@@ -15,7 +15,6 @@ class SceneManager;
 class SceneNode;
 }  // namespace Ogre
 
-
 namespace rviz
 {
 class MovableText;
@@ -35,7 +34,7 @@ public:
   void setMessage(const vision_msgs::BoundingBox3D msg);
 
 private:
-  void addPose(Eigen::Vector3d &p);
+  void addPose(Eigen::Vector3d& p);
 
   Ogre::SceneNode* object_node_{ nullptr };
   Ogre::SceneManager* scene_manager_{ nullptr };

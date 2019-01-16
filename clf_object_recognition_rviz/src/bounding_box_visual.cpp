@@ -41,7 +41,7 @@ BoundingBoxVisual::~BoundingBoxVisual()
   scene_manager_->destroySceneNode(object_node_);
 }
 
-void BoundingBoxVisual::addPose(Eigen::Vector3d &p)
+void BoundingBoxVisual::addPose(Eigen::Vector3d& p)
 {
   manual_object_->position(p[0], p[1], p[2]);
 }

@@ -26,28 +26,43 @@ void BoundingBoxArrayDisplay::reset()
 
 void BoundingBoxArrayDisplay::processMessage(const clf_object_recognition_msgs::BoundingBox3DArray::ConstPtr& msg)
 {
-  std::lock_guard<std::mutex> lock(mutex_);
-
-  int count = 0;
-  // scene_node to map
-
-  for (auto bbox : msg->boxes)
+  Ogre::Quaternion orientation;
+  Ogre::Vector3 position;
+  if (!context_->getFrameManager()->getTransform(msg->header.frame_id, msg->header.stamp, position, orientation))
   {
-    std::shared_ptr<BoundingBoxVisual> box;
-    if (++count > boxes_.size())
-    {
-      box = std::make_shared<BoundingBoxVisual>(context_->getSceneManager(), scene_node_);
-      boxes_.push_back(box);
-    }
-    else
-    {
-      box = boxes_.at(count-1);
-    }
-    box->setMessage(bbox);
+    ROS_DEBUG("Error transforming from frame '%s' to frame '%s'", msg->header.frame_id.c_str(),
+              qPrintable(fixed_frame_));
+    return;
   }
 
-  for(int i = boxes_.size() - count; i > 0; i++) {
-    boxes_.pop_back();
+  scene_node_->setPosition(position);
+  scene_node_->setOrientation(orientation);
+
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    int count = 0;
+    // scene_node to map
+
+    for (auto bbox : msg->boxes)
+    {
+      std::shared_ptr<BoundingBoxVisual> box;
+      if (++count > boxes_.size())
+      {
+        box = std::make_shared<BoundingBoxVisual>(context_->getSceneManager(), scene_node_);
+        boxes_.push_back(box);
+      }
+      else
+      {
+        box = boxes_.at(count - 1);
+      }
+      box->setMessage(bbox);
+    }
+
+    for (int i = boxes_.size() - count; i > 0; i++)
+    {
+      boxes_.pop_back();
+    }
   }
 }
 
