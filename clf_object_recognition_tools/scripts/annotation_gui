@@ -1,3 +1,3 @@
 #!/bin/bash
 
-rqt -s clf_object_recognition_tools.annotation.AnnotationPlugin
+rqt -s clf_object_recognition_tools.annotater.AnnotationPlugin

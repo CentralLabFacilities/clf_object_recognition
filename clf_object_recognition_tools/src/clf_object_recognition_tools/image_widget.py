@@ -35,8 +35,6 @@ def _get_roi_from_rect(rect):
 
 class ImageWidget(QWidget):
 
-    
-
     def __init__(self, parent, image_callback, clear_on_click=False):
         """
         Image widget that allows drawing rectangles and firing a image_roi_callback
@@ -47,18 +45,18 @@ class ImageWidget(QWidget):
         self._cv_image = None
         self._bg_image = None
         self._qt_image = QImage()
-        self.pMOG2 = cv2.createBackgroundSubtractorMOG2(500, 16, True)
 
         self.clip_rect = QRect(0, 0, 0, 0)
 
+        self._active = False
         self.dragging = False
         self.drag_offset = QPoint()
         self.image_callback = image_callback
 
-        self.detections = []
+        self.detections = []  # todo
         self._clear_on_click = clear_on_click
+
         self.bbox = None
-        self.mask = None
 
 
     def paintEvent(self, event):
@@ -78,158 +76,57 @@ class ImageWidget(QWidget):
             painter.setPen(QPen(Qt.magenta, 5.0))
             painter.drawRect(rect)
 
-	    painter.setPen(QPen(Qt.magenta, 5.0))
+            painter.setPen(QPen(Qt.magenta, 5.0))
             painter.drawText(rect, Qt.AlignCenter, label)
 
         painter.end()
 
-
-        
-
-    def calc_bbox(self, image, dil_size, eros_size):
-        fgMaskMOG2 = self.pMOG2.apply(image, 0.001)
-        fgMaskMOG2 = cv2.inRange(fgMaskMOG2, 250, 255)
-
-        elementEr = cv2.getStructuringElement(cv2.MORPH_RECT, (eros_size, eros_size), (-1, -1))
-        fgMaskMOG2 = cv2.dilate(fgMaskMOG2, elementEr)
-
-        elementDi = cv2.getStructuringElement(cv2.MORPH_RECT, (dil_size, dil_size), (-1, -1))
-        fgMaskMOG2 = cv2.erode(fgMaskMOG2, elementDi)
-
-        diagElem = np.identity(10, np.uint8)
-        fgMaskMOG2 = cv2.erode(fgMaskMOG2, diagElem)
-        fgMaskMOG2 = cv2.dilate(fgMaskMOG2, diagElem)
-
-        diagElem2 = np.fliplr(diagElem)
-        fgMaskMOG2 = cv2.erode(fgMaskMOG2, diagElem2)
-        fgMaskMOG2 = cv2.dilate(fgMaskMOG2, diagElem2)
-
-        shapeHeight = 2
-        shapeWidth = 5
-
-        elementEr = cv2.getStructuringElement(cv2.MORPH_RECT, (shapeHeight, shapeWidth), (-1, -1))
-        fgMaskMOG2 = cv2.erode(fgMaskMOG2, elementEr)
-        elementDi = cv2.getStructuringElement(cv2.MORPH_RECT, (shapeHeight, shapeWidth), (-1, -1))
-        fgMaskMOG2 = cv2.dilate(fgMaskMOG2, elementDi)
-        elementEr = cv2.getStructuringElement(cv2.MORPH_RECT, (shapeWidth, shapeHeight), (-1, -1))
-        fgMaskMOG2 = cv2.erode(fgMaskMOG2, elementEr)
-        elementDi = cv2.getStructuringElement(cv2.MORPH_RECT, (shapeWidth, shapeHeight), (-1, -1))
-        fgMaskMOG2 = cv2.dilate(fgMaskMOG2, elementDi)
-
-
-	#copy image to different background
-	back = cv2.imread('backgrounds/rgb-1577.ppm',1)
-	mask1 = fgMaskMOG2
-
-        thresh = 1
-        fgMaskMOG2 = cv2.blur(fgMaskMOG2, (6, 6))
-        fgMaskMOG2 = cv2.Canny(fgMaskMOG2, thresh, thresh * 2, 3)
-        dil_size = 4
-        elementDi = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * dil_size + 1, 2 * dil_size + 1),
-                                              (dil_size, dil_size))
-        fgMaskMOG2 = cv2.dilate(fgMaskMOG2, elementDi)
-        fgMaskMOG2, contours, hierarchy = cv2.findContours(fgMaskMOG2, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
-        largest_area = 0
-        largest_contour_index = 0
-
-        for i in range(len(contours)):
-            a = cv2.contourArea(contours[i], False)
-            if a > largest_area:
-                largest_area = a
-                largest_contour_index = i
-        if len(contours) > 0:
-
-            hull = cv2.convexHull(contours[largest_contour_index], contours[largest_contour_index])
-            mask_poly = np.zeros(fgMaskMOG2.shape, dtype=np.uint8)
-	    cv2.fillConvexPoly(mask_poly, hull.astype(np.int32), (255))
-	    #cv2.imshow('mask test',mask_poly)
-
-            bbox = cv2.boundingRect(contours[largest_contour_index])
-            mask = np.zeros(fgMaskMOG2.shape, dtype=np.uint8)
-            rect = cv2.minAreaRect(contours[largest_contour_index])
-            box = cv2.boxPoints(rect)
-            box = np.int0(box)
-            cv2.rectangle(mask, (bbox[0], bbox[1]), (bbox[0]+bbox[2], bbox[1]+bbox[3]), 255, thickness=-1)
-	    mask1 = cv2.bitwise_and(mask_poly, mask_poly, mask = mask)
-	    self.mask = mask1
-	    self.bbox = cv2.boundingRect(contours[largest_contour_index])
-	    self.bbox = (self.bbox[0], self.bbox[0] + self.bbox[2], self.bbox[1], self.bbox[1] + self.bbox[3])
-	    #cv2.rectangle(image, (self.bbox[0], self.bbox[2]), (self.bbox[1], self.bbox[3]), (0, 0, 255))
-
-        return
-
     def get_image(self):
         return self._cv_image
-
-    def get_bg_image(self):
-        return self._bg_image
-
-    def get_mask(self):
-        return self.mask
 
     def get_roi_image(self):
         # Flip if we have dragged the other way
         x, y, width, height = _get_roi_from_rect(self.clip_rect)
-	self.bbox = (x, x+width, y, y+height)
+        self.bbox = (x, x+width, y, y+height)
 
         return self._cv_image[y:y + height, x:x + width]
 
-    def set_image(self, img, bboxes, labels):
-        """
-        Sets an opencv image to the widget
-        :param image: The opencv image
-        """
-        image = img
-        self._cv_image = copy.copy(image)
+    def set_image(self, img, annotation_list, sel_index):
+        self._cv_image = copy.copy(img)
+        if annotation_list is not None:
+            for i in range(len(annotation_list)):
+                a = annotation_list[i]
 
-        if (bboxes is not None and labels is not None):
-            # draw boxes for current annotations
-            for i in range (0,len(bboxes)):
-                bbox = bboxes[i]
-                label = labels[i]
                 color = (0, 0, 255)
-                cv2.rectangle(image, (bbox[0], bbox[2]),
-                          (bbox[1], bbox[3]), color, 2)
-                image_label = '%s' % (label)
-                cv2.putText(image, image_label, (bbox[0], bbox[2]), 0, 0.6,
-                        color,
-                        1)
-        # for lazy annotation:
-        if (bboxes is not None and labels is None):
-            for i in range (0,len(bboxes)):
-                bbox = bboxes[i]
-                color = (0, 0, 255)
-                cv2.rectangle(image, (bbox[0], bbox[2]),
-                          (bbox[1], bbox[3]), color, 1)
-        self._qt_image = _convert_cv_to_qt_image(image)
+                line_thickness = 1
+                if i == sel_index:
+                    line_thickness = 3
+
+                height, width, channels = img.shape
+                cv2.rectangle(img, (int(a.bbox.get_x_min()*width), int(a.bbox.get_y_min()*height)),
+                              (int(a.bbox.get_x_max()*width), int(a.bbox.get_y_max()*height)),
+                              color, line_thickness)
+                cv2.putText(img, str(i), (int(a.bbox.get_x_min()*width), int(a.bbox.get_y_min()*height)), 0, 0.6, color, 1)
+        self._qt_image = _convert_cv_to_qt_image(img)
         self.update()
-	return self._cv_image
 
-    def get_mask(self):
-	return self.mask
-
-    def get_bbox(self):
-        return self.bbox
-
-    def add_detection(self, x, y, width, height, label):
-        """
-        Adds a detection to the image
-        :param x: ROI_X
-        :param y: ROI_Y
-        :param width: ROI_WIDTH
-        :param height: ROI_HEIGHT
-        :param label: Text to draw
-        """
-        roi_x, roi_y, roi_width, roi_height = _get_roi_from_rect(self.clip_rect)
-        self.detections.append((QRect(x+roi_x, y+roi_y, width, height), label))
+    def set_active(self, active):
+        self._active = active
 
     def clear(self):
-        self.detections = []
         self.clip_rect = QRect(0, 0, 0, 0)
 
     def get_roi(self):
         return _get_roi_from_rect(self.clip_rect)
+
+    def get_normalized_roi(self):
+        x_min, y_min, width, height = self.get_roi()
+        h, w, channels = self._cv_image.shape
+        x_center = (float(x_min) + float(width) / 2.0) / float(w)
+        y_center = (float(y_min) + float(height) / 2.0) / float(h)
+        width = float(width) / float(w)
+        height = float(height) / float(h)
+        return x_center, y_center, width, height
 
     def mousePressEvent(self, event):
         """
@@ -238,11 +135,13 @@ class ImageWidget(QWidget):
         """
         # Check if we clicked on the img
         if event.pos().x() < self._qt_image.width() and event.pos().y() < self._qt_image.height():
-            if self._clear_on_click:
-                self.clear()
-            self.clip_rect.setTopLeft(event.pos())
-            self.clip_rect.setBottomRight(event.pos())
-            self.dragging = True
+            # check if clicking is allowed
+            if self._active:
+                if self._clear_on_click:
+                    self.clear()
+                self.clip_rect.setTopLeft(event.pos())
+                self.clip_rect.setBottomRight(event.pos())
+                self.dragging = True
 
     def mouseMoveEvent(self, event):
         """
@@ -264,8 +163,6 @@ class ImageWidget(QWidget):
         if not self.dragging:
             return
 
-        roi_image = self.get_roi_image()
-        if roi_image is not None:
-            self.image_callback(roi_image)
+        self.image_callback()
 
         self.dragging = False

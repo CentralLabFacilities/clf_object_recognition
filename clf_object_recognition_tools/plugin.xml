@@ -1,5 +1,5 @@
 <library path="src/clf_object_recognition_tools">
-  <class name="Annotation Plugin" type="clf_object_recognition_tools.annotation.AnnotationPlugin" base_class_type="rqt_gui_py::Plugin">
+  <class name="Annotation Plugin" type="clf_object_recognition_tools.annotater.AnnotationPlugin" base_class_type="rqt_gui_py::Plugin">
     <description>
       A Python GUI plugin for annotating testset image regions
     </description>
