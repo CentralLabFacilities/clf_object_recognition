@@ -1,12 +1,11 @@
-#IDEs
-
+*.user
 *.pyc
 
-.idea 
-.vscode
-.kdev4
-.kdev5
-*.kdev4
+#IDEs
+
+.idea
+/.vscode /.kdev4 /.kdev5 /
+        *.kdev4
 
              cmake -
     build -

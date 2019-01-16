@@ -1,0 +1,8 @@
+prefix=/usr/local
+
+Name: clf_object_recognition_rviz
+Description: Description of clf_object_recognition_rviz
+Version: 0.0.1
+Cflags: -I/usr/local/include
+Libs: -L/usr/local/lib 
+Requires: clf_object_recognition_msgs

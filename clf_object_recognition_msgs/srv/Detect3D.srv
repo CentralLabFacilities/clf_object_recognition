@@ -1,5 +1,4 @@
-sensor_msgs/Image image
 
 ---
 
-vision_msgs/Detection3DArray detections
+vision_msgs/Detection3D[] detections

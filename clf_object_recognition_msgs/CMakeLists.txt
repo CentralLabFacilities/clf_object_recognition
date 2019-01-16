@@ -1,13 +1,14 @@
 cmake_minimum_required(VERSION 2.8.12) 
 project(clf_object_recognition_msgs)
 
-set(MSG_DEPS vision_msgs)
+set(MSG_DEPS vision_msgs std_msgs)
 
 find_package(catkin REQUIRED COMPONENTS message_generation ${MSG_DEPS})
 
 #ROS messages, services and actions
-#add_message_files(DIRECTORY msg FILES
-#)
+add_message_files(DIRECTORY msg FILES
+    BoundingBox3DArray.msg
+)
 
 add_service_files(DIRECTORY srv FILES
     Classify2D.srv

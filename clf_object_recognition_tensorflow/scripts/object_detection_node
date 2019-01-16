@@ -53,7 +53,7 @@ class TensorflowDetectionNode:
         self._detector = detect.Detector(num_classes, detection_threshold)
         self._recognizer = recognize.TensorflowRecognition()
 
-        self._detectionArray = Detection2DArray()
+        self._detectionArray = []
         self._bridge = CvBridge()
         self._detect_srv = rospy.Service('detect', Detect2D, self._detect_srv_callback)
         self._do_detection = False  # Indicates whether a new request has been received and thus detection must
@@ -122,9 +122,7 @@ class TensorflowDetectionNode:
         :param req: object_tracking_msgs.srv.DetectRequest
         :return: object_tracking_msgs.srv.DetectResponse
         """
-        self._detectionArray.detections = []
-        self._detectionArray.header.stamp = rospy.get_rostime()
-        self._detectionArray.header.frame_id = "0"
+        self._detectionArray = []
 
         try:
             self._bgr_image = self._bridge.imgmsg_to_cv2(req.image, "bgr8")
@@ -203,9 +201,7 @@ class TensorflowDetectionNode:
             # TODO: use a threshold?
 
             detection2D = Detection2D()
-            #detection2D.header.stamp
-            #detection2D.header.frame_id
-
+            detection2D.source_img = self._bridge.cv2_to_imgmsg(self._bgr_image, "bgr8")
             detection2D.results = []
 
             # all floats [0,1] normalized regarding image size
@@ -231,11 +227,11 @@ class TensorflowDetectionNode:
                 # hypothesis.pose.covariante # float[36]
                 detection2D.results.append(hypothesis)
 
-            self._detectionArray.detections.append(detection2D)
+            self._detectionArray.append(detection2D)
 
         # show results
         if (self._show_results):
-            self.visualize_bounding_boxes(self._detectionArray.detections, self._bgr_image)
+            self.visualize_bounding_boxes(self._detectionArray, self._bgr_image)
 
         self._do_detection = False
 

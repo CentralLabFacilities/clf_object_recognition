@@ -2,4 +2,4 @@ sensor_msgs/Image image
 
 ---
 
-vision_msgs/Detection2DArray detections
+vision_msgs/Detection2D[] detections

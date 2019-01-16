@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>clf_object_recognition_msgs</name>
-  <version>0.0.1</version>
+  <version>0.0.2</version>
   <description>Test Messages</description>
 
   <maintainer email="lruegeme@techfak.uni-bielefeld.de">Leroy Rügemer</maintainer>
@@ -13,6 +13,8 @@
 
   <build_depend>message_generation</build_depend>
   <build_depend>vision_msgs</build_depend>
+
+  <depend>std_msgs</depend>
 
   <exec_depend>message_runtime</exec_depend>
   <exec_depend>vision_msgs</exec_depend>
