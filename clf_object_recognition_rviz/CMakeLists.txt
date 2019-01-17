@@ -20,7 +20,6 @@ catkin_package(
 
 find_package (Eigen3 REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIR})
-MESSAGE(WARN, ${EIGEN3_INCLUDE_DIR})
 
 link_directories(${catkin_LIBRARY_DIRS})
 

@@ -59,11 +59,11 @@ void BoundingBoxArrayDisplay::processMessage(const clf_object_recognition_msgs::
       box->setMessage(bbox);
     }
 
-    for (int i = boxes_.size() - count; i > 0; i++)
+    for (int i = boxes_.size() - count; i > 0; i--)
     {
       boxes_.pop_back();
     }
-  }
+  }  // lock_guard mutex_
 }
 
 }  // namespace viz

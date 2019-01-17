@@ -17,6 +17,8 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+#include "clf_object_recognition_merger/oobb_calculate.h"
+
 // ros
 ros::NodeHandle* nh;
 ros::ServiceClient segmentationClient;
@@ -25,6 +27,18 @@ ros::ServiceClient detection2DClient;
 // TODO: read as param
 bool visualize = false;
 double threshold = 0.3;  // threshold for matching boxes, TODO: find appropriate value
+
+void fixBoxes(std::vector<vision_msgs::Detection3D>& detections3D)
+{
+  // ROS_INFO_STREAM("calculate oobbs");
+  for (auto& detection : detections3D)
+  {
+    auto newbox = OOBB_Calculate::calculate(detection.source_cloud);
+    // ROS_INFO_STREAM("BOX PRE: " << detection.bbox );
+    // ROS_INFO_STREAM("BOX POST: " << newbox );
+    detection.bbox = newbox;
+  }
+}
 
 /* this service provides a list of detections with hypothesis (id, score), 3d boundingbox and pointcloud
    by merging 2d and 3d detections */
@@ -46,7 +60,10 @@ bool detectObjectsCallback(clf_object_recognition_msgs::Detect3D::Request& req,
   if (detections2D.size() == 0)
   {
     ROS_INFO_STREAM("no detections in 2d image, return 3d detections");
-    res.detections = segmentCall.response.detections;
+
+    fixBoxes(detections3D);
+    res.detections = detections3D;
+
     return true;
   }
   if (detections3D.size() == 0)
@@ -220,6 +237,7 @@ bool detectObjectsCallback(clf_object_recognition_msgs::Detect3D::Request& req,
     }
   }
 
+  fixBoxes(detections3D);
   res.detections = detections3D;
 
   return true;

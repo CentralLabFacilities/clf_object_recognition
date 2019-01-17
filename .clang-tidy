@@ -1,5 +1,4 @@
 Checks: 'clang-diagnostic-*,clang-analyzer-*,-clang-analyzer-alpha*,google-*,misc-*,readability-*,modernize-*,performance-*,-clang-diagnostic-deprecated-declarations,-modernize-pass-by-value,-clang-diagnostic-reinterpret-base-class,-clang-diagnostic-return-type,-clang-diagnostic-switch'
-HeaderFilterRegex: '.*tobi_worldl.*'
 CheckOptions:
 # Classes, structs, ...
   - key:    readability-identifier-naming.NamespaceCase
