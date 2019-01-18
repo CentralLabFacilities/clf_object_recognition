@@ -20,7 +20,7 @@ def _convert_cv_to_qt_image(cv_image):
 
 def _get_roi_from_rect(rect):
     """
-    Returns the ROI from a rectangle, the rectangle can have the top and bottom flipped
+    Returns the ROI from a rectangle, the rectangle can have the top and bottom flipped.
     :param rect: Rect to get roi from
     :return: x, y, width, height of ROI
     """
@@ -29,7 +29,7 @@ def _get_roi_from_rect(rect):
     x_max = max(rect.topLeft().x(), rect.bottomRight().x())
     y_max = max(rect.topLeft().y(), rect.bottomRight().y())
 
-    return x_min, y_min, x_max - x_min, y_max - y_min
+    return x_min, y_min, x_max, y_max
 
 
 
@@ -86,10 +86,10 @@ class ImageWidget(QWidget):
 
     def get_roi_image(self):
         # Flip if we have dragged the other way
-        x, y, width, height = _get_roi_from_rect(self.clip_rect)
-        self.bbox = (x, x+width, y, y+height)
+        x, y, x2, y2 = _get_roi_from_rect(self.clip_rect)
+        self.bbox = (x, x2, y, y2)
 
-        return self._cv_image[y:y + height, x:x + width]
+        return self._cv_image[y:y2, x:x2]
 
     def set_image(self, img, annotation_list, sel_index):
         self._cv_image = copy.copy(img)
@@ -120,8 +120,18 @@ class ImageWidget(QWidget):
         return _get_roi_from_rect(self.clip_rect)
 
     def get_normalized_roi(self):
-        x_min, y_min, width, height = self.get_roi()
+        """ Return normalized roi. Make sure the roi doesn't extend over image bounds. """
+        x_min, y_min, x_max, y_max = self.get_roi()
         h, w, channels = self._cv_image.shape
+
+        x_min = max(0, x_min)
+        y_min = max(0, y_min)
+        x_max = min(w, x_max)
+        y_max = min(h, y_max)
+
+        width = x_max-x_min
+        height = y_max-y_min
+
         x_center = (float(x_min) + float(width) / 2.0) / float(w)
         y_center = (float(y_min) + float(height) / 2.0) / float(h)
         width = float(width) / float(w)
