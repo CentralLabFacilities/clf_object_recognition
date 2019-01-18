@@ -1,35 +1,3 @@
-# gui for annotation
-
-# left: camera stream + tracking options (start/stop) + grab frame button
-# right: workspace with list of images + annotations of current image, display/ select/ change/ delete/ add annotations, delete image
-# down: data augmentation (generate new workspace) options
-
-# save only images/ and labels/, rois/ are generated
-# "auto save" (every time an image is added, or buttons with edit properties are clicked)
-
-# on start: check workspace empty/ load if not, create if, check camera topic
-# options: configure tracker, data augmentation, camera topic, workspace
-# select new workspace -> check, load/create
-#
-
-
-
-# important:
-#   show camera frame,
-#   grab camera frame,
-#   workspace loading/ saving,
-#   displaying annotations and changing them
-#   configure labels
-#   generate dataset with rois
-
-
-# additional:
-#   display number of annotations per object
-#   data augmentation -> generate dataset
-#   background subtraction/ tracker
-#
-
-
 import os
 import rospy
 import rostopic
@@ -47,7 +15,8 @@ from python_qt_binding.QtCore import *
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 
-from utils import AnnotatedImage, AnnotationWithBbox, BoundingBox
+import utils
+import tf_utils
 
 from image_widget import ImageWidget
 from dialogs import warning_dialog
@@ -140,9 +109,13 @@ class AnnotationPlugin(Plugin):
         self.remove_image_button.clicked.connect(self.remove_current_image)
 
 
+        """ export data """
+        self.export_ws_button = QPushButton(self.widget)
+        self.export_ws_button.setText("Export workspace")
+        self.export_ws_button.setGeometry(QRect(1400, 600, 150, 30))
+        self.export_ws_button.clicked.connect(self.export_workspace_to_tf)
 
         """ functional stuff"""
-        # Bridge for opencv conversion
         self.bridge = CvBridge()
 
         self.sub = None
@@ -157,11 +130,22 @@ class AnnotationPlugin(Plugin):
         self.cur_annotated_image = None
         self.cur_annotation_index = -1
 
-        #self.set_workspace("/tmp")
         self.class_change()
 
+    def export_workspace_to_tf(self):
+        p_test = 0.2  #todo
+        default_config = "/media/sarah/media/objectrec/models/ssd_default.config"
+        batch_size = 12
+        tf_utils.export_data_to_tf(self.workspace, self.images_with_annotations, self.labels, p_test, default_config,
+                                batch_size, None, False)
+        tf_utils.create_roi_images(self.workspace, self.images_with_annotations, self.labels)
+
     def add_label(self):
+        """ If label doesn't exist yet, add to the list and combo box"""
         new_label = str(self.label_edit.text())
+        if new_label is None or new_label == "":
+            return
+
         for label in self.labels:
             if label[0] == new_label:
                 warning_dialog("warning", "label\""+label[0]+"\" already exists")
@@ -171,12 +155,7 @@ class AnnotationPlugin(Plugin):
         self.option_selector.addItem(new_label[0])
 
         label_file = self.workspace+"/labels.txt"
-        label_file = open(label_file, 'w')
-        label_str = ""
-        for label in self.labels:
-            label_str = label_str + label[0] + "\n"
-        label_file.write(label_str)
-
+        utils.write_labels(label_file, self.labels)
 
     def add_annotation(self):
         """ Add annotation to current image. Bounding box is just a dummy. Use current label. """
@@ -187,7 +166,7 @@ class AnnotationPlugin(Plugin):
             warning_dialog("Warning", "select image first")
             return
         label = self.option_selector.currentText()
-        annotation = AnnotationWithBbox(self.class_id, 1.0, 0.5, 0.5, 1, 1)
+        annotation = utils.AnnotationWithBbox(self.class_id, 1.0, 0.5, 0.5, 1, 1)
         self.cur_annotated_image.annotation_list.append(annotation)
         index = len(self.cur_annotated_image.annotation_list)-1
         self.add_annotation_to_list_widget(index, label, True)
@@ -195,7 +174,7 @@ class AnnotationPlugin(Plugin):
         self.changes_done = True
 
     def class_change(self):
-        """ Called when selected label (combo box) changes. Set current label and class id. """
+        """ Called another label is selected in the combo box. Set current label and class id. """
         self.label = self.option_selector.currentText()
         if self.labels is None or len(self.labels) == 0:
             return
@@ -203,7 +182,10 @@ class AnnotationPlugin(Plugin):
         # num_annotations = self.labels[self.class_id][1]
 
     def select_annotation(self):
-        """ Called when an annotation from the current image is selected. """
+        """
+            Called when an annotation is selected. The corresponding bounding box is drawn thicker,
+            enables drawing on the image widget.
+        """
         item = self.annotation_list_widget.currentItem()
         if item is None:
             self.sel_im_widget.set_active(False)
@@ -216,10 +198,12 @@ class AnnotationPlugin(Plugin):
         self.sel_im_widget.set_active(True)
 
     def select_image(self):
-        """ Called when an image from the list is selected. """
-        # save current annotations
+        """
+            Called when an image from the list is selected.
+            Save annotations, if changes were made. Then show selected image and its annotation list.
+        """
         if self.changes_done:
-            self.save_current_annotations()
+            utils.save_annotations(self.cur_annotated_image.image_file, self.cur_annotated_image.annotation_list)
             self.changes_done = False
 
         item = self.image_list_widget.currentItem()
@@ -249,7 +233,12 @@ class AnnotationPlugin(Plugin):
         self.show_image_from_workspace()
 
     def add_annotation_to_list_widget(self, index, label, select=False):
-        """ Add a QListWidgetItem to the annotation QListWidget """
+        """
+            Add a QListWidgetItem to the annotation QListWidget
+            :param index: index in annotation list
+            :param label: label of annotation
+            :param select: select new item or not
+        """
         item = QListWidgetItem()
         item.setText(str(index)+":"+label)
         self.annotation_list_widget.addItem(item)
@@ -258,7 +247,11 @@ class AnnotationPlugin(Plugin):
             self.select_annotation()
 
     def add_image_to_list_widget(self, file_name, select=False):
-        """ Add a QListWidgetItem to the image QListWidget """
+        """
+            Add a QListWidgetItem to the image QListWidget
+            :param file_name: image file name
+            :param select: select new item or not
+        """
         item = QListWidgetItem()
         item.setText(file_name)
         self.image_list_widget.addItem(item)
@@ -267,11 +260,13 @@ class AnnotationPlugin(Plugin):
             self.select_image()
 
     def refresh_image_list_widget(self):
+        """ Clear and fill image list widget """
         self.image_list_widget.clear()
         for img in self.images_with_annotations:
             self.add_image_to_list_widget(img.image_file.replace(self.workspace, ""))
 
     def remove_current_annotation(self):
+        """ Remove currently selected annotation """
         if self.cur_annotation_index == -1:
             warning_dialog("Warning", "no annotation selected")
             return
@@ -279,6 +274,7 @@ class AnnotationPlugin(Plugin):
         self.set_annotation_list()
 
     def remove_current_image(self):
+        """ Remove currently selected image. Remove ItemWidget and delete files """
         if self.cur_annotated_image is None:
             warning_dialog("Warning", "no image selected")
             return
@@ -296,14 +292,15 @@ class AnnotationPlugin(Plugin):
     def get_workspace(self):
         """ Gets and sets the output directory via a QFileDialog. Save before, if changes were done. """
         if self.changes_done:
-            self.save_current_annotations()
+            utils.save_annotations(self.cur_annotated_image.image_file, self.cur_annotated_image.annotation_list)
             self.changes_done = False
 
-        self.set_workspace(QFileDialog.getExistingDirectory(self.widget, "Select output directory"))
+        self.load_workspace(QFileDialog.getExistingDirectory(self.widget, "Select output directory"))
 
-    def set_workspace(self, path):
+    def load_workspace(self, path):
         """
-        Sets the workspace directory
+        Sets the workspace directory. Checks for missing directories and files,
+        then loads all images, annotations & label list.
         :param path: The path of the directory
         """
         if not path:
@@ -326,98 +323,25 @@ class AnnotationPlugin(Plugin):
         self.image_list_widget.clear()
         self.annotation_list_widget.clear()
 
-        self.check_workspace()
+        if utils.check_workspace(self.workspace):
+            image_dir = self.workspace + "/images"
+            label_file = self.workspace + "/labels.txt"
 
-    def check_workspace(self):
-        """
-            Check current workspace for label list, images and annotation files.
-            Create empty directories if they don't exist already.
-        """
-        if not self.workspace:
-            return
-
-        label_file = self.workspace + "/labels.txt"
-        image_dir = self.workspace + "/images"
-        label_dir = self.workspace + "/labels"
-        if os.path.isdir(self.workspace):
-            if not os.path.isfile(label_file):
-                label_file = open(label_file, 'w')
-                label_file.write("")    # needed?
-                label_file.close()
-            else:
-                self.labels = self.read_labels(label_file)
-                print("read labels: {}".format(self.labels))
-
-            if not os.path.isdir(image_dir):
-                os.makedirs(image_dir)
-            if not os.path.isdir(label_dir):
-                os.makedirs(label_dir)
+            self.labels = utils.read_labels(label_file)
+            for label in self.labels:
+                self.option_selector.addItem(label[0])
 
             for dirname, dirnames, filenames in os.walk(image_dir):
                 for filename in filenames:
                     image_file = dirname + '/' + filename
                     label_file = image_file.replace("images", "labels").replace(".jpg", ".txt").replace(".png", ".txt")
-                    annotated_image = self.read_annotated_image(image_file, label_file)
+                    annotated_image = utils.read_annotated_image(image_file, label_file)
                     self.images_with_annotations.append(annotated_image)
-                    self.add_image_to_list_widget("/images/"+filename)
-        else:
-            os.makedirs(self.workspace)
-            os.makedirs(image_dir)
-            os.makedirs(label_dir)
-            label_file = open(label_file, 'w')
-            label_file.write("")  # needed?
-            label_file.close()
-
-    def read_annotated_image(self, image_file, label_file):
-        """ Read annotation file of one image and add an AnnotatedImage object to the list """
-        annotation_list = []
-        if os.path.isfile(label_file):
-            with open(label_file) as f:
-                content = f.readlines()
-                content = [x.strip() for x in content]
-            for i in range(len(content)):
-                line = content[i].split(' ')
-                if len(line) == 5:
-                    annotation = AnnotationWithBbox(line[0], 1.0, line[1], line[2], line[3], line[4])
-                    annotation_list.append(annotation)
-        else:
-            print("label file missing: "+label_file)
-
-        return AnnotatedImage(image_file, annotation_list)
-
-    def save_current_annotations(self):
-        """
-            Save annotations of current image.
-            Should be called every time another image is selected and there were changes.
-        """
-        file_name = self.cur_annotated_image.image_file.replace("images", "labels").replace("jpg", "txt").replace("png", "txt")
-        label_str = ""
-        for a in self.cur_annotated_image.annotation_list:
-            label_str = label_str + "{} {} {} {} {}\n".format(a.label, a.bbox.x_center, a.bbox.y_center, a.bbox.width,
-                                                              a.bbox.height)
-        print("write labels to: "+file_name)
-        label_file = open(file_name, 'w')
-        label_file.write(label_str)
-
-    def read_labels(self, file):
-        """ Read list of labels from file """
-        labels_tmp = []
-        try:
-            with open(file, 'r') as f:
-                labels_tmp = f.readlines()
-            labels_tmp = [(i.rstrip(), 0) for i in labels_tmp]
-        except:
-            pass
-
-        labels = []
-        for label in labels_tmp:
-            label = list(label)
-            labels.append(label)
-            self.option_selector.addItem(label[0])
-        return labels
+                    self.add_image_to_list_widget("/images/" + filename)
+            print("workspace loaded successfully")
 
     def grab_frame(self):
-        """ Grab current frame and save to workspace"""
+        """ Grab current frame, save to workspace and show it."""
         if self.workspace is None or self.workspace == "":
             warning_dialog("Warning", "select workspace first")
             return
@@ -426,7 +350,7 @@ class AnnotationPlugin(Plugin):
             warning_dialog("warning", "no frame to grab")
             return
         file_name = "/images/{}.jpg".format(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S_%f"))
-        new_image = AnnotatedImage(self.workspace+file_name, [])
+        new_image = utils.AnnotatedImage(self.workspace+file_name, [])
         self.cur_annotated_image = new_image
         self.images_with_annotations.append(new_image)
         cv2.imwrite(self.workspace+file_name, cv_image)
@@ -445,10 +369,10 @@ class AnnotationPlugin(Plugin):
             self.changes_done = True
             return
 
-        # set boundign box
+        # set bounding box
         x_center, y_center, width, height = self.sel_im_widget.get_normalized_roi()
         annotation = self.cur_annotated_image.annotation_list[self.cur_annotation_index]
-        annotation.bbox = BoundingBox(x_center, y_center, width, height)
+        annotation.bbox = utils.BoundingBox(x_center, y_center, width, height)
 
         # set selected label
         self.label = self.option_selector.currentText()
@@ -468,7 +392,8 @@ class AnnotationPlugin(Plugin):
         if self.cur_annotated_image is None:
             return
         img = cv2.imread(self.cur_annotated_image.image_file)
-        self.sel_im_widget.set_image(img, self.cur_annotated_image.annotation_list, self.cur_annotation_index)
+        if img is not None:
+            self.sel_im_widget.set_image(img, self.cur_annotated_image.annotation_list, self.cur_annotation_index)
 
     def image_callback(self, msg):
         """
@@ -507,7 +432,7 @@ class AnnotationPlugin(Plugin):
         Callback function when shutdown is requested
         """
         if self.changes_done:
-            self.save_current_annotations()
+            utils.save_annotations(self.cur_annotated_image.image_file, self.cur_annotated_image.annotation_list)
 
     def save_settings(self, plugin_settings, instance_settings):
         """
@@ -516,10 +441,6 @@ class AnnotationPlugin(Plugin):
         :param instance_settings: Settings of this instance
         """
         instance_settings.set_value("workspace_dir", self.workspace)
-        #instance_settings.set_value("output_directory", self.output_directory)
-        #instance_settings.set_value("labels", self.labels)
-        #if self._sub:
-        #    instance_settings.set_value("topic_name", self._sub.name)
 
     def restore_settings(self, plugin_settings, instance_settings):
         """
@@ -532,21 +453,5 @@ class AnnotationPlugin(Plugin):
             workspace = instance_settings.value("workspace_dir")
         except:
             pass
-        self.set_workspace(workspace)
-
-        #path = None
-        #try:
-        #    path = instance_settings.value("output_directory")
-        #except:
-        #    pass
-        #self._set_output_directory(path)
-
-        #labels = None
-        #try:
-        #    labels = instance_settings.value("labels")
-        #except:
-        #    pass
-        # labels = self._read_labels()
-        # self._set_labels(labels)
-        #self._create_service_client(str(instance_settings.value("service_name", "/image_recognition/my_service")))
-        #self._create_subscriber(str(instance_settings.value("topic_name", "/xtion/rgb/image_raw")))
+        self.load_workspace(workspace)
+        self.create_subscriber(str(instance_settings.value("topic_name", "/xtion/rgb/image_raw")))
