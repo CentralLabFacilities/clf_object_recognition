@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.12)
 project(clf_object_recognition_merger)
 
+include_directories(include)
+
 ## Find catkin macros and libraries
 find_package(catkin REQUIRED COMPONENTS
   roscpp
@@ -15,10 +17,20 @@ catkin_package(CATKIN_DEPENDS
   vision_msgs
   cv_bridge
 )
+include_directories(${catkin_INCLUDE_DIRS})
 
-FIND_PACKAGE(OpenCV REQUIRED COMPONENTS highgui
-                                        core
+
+
+FIND_PACKAGE(OpenCV REQUIRED COMPONENTS 
+  highgui 
+  core
 )
+include_directories(${OpenCV_INCLUDE_DIRS})
+
+find_package(PCL REQUIRED)
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
 
 ###########
 ## Build ##
@@ -26,13 +38,8 @@ FIND_PACKAGE(OpenCV REQUIRED COMPONENTS highgui
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -std=c++0x")
 
-include_directories(
-  ${catkin_INCLUDE_DIRS}
-  ${OpenCV_INCLUDE_DIRS}
-)
-
 add_executable(object_merger src/object_merger.cpp) 
-target_link_libraries(object_merger ${catkin_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(object_merger ${catkin_LIBRARIES} ${OpenCV_LIBS} ${PCL_LIBRARIES})
 #add_dependencies(object_merger clf_object_recognition_merger)
 
 
