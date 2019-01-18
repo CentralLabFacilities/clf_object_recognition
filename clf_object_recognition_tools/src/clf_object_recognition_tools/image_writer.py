@@ -75,7 +75,7 @@ def write_annotated(dir_path, image, mask, labels, cls_ids, bboxes, test=False):
             cls_id = cls_ids[i]
 
             # convert bbox for darknet
-            h, w = image.shape[:2] # changed w, h to h, w -- thilo
+            h, w = image.shape[:2]  # changed w, h to h, w
             bb = convert((w,h), bbox)
 
             # write converted bbox as label in label_dir
