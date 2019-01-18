@@ -83,7 +83,8 @@ class TrainPlugin(Plugin):
         """
         The train method that does the actual retraining of the an inception graph
         """
-        self._get_output_directory()
+        if not self.output_directory:
+            self._get_output_directory()
         output_dir = self.output_directory
         print("output_dir = " + output_dir)
         model_dir = output_dir + "/inception"
