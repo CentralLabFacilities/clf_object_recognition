@@ -68,22 +68,13 @@ tf.logging.set_verbosity(tf.logging.INFO)
 
 flags = tf.app.flags
 
-# select train mode
-flags.DEFINE_integer('train_mode',0,'0: complete, 1: create configs, 2: train, 3: export graph')
-
 # all modes
-flags.DEFINE_string('model_dir', None,
+flags.DEFINE_string('train_dir', None,
                     'Directory to save configs, checkpoints and training summaries.')
-flags.DEFINE_string('data_dir', None,
-                    'Directory to input data.')
-flags.DEFINE_string('default_config_path', None,
-                    'Path to a pipeline_pb2.TrainEvalPipelineConfig config template')
 flags.DEFINE_string('pipeline_config_path', None,
                     'Path to a pipeline_pb2.TrainEvalPipelineConfig config')
-flags.DEFINE_string('fine_tune_checkpoint', None,
-                    'Path to finetune checkpoin. Must be compatible with config file!')
 
-# strucure:
+# structure:
 
 # data-dir
 # - (classNames.txt)
@@ -126,9 +117,8 @@ flags.DEFINE_string('model_config_path', '',
 flags.DEFINE_integer('train_steps', 40000, 'perform training for n steps')
 flags.DEFINE_integer('to_keep', 50, 'keep n checkpoints')
 flags.DEFINE_integer('save_steps', 600, 'save every n seconds')
-flags.DEFINE_integer('batch_size', 12, 'batch size')
+flags.DEFINE_integer('batch_size', 16, 'batch size')
 
-# export relevant flags #TODO: those needed?
 flags.DEFINE_string('input_type', 'image_tensor', 'Type of input node. Can be '
                     'one of [`image_tensor`, `encoded_image_string_tensor`, '
                     '`tf_example`]')
@@ -141,147 +131,115 @@ flags.DEFINE_string('input_shape', None,
                     'default shape will be partially specified as '
                     '`[None, None, None, 3]`.')
 
-tf.app.flags.mark_flag_as_required('model_dir')
-#only for config/ tf record generation
-#tf.app.flags.mark_flag_as_required('data_dir')
-#tf.app.flags.mark_flag_as_required('default_config_path')
+
+tf.app.flags.mark_flag_as_required('train_dir')
+tf.app.flags.mark_flag_as_required('pipeline_config_path')
 
 FLAGS = flags.FLAGS
 
 
 def main(_):
 
-    # check flags
-    if(FLAGS.train_mode == 0 or FLAGS.train_mode == 1):
-        if not FLAGS.data_dir or not os.path.exists(FLAGS.data_dir):
-            print("error: input data directory doesn't exist!")
-            exit(0)
+    # check config file and train dir exist
+    if not os.path.isfile(FLAGS.pipeline_config_path):
+        print("error: default config doesn't exist!")
+        exit(0)
+    configs = config_util.get_configs_from_pipeline_file(FLAGS.pipeline_config_path)
 
-        if not FLAGS.default_config_path or not os.path.isfile(FLAGS.default_config_path):
-            print("error: default config doesn't exist!")
-            exit(0)
-    else:
-        configs = config_util.get_configs_from_pipeline_file(FLAGS.pipeline_config_path)
-
-    if not os.path.exists(FLAGS.model_dir):
-        os.makedirs(FLAGS.model_dir)
-
-    if (FLAGS.train_mode == 0 or FLAGS.train_mode == 1):
-        # create config and tf records
-        pipeline_config_path = creator.create_config_and_records(FLAGS.data_dir, FLAGS.model_dir,
-                                                                 FLAGS.default_config_path,FLAGS.fine_tune_checkpoint,
-                                                                 FLAGS.batch_size)
-        configs = config_util.get_configs_from_pipeline_file(pipeline_config_path)
-        if FLAGS.train_mode == 1:
-            print("Created config and tf records. Done.")
-            exit(0)
-
-    train_dir = FLAGS.model_dir + "/checkpoints"
+    train_dir = FLAGS.train_dir
     if not os.path.exists(train_dir):
+        print("create training directory: "+train_dir)
         os.makedirs(train_dir)
 
+    model_config = configs['model']
+    train_config = configs['train_config']
+    input_config = configs['train_input_config']
 
-    if (FLAGS.train_mode == 0 or FLAGS.train_mode == 2):
-        # training
+    model_fn = functools.partial(
+        model_builder.build,
+        model_config=model_config,
+        is_training=True)
 
-        model_config = configs['model']
-        train_config = configs['train_config']
-        input_config = configs['train_input_config']
+    create_input_dict_fn = functools.partial(
+        input_reader_builder.build, input_config)
 
-        model_fn = functools.partial(
-            model_builder.build,
-            model_config=model_config,
-            is_training=True)
+    env = json.loads(os.environ.get('TF_CONFIG', '{}'))
+    cluster_data = env.get('cluster', None)
+    cluster = tf.train.ClusterSpec(cluster_data) if cluster_data else None
+    task_data = env.get('task', None) or {'type': 'master', 'index': 0}
+    task_info = type('TaskSpec', (object,), task_data)
 
-        create_input_dict_fn = functools.partial(
-            input_reader_builder.build, input_config)
+    # Parameters for a single worker.
+    ps_tasks = 0
+    worker_replicas = 1
+    worker_job_name = 'lonely_worker'
+    task = 0
+    is_chief = True
+    master = ''
 
-        env = json.loads(os.environ.get('TF_CONFIG', '{}'))
-        cluster_data = env.get('cluster', None)
-        cluster = tf.train.ClusterSpec(cluster_data) if cluster_data else None
-        task_data = env.get('task', None) or {'type': 'master', 'index': 0}
-        task_info = type('TaskSpec', (object,), task_data)
+    if cluster_data and 'worker' in cluster_data:
+        # Number of total worker replicas include "worker"s and the "master".
+        worker_replicas = len(cluster_data['worker']) + 1
+    if cluster_data and 'ps' in cluster_data:
+        ps_tasks = len(cluster_data['ps'])
 
-        # Parameters for a single worker.
-        ps_tasks = 0
-        worker_replicas = 1
-        worker_job_name = 'lonely_worker'
-        task = 0
-        is_chief = True
-        master = ''
+    if worker_replicas > 1 and ps_tasks < 1:
+        raise ValueError('At least 1 ps task is needed for distributed training.')
 
-        if cluster_data and 'worker' in cluster_data:
-            # Number of total worker replicas include "worker"s and the "master".
-            worker_replicas = len(cluster_data['worker']) + 1
-        if cluster_data and 'ps' in cluster_data:
-            ps_tasks = len(cluster_data['ps'])
+    if worker_replicas >= 1 and ps_tasks > 0:
+        # Set up distributed training.
+        server = tf.train.Server(tf.train.ClusterSpec(cluster), protocol='grpc',
+                                 job_name=task_info.type,
+                                 task_index=task_info.index)
+        if task_info.type == 'ps':
+            server.join()
+            return
 
-        if worker_replicas > 1 and ps_tasks < 1:
-            raise ValueError('At least 1 ps task is needed for distributed training.')
+        worker_job_name = '%s/task:%d' % (task_info.type, task_info.index)
+        task = task_info.index
+        is_chief = (task_info.type == 'master')
+        master = server.target
 
-        if worker_replicas >= 1 and ps_tasks > 0:
-            # Set up distributed training.
-            server = tf.train.Server(tf.train.ClusterSpec(cluster), protocol='grpc',
-                                     job_name=task_info.type,
-                                     task_index=task_info.index)
-            if task_info.type == 'ps':
-                server.join()
-                return
+    if not FLAGS.train_steps:
+        print("warning: training steps are not defined, set to 99999")
+        train_steps = 99999
+    else:
+        train_steps = FLAGS.train_steps
 
-            worker_job_name = '%s/task:%d' % (task_info.type, task_info.index)
-            task = task_info.index
-            is_chief = (task_info.type == 'master')
-            master = server.target
+    clf_object_recognition_tensorflow.trainer.train(create_input_dict_fn,
+                                                    model_fn, train_config,
+                                                    master, task,
+                                                    FLAGS.num_clones,
+                                                    worker_replicas,
+                                                    FLAGS.clone_on_cpu,
+                                                    ps_tasks,
+                                                    worker_job_name, is_chief,
+                                                    train_dir, train_steps,
+                                                    FLAGS.to_keep,
+                                                    FLAGS.save_steps)
 
-        if (not FLAGS.train_steps):
-            print("warning: training steps are not defined, set to 99999")
-            train_steps = 99999
-        else:
-            train_steps = FLAGS.train_steps
+    # export last checkpoint
+    pipeline_config = pipeline_pb2.TrainEvalPipelineConfig()
+    with tf.gfile.GFile(FLAGS.pipeline_config_path, 'r') as f:
+        text_format.Merge(f.read(), pipeline_config)
 
-        clf_object_recognition_tensorflow.trainer.train(create_input_dict_fn,
-                                                          model_fn, train_config,
-                                                          master, task,
-                                                          FLAGS.num_clones,
-                                                          worker_replicas,
-                                                          FLAGS.clone_on_cpu,
-                                                          ps_tasks,
-                                                          worker_job_name, is_chief,
-                                                          train_dir, train_steps,
-                                                          FLAGS.to_keep,
-                                                          FLAGS.save_steps)
+    if FLAGS.input_shape:
+        input_shape = [
+            int(dim) if dim != '-1' else None
+            for dim in FLAGS.input_shape.split(',')
+        ]
+    else:
+        input_shape = None
 
-    if (FLAGS.train_mode == 0 or FLAGS.train_mode == 3):
-        # export the graph
-        print("export the graph...")
-        print(pipeline_config_path)
+    checkpoint_prefix = train_dir+"model.ckpt-"+str(train_steps)
+    export_dir = train_dir+"/export"
+    if not os.path.exists(export_dir):
+        os.makedirs(export_dir)
+    export_dir2 = export_dir+str(train_steps)
+    exporter.export_inference_graph(FLAGS.input_type, pipeline_config,
+                                    checkpoint_prefix,
+                                    export_dir2, input_shape)
 
-        if not pipeline_config_path:
-            pipeline_config_path = FLAGS.pipeline_config_path
-
-        pipeline_config = pipeline_pb2.TrainEvalPipelineConfig()
-        with tf.gfile.GFile(pipeline_config_path, 'r') as f:
-            text_format.Merge(f.read(), pipeline_config)
-
-        # TODO: needed?
-        if FLAGS.input_shape:
-            input_shape = [
-                int(dim) if dim != '-1' else None
-                for dim in FLAGS.input_shape.split(',')
-            ]
-        else:
-            input_shape = None
-
-        # TODO: export all checkpoints that are available? optional?
-        checkpoint_prefix = train_dir+"/model.ckpt-"+str(train_steps)
-        export_dir = FLAGS.model_dir+"/export"
-        if not os.path.exists(export_dir):
-            os.makedirs(export_dir)
-        export_dir2 = export_dir+str(train_steps) # for each export graph (~ train steps), directory must not exists!
-
-        exporter.export_inference_graph(FLAGS.input_type, pipeline_config,
-                                        checkpoint_prefix,
-                                        export_dir2, input_shape)
 
 if __name__ == '__main__':
   tf.app.run()
