@@ -108,7 +108,6 @@ class AnnotationPlugin(Plugin):
         self.remove_image_button.setGeometry(QRect(1550, 550, 150, 30))
         self.remove_image_button.clicked.connect(self.remove_current_image)
 
-
         """ export data """
         self.export_ws_button = QPushButton(self.widget)
         self.export_ws_button.setText("Export workspace")
@@ -132,16 +131,49 @@ class AnnotationPlugin(Plugin):
 
         self.class_change()
 
+        self.default_config_path = None
+        self.p_test = 0.2
+        self.batch_size = 12
+
+    def set_export_variables(self):
+        """ Set variables for export via QInputDialog and QFileDialog. """
+        # default config path
+        config_path = QFileDialog.getOpenFileName(self.widget, "Select default config")
+        config_path = str(config_path[0])
+        file, ext = os.path.splitext(config_path)
+        if not ext == ".config":
+            self.default_config_path = None
+            warning_dialog("warning", "invalid file extension")
+            return
+        else:
+            self.default_config_path = config_path
+
+        # batch size
+        batch_size, ok = QInputDialog.getText(self.widget, "Set batch size", "12")
+        if ok:
+            self.batch_size = int(batch_size)
+            if self.batch_size == -1:
+                warning_dialog("warning", "invalid batch size")
+                return
+
+        # test percentage
+        p_test, ok = QInputDialog.getText(self.widget, "Set test percentage", "0.2")
+        if ok:
+            self.p_test = float(p_test)
+
     def export_workspace_to_tf(self):
-        p_test = 0.2  #todo
-        default_config = "/media/sarah/media/objectrec/models/ssd_default.config"
-        batch_size = 12
-        tf_utils.export_data_to_tf(self.workspace, self.images_with_annotations, self.labels, p_test, default_config,
-                                batch_size, None, False)
+        """ Export workspace to training formats. """
+        if self.default_config_path is None:
+            warning_dialog("Warning", "define default config first")
+            return
+
+        tf_utils.export_data_to_tf(self.workspace, self.images_with_annotations, self.labels, self.p_test,
+                                   self.default_config_path, self.batch_size, None, False)
         tf_utils.create_roi_images(self.workspace, self.images_with_annotations, self.labels)
+        print("Export done")
 
     def add_label(self):
-        """ If label doesn't exist yet, add to the list and combo box"""
+        """ If label doesn't exist yet, add to the list and combo box. """
         new_label = str(self.label_edit.text())
         if new_label is None or new_label == "":
             return
@@ -415,6 +447,8 @@ class AnnotationPlugin(Plugin):
                                               rostopic.find_by_type('sensor_msgs/Image'))
         if ok:
             self.create_subscriber(topic_name)
+
+        self.set_export_variables()
 
     def create_subscriber(self, topic_name):
         """

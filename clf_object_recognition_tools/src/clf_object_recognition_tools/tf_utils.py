@@ -22,7 +22,7 @@ def create_roi_images(ws_dir, annotated_images_list, label_list):
 
     roi_dir = ws_dir+"/rois"
     if os.path.isdir(roi_dir):
-        print("delete existing dir: "+roi_dir)
+        print("Delete existing dir: "+roi_dir)
         shutil.rmtree(roi_dir)  # delete older generated files
 
     os.makedirs(roi_dir)
@@ -174,10 +174,7 @@ def create_tf_example(annotated_image, label_list):
     classes_text = []
     classes = []
 
-    print(label_list)
-
     for a in annotated_image.annotation_list:
-        print(a.label)
         class_id = int(a.label)+1  # tf record format starts with id 1
         class_text = label_list[int(a.label)][0]
         x_min, y_min, x_max, y_max = a.bbox.get_corners()
@@ -203,3 +200,4 @@ def create_tf_example(annotated_image, label_list):
         'image/object/class/label': dataset_util.int64_list_feature(classes),
     }))
     return tf_example
+
