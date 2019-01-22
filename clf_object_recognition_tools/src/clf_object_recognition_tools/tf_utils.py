@@ -130,15 +130,22 @@ def export_data_to_tf(ws_dir, annotated_images_list, label_list, test_percentage
     writer_train = tf.python_io.TFRecordWriter(train_record_output)
     writer_test = tf.python_io.TFRecordWriter(test_record_output)
 
+    counter_test = 0
+    counter_train = 0
+    test_percentage = int(test_percentage*100)
+
     for annotated_image in annotated_images_list:
         tf_example = create_tf_example(annotated_image, label_list)
         if random.randint(0, 100) < test_percentage:
+            counter_test = counter_test + 1
             writer_test.write(tf_example.SerializeToString())
         else:
+            counter_train = counter_train + 1
             writer_train.write(tf_example.SerializeToString())
 
     writer_train.close()
     writer_test.close()
+    print("Write "+str(counter_train)+" train and "+str(counter_test)+" test examples")
     print('Successfully created the TFRecords: {}, {}'.format(train_record_output, test_record_output))
 
     # label map

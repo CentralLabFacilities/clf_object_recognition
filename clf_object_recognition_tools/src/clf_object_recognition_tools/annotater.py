@@ -111,7 +111,7 @@ class AnnotationPlugin(Plugin):
         """ export data """
         self.export_ws_button = QPushButton(self.widget)
         self.export_ws_button.setText("Export workspace")
-        self.export_ws_button.setGeometry(QRect(1400, 600, 150, 30))
+        self.export_ws_button.setGeometry(QRect(1550, 650, 150, 50))
         self.export_ws_button.clicked.connect(self.export_workspace_to_tf)
 
         """ functional stuff"""
@@ -151,15 +151,18 @@ class AnnotationPlugin(Plugin):
         # batch size
         batch_size, ok = QInputDialog.getText(self.widget, "Set batch size", "12")
         if ok:
-            self.batch_size = int(batch_size)
-            if self.batch_size == -1:
-                warning_dialog("warning", "invalid batch size")
-                return
+            try:
+                self.batch_size = int(batch_size)
+            except ValueError:
+                pass
 
         # test percentage
         p_test, ok = QInputDialog.getText(self.widget, "Set test percentage", "0.2")
         if ok:
-            self.p_test = float(p_test)
+            try:
+                self.p_test = float(p_test)
+            except ValueError:
+                pass
 
     def export_workspace_to_tf(self):
         """ Export workspace to training formats. """
