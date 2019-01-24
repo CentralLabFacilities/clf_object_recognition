@@ -42,9 +42,10 @@ def create_roi_images(ws_dir, annotated_images_list, label_list):
             label = label_list[int(a.label)][0]
             x_min, y_min, x_max, y_max = a.bbox.get_corners()
             roi = image[int(y_min*h):int(y_max*h), int(x_min*w):int(x_max*w)]
-            h2,w2,c2 = roi.shape
+            h2, w2, c2 = roi.shape
 
-            output_file = roi_dir+"/"+label+"/"+base_name+"_"+str(i)
+            base_name = base_name.split('.')[0]
+            output_file = roi_dir+"/"+label+"/"+base_name+"_"+str(i)+".jpg"
             if h2 == 0 or w2 == 0:
                 print("skip roi with size 0: "+output_file)
                 print(x_min, y_min, x_max, y_max)
