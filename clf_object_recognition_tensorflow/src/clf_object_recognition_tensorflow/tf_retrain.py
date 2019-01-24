@@ -177,6 +177,7 @@ def create_image_lists(image_dir, testing_percentage, validation_percentage):
     into training, testing, and validation sets within each label.
   """
   tf.logging.info('creating image list, test: %d, val: %d',testing_percentage,validation_percentage)
+  tf.logging.info('creating image list, test: %d, val: %d',testing_percentage,validation_percentage)
   if not gfile.Exists(image_dir):
     print("Image directory '" + image_dir + "' not found.")
     return None
@@ -190,11 +191,9 @@ def create_image_lists(image_dir, testing_percentage, validation_percentage):
       continue
     extensions = ['jpg', 'jpeg', 'JPG', 'JPEG']
     file_list = []
-    if not ("rois" in sub_dir):
-        continue
     # workaround for new paths
-    dir_name = os.path.basename(sub_dir.replace("/rois",""))
-    dir_name_search = dir_name + "/rois"
+    dir_name = os.path.basename(sub_dir)
+    dir_name_search = dir_name
     if dir_name == image_dir:
       continue
     print("Looking for images in '" + dir_name_search + "'")
@@ -204,8 +203,9 @@ def create_image_lists(image_dir, testing_percentage, validation_percentage):
     if not file_list:
       print('No files found')
       continue
-    if len(file_list) < 20:
-      print('WARNING: Folder has less than 20 images, which may cause issues.')
+    if len(file_list) < 10:
+      print('WARNING: Skip folder '+dir_name_search+', because it contains less than 10 images.')
+      continue
     elif len(file_list) > MAX_NUM_IMAGES_PER_CLASS:
       print('WARNING: Folder {} has more than {} images. Some images will '
             'never be selected.'.format(dir_name_search, MAX_NUM_IMAGES_PER_CLASS))
@@ -221,9 +221,9 @@ def create_image_lists(image_dir, testing_percentage, validation_percentage):
     training_num = image_num
     print('Found %d images\n' % (image_num))
     # choose images for test set and remove them from the training set
-    testing_num = (int) (testing_percentage*image_num/100)
+    testing_num = int(testing_percentage*image_num/100)
     print('Take %d images for testing\n' % (testing_num))
-    for i in range (0,testing_num):
+    for i in range(0, testing_num):
       r = random.randint(0, training_num-1) 
       testing_images.append(training_images.pop(r))
       #print('Take image with id %d for test set' % (r))
@@ -232,7 +232,7 @@ def create_image_lists(image_dir, testing_percentage, validation_percentage):
     #choose images for validation set and remove them from the training set
     validation_num = (int) (validation_percentage*image_num/100)
     print('Take %d images for validation\n' % (validation_num))
-    for i in range (0,validation_num):
+    for i in range(0, validation_num):
       r = random.randint(0, training_num-1) 
       validation_images.append(training_images.pop(r))
       #print('Take image with id %d for validation set' % (r))
