@@ -1,4 +1,32 @@
 import os
+import cv2
+
+
+def get_bbox_by_mask(mask):
+    """ Returns bounding box in absolute image coordinates """
+    version_number = int(cv2.__version__[0])  # check opencv version
+    contours = 0
+    if version_number > 2:
+        mask, contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    else:
+        # this doesnt work for some reason (mask is just black)
+        mask_cpy = mask.copy()
+        contours, hierarchy = cv2.findContours(mask_cpy, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    largest_area = 0
+    largest_contour_index = 0
+    for i in range(len(contours)):
+        a = cv2.contourArea(contours[i], False)
+        if a > largest_area:
+            largest_area = a
+            largest_contour_index = i
+    box = cv2.boundingRect(contours[largest_contour_index])
+    h, w = mask.shape
+    center_x = float(box[0]) + float(box[2])/2.0
+    center_y = float(box[1]) + float(box[3])/2.0
+    width = box[2]
+    height = box[3]
+    bbox = BoundingBoxAbs(center_x, center_y, width, height, w, h)
+    return bbox
 
 
 def read_labels(file_name):
@@ -40,8 +68,11 @@ def write_labels(file_name, labels):
     label_file.close()
 
 
-def read_annotated_image(image_file, label_file):
-    """ Read annotation file of one image return an AnnotatedImage object """
+def read_annotations(label_file):
+    """
+        Read annotation file of one image
+        :return list of AnnotationWithBbox objects
+    """
     annotation_list = []
     if os.path.isfile(label_file):
         with open(label_file) as f:
@@ -53,9 +84,30 @@ def read_annotated_image(image_file, label_file):
                 annotation = AnnotationWithBbox(line[0], 1.0, line[1], line[2], line[3], line[4])
                 annotation_list.append(annotation)
     else:
-        print("label file missing: "+label_file)
+        print("label file missing: " + label_file)
+    return annotation_list
 
-    return AnnotatedImage(image_file, annotation_list)
+
+def abs_to_norm_bbox(bbox_abs):
+    x_center = float(bbox_abs.x_center)/float(bbox_abs.img_width)
+    y_center = float(bbox_abs.y_center)/float(bbox_abs.img_height)
+    width = float(bbox_abs.width)/float(bbox_abs.img_width)
+    height = float(bbox_abs.height)/float(bbox_abs.img_height)
+
+    return BoundingBox(x_center, y_center, width, height)
+
+
+def norm_to_abs_bbox(bbox_norm, img_width, img_height):
+    x_center = int(bbox_norm.x_center*img_width)
+    y_center = int(bbox_norm.y_center*img_height)
+    width = int(bbox_norm.width*img_width)
+    height = int(bbox_norm.height*img_height)
+    return BoundingBoxAbs(x_center, y_center, width, height, img_width, img_height)
+
+
+def read_annotated_image(image_file, label_file):
+    """ Read annotation file of one image return an AnnotatedImage object """
+    return AnnotatedImage(image_file, read_annotations(label_file))
 
 
 def save_annotations(image_file, annotation_list):
@@ -130,6 +182,40 @@ class AnnotationWithBbox:
         return self.__dict__ == other.__dict__
 
 
+class BoundingBoxAbs:
+    """
+        Store absolute image coordinates of a bounding box and the image dimensions.
+    """
+    def __init__(self, x_center, y_center, width, height, img_width, img_height):
+        self.x_center = x_center
+        self.y_center = y_center
+        self.width = width
+        self.height = height
+        self.img_width = img_width
+        self.img_height = img_height
+
+    def __str__(self):
+        return str(self.__dict__)
+
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
+
+    def get_corners(self):
+        return self.get_x_min(), self.get_y_min(), self.get_x_max(), self.get_y_max()
+
+    def get_x_min(self):
+        return self.x_center - self.width / 2
+
+    def get_y_min(self):
+        return self.y_center - self.height / 2
+
+    def get_x_max(self):
+        return self.x_center + self.width / 2
+
+    def get_y_max(self):
+        return self.y_center + self.height / 2
+
+
 class BoundingBox:
     """
         Store normalized image coordinates [0,1] of a bounding box.
@@ -147,16 +233,13 @@ class BoundingBox:
         return self.__dict__ == other.__dict__
 
     def get_corners(self):
-        """
-        :return: x_min, y_min, x_max, y_max
-        """
         return self.get_x_min(), self.get_y_min(), self.get_x_max(), self.get_y_max()
 
     def get_x_min(self):
-        return self.x_center-self.width/2.0
+        return self.x_center-self.width / 2.0
 
     def get_y_min(self):
-        return self.y_center-self.height/2.0
+        return self.y_center-self.height / 2.0
 
     def get_x_max(self):
         return self.x_center + self.width / 2.0
