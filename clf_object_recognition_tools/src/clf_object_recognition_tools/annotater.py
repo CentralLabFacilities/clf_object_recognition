@@ -17,6 +17,7 @@ from cv_bridge import CvBridge, CvBridgeError
 
 import utils
 import tf_utils
+import data_augmentation
 
 from image_widget import ImageWidget
 from dialogs import warning_dialog
@@ -109,10 +110,36 @@ class AnnotationPlugin(Plugin):
         self.remove_image_button.clicked.connect(self.remove_current_image)
 
         """ export data """
+        self.gen_data_label = QLabel(self.widget)
+        self.gen_data_label.setText("Export workspace: ")
+        self.gen_data_label.setGeometry(QRect(1550, 650, 250, 50))
+
         self.export_ws_button = QPushButton(self.widget)
-        self.export_ws_button.setText("Export workspace")
-        self.export_ws_button.setGeometry(QRect(1550, 650, 150, 50))
+        self.export_ws_button.setText("Export")
+        self.export_ws_button.setGeometry(QRect(1550, 700, 125, 50))
         self.export_ws_button.clicked.connect(self.export_workspace_to_tf)
+
+        self.conf_export_button = QPushButton(self.widget)
+        self.conf_export_button.setText("Configure")
+        self.conf_export_button.setGeometry(QRect(1675, 700, 125, 50))
+        self.conf_export_button.clicked.connect(self.set_export_parameters)
+
+        """ generate augmented data """
+
+        self.gen_data_label = QLabel(self.widget)
+        self.gen_data_label.setText("Generate augmented dataset:")
+        self.gen_data_label.setGeometry(QRect(1550, 800, 250, 50))
+
+        self.gen_data_button = QPushButton(self.widget)
+        self.gen_data_button.setText("Generate")
+        self.gen_data_button.setGeometry(QRect(1550, 850, 125, 50))
+        self.gen_data_button.clicked.connect(self.generate_augmented_data)
+
+        self.gen_data_button = QPushButton(self.widget)
+        self.gen_data_button.setText("Configure")
+        self.gen_data_button.setGeometry(QRect(1675, 850, 125, 50))
+        self.gen_data_button.clicked.connect(self.set_data_augmentation_parameters)
+
 
         """ functional stuff"""
         self.bridge = CvBridge()
@@ -131,11 +158,48 @@ class AnnotationPlugin(Plugin):
 
         self.class_change()
 
+        # export parameters
         self.default_config_path = None
         self.p_test = 0.2
         self.batch_size = 12
 
-    def set_export_variables(self):
+        # data augmentation parameters
+        self.gen_dir = None
+        self.num_illuminate = 1
+        self.num_scale = 1
+        self.num_blur = 1
+
+    def set_data_augmentation_parameters(self):
+        self.gen_dir = QFileDialog.getExistingDirectory(self.widget, "Select output directory")
+
+        num_illum, ok = QInputDialog.getText(self.widget, "Illumination changes per image", "1")
+        if ok:
+            try:
+                self.num_illuminate = int(num_illum)
+            except ValueError:
+                pass
+        num_scale, ok = QInputDialog.getText(self.widget, "Scaling changes per image", "1")
+        if ok:
+            try:
+                self.num_scale = int(num_scale)
+            except ValueError:
+                pass
+        num_blur, ok = QInputDialog.getText(self.widget, "Blurring changes per image", "1")
+        if ok:
+            try:
+                self.num_blur = int(num_blur)
+            except ValueError:
+                pass
+
+    def generate_augmented_data(self):
+        if self.gen_dir is None:
+            warning_dialog("Warning", "Set parameters first")
+            return
+        data_augmentation.multiply_dataset(self.workspace, self.gen_dir, None, 0, self.num_illuminate, self.num_scale,
+                                           self.num_blur, 0)
+        print("data augmentation done")
+
+    def set_export_parameters(self):
         """ Set variables for export via QInputDialog and QFileDialog. """
         # default config path
         config_path = QFileDialog.getOpenFileName(self.widget, "Select default config")
@@ -450,8 +514,6 @@ class AnnotationPlugin(Plugin):
                                               rostopic.find_by_type('sensor_msgs/Image'))
         if ok:
             self.create_subscriber(topic_name)
-
-        self.set_export_variables()
 
     def create_subscriber(self, topic_name):
         """

@@ -219,7 +219,7 @@ def change_whole_image(image, path, annotation_list, norm_boxes, num_illuminate,
         for m in range(num_scale):
             s_img, s_path, s_boxes = change_scale(l_img, norm_boxes, l_path, 0.4, 1.0)
             for n in range(0, num_blur):
-                b_img, b_path = blur_image(s_img, s_path, 1, 3)
+                b_img, b_path = blur_image(s_img, s_path, 1, 2)
 
                 b_boxes = s_boxes
                 if randint(0, 1) == 1:
@@ -232,7 +232,7 @@ def change_whole_image(image, path, annotation_list, norm_boxes, num_illuminate,
 def save_image(image, annotation_list, bbox_list, image_file):
     # set new bounding boxes
     if not len(bbox_list) == len(annotation_list):
-        print("ERROR: got {} annotations, but changed {} bounding boxes".format(len(bbox_list),len(annotation_list)))
+        print("ERROR: got {} annotations, but changed {} bounding boxes".format(len(bbox_list), len(annotation_list)))
         return
     for i in range(len(bbox_list)):
         annotation_list[i].bbox = bbox_list[i]
@@ -246,6 +246,9 @@ def save_image(image, annotation_list, bbox_list, image_file):
 
 
 def multiply_dataset(input_dir, output_dir, bg_dir, num_rotate=1, num_illuminate=1, num_scale=1, num_blur=1, num_bg=1):
+
+    print("input: " + input_dir)
+    print("output: " + output_dir)
 
     bg_list = []
     use_bg = False
@@ -283,29 +286,29 @@ def multiply_dataset(input_dir, output_dir, bg_dir, num_rotate=1, num_illuminate
             # deals with all None-Image files
             if imghdr.what(file_path) is None:
 
-                if ".jpg" in filename:  # delete empty images
+                if ".jpg" in filename or ".png" in filename:  # ignore empty images
                     continue
 
                 if dirname.endswith("/labels"):  # ignores the label files, they will be written later
                     continue
-
-                # todo: copy labels.txt
-
                 #if "train.txt" in filename or "test.txt" in filename:  # leaves the files empty to fill it later
                 #    train_txt = open(file_path.replace(input_dir, output_dir).replace("test.txt", "train.txt"), 'a+')
-                #else:  # copy the files without changing
-                #    old_file = open(file_path, 'r')
-                #    new_file = open(file_path.replace(input_dir, output_dir), 'w+')
-                #    new_file.write(old_file.read())
-                #    old_file.close()  # close the streams
-                #    new_file.close()
-                #    continue
+                else:  # copy the files without changing
+                    old_file = open(file_path, 'r')
+                    new_file = open(file_path.replace(input_dir, output_dir), 'w+')
+                    new_file.write(old_file.read())
+                    old_file.close()  # close the streams
+                    new_file.close()
+                    continue
 
-            if "mask.jpg" in file_path:  # ignore masks
+            if "mask." in file_path:  # ignore masks
                 continue
 
-            label_path = file_path.replace("/images/", "/labels/").replace(".jpg", ".txt")
-            mask_path = file_path.replace(".jpg", "_mask.jpg")
+            if "/rois" in file_path:  # ignore generated rois
+                continue
+
+            label_path = file_path.replace("/images/", "/labels/").replace(".jpg", ".txt").replace(".png", ".txt")
+            mask_path = file_path.replace(".jpg", "_mask.jpg").replace(".png", "_mask.png")
             if not os.path.isfile(label_path):  # skip images with no labels
                 continue
 
