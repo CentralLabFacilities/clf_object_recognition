@@ -160,6 +160,7 @@ class AnnotationPlugin(Plugin):
 
         # export parameters
         self.default_config_path = None
+        self.pretrained_graph = None
         self.p_test = 0.2
         self.batch_size = 12
 
@@ -212,6 +213,10 @@ class AnnotationPlugin(Plugin):
         else:
             self.default_config_path = config_path
 
+        # pretrained graph
+        pretrained_graph_dir = QFileDialog.getExistingDirectory(self.widget, "Select pretrained graph directory")
+        self.pretrained_graph = pretrained_graph_dir+"/model.ckpt"
+
         # batch size
         batch_size, ok = QInputDialog.getText(self.widget, "Set batch size", "12")
         if ok:
@@ -230,12 +235,12 @@ class AnnotationPlugin(Plugin):
 
     def export_workspace_to_tf(self):
         """ Export workspace to training formats. """
-        if self.default_config_path is None:
-            warning_dialog("Warning", "define default config first")
+        if self.default_config_path is None or self.pretrained_graph is None:
+            warning_dialog("Warning", "define default config and pretrained graph first")
             return
 
         tf_utils.export_data_to_tf(self.workspace, self.images_with_annotations, self.labels, self.p_test,
-                                   self.default_config_path, self.batch_size, None, False)
+                                   self.default_config_path, self.batch_size, self.pretrained_graph, True)
         tf_utils.create_roi_images(self.workspace, self.images_with_annotations, self.labels)
         print("Export done")
 
