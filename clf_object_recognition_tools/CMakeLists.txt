@@ -19,5 +19,7 @@ install(PROGRAMS
   scripts/annotation_gui
   scripts/test_gui
   scripts/train_gui
+  src/data_augmentation.py
+  src/evaluation.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

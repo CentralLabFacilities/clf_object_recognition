@@ -346,8 +346,10 @@ def multiply_dataset(input_dir, output_dir, bg_dir, num_rotate=1, num_illuminate
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
-        description='Duplicate Images: use this script to create new training Datasets from single object'
-                    ' images with mask on labeled backgrounds')
+        description='Data augmentation.py: Use this script to generate a new set of training data based on a smaller '
+                    'annotated set or a set of images with masks images, defining object recgions. The orignal data'
+                    'be copied to a new directory and varied by scaling, blurring, illumination and if possible '
+                    'rotation & background changing')
 
     parser.add_argument('imageset_dir', type=readable_dir, help='sys-path to the simple imageset')
 

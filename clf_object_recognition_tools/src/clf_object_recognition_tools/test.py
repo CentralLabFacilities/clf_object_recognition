@@ -24,7 +24,7 @@ from sensor_msgs.msg import Image
 #srv
 from clf_object_recognition_msgs.srv import Classify2D, Detect2D, Detect2DRequest
 
-_SUPPORTED_SERVICES = ["clf_object_recognition_msgs/Classify2D","clf_object_recognition_msgs/Detect2D"]
+_SUPPORTED_SERVICES = ["clf_object_recognition_msgs/Classify2D", "clf_object_recognition_msgs/Detect2D"]
 
 
 class TestPlugin(Plugin):

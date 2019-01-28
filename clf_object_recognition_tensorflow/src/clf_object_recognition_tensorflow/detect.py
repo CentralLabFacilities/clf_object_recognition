@@ -18,7 +18,7 @@ class Detector:
         self.num_classes = num_classes
 
     def load_graph(self, pathToCkpt, pathToLabels):
-        print pathToCkpt
+        print(pathToCkpt)
         # load a (frozen) tensorflow model into memory
         self.detection_graph = tf.Graph()
         with self.detection_graph.as_default():
@@ -28,8 +28,7 @@ class Detector:
                 od_graph_def.ParseFromString(serialized_graph)
                 tf.import_graph_def(od_graph_def, name='')
 
-        print "load label map"
-        print pathToLabels
+        print("load label map"+pathToLabels)
         # loading label map
         self.label_map = label_map_util.load_labelmap(pathToLabels)
         self.categories = label_map_util.convert_label_map_to_categories(self.label_map, max_num_classes=self.num_classes,
@@ -37,9 +36,8 @@ class Detector:
         self.category_index = label_map_util.create_category_index(self.categories)
 
     def detect(self, image_np):
-        print "detect"
         if self.detection_graph == None:
-            print "No graph defined. You need to load a graph before detecting objects!"
+            print("No graph defined. You need to load a graph before detecting objects!")
             return None
         gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.25, allow_growth=True, force_gpu_compatible=True)
         with self.detection_graph.as_default():
