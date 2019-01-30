@@ -113,7 +113,7 @@ tf.app.flags.DEFINE_integer('test_batch_size', 500,
                             """ the overall accuracy of the model.""")
 tf.app.flags.DEFINE_integer(
     'validation_batch_size', 100,
-    """How many images to use in an evaluation batch. This validation set is"""
+    """How many images to use in an evaluation.py batch. This validation set is"""
     """ used much more often than the test set, and is an early indicator of"""
     """ how accurate the model is during training.""")
 

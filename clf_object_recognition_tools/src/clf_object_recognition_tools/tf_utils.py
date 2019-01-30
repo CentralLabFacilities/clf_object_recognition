@@ -93,6 +93,40 @@ def create_ssd_config(default_config_path, config_output, num_classes, label_map
     print("Sucessfully created config: {}".format(config_output))
 
 
+def read_label_file(label_file_path, id_offset):    # default: id's start with 0
+    # get content of the label map
+    with open(label_file_path) as f:
+        content = f.readlines()
+    content = [x.strip() for x in content]
+
+    dict_labels = {}
+    for i in range(len(content)):
+        label = content[i]
+        dict_labels[i+id_offset] = label
+    return dict_labels
+
+
+def read_label_map(label_map_path):     # default: id's start with 1
+    # get content of the label map
+    with open(label_map_path) as f:
+        content = f.readlines()
+    content = [x.strip() for x in content]
+    content.remove('')
+
+    dict_labels = {}
+    for i in range(0, int(len(content)/4)):  # 4 lines per label-id pair
+        l = content[(i * 4) + 1]
+        label = int(l[l.index(':') + 1:len(l)])
+        s = content[(i * 4) + 2]
+        # assume that the label is surrounded by " or '
+        if '\'' in s:
+            label_text = s[s.index('\'') + 1:s.rindex('\'')]
+        elif '\"' in s:
+            label_text = s[s.index('\"') + 1:s.rindex('\"')]
+        dict_labels[label] = label_text
+    return dict_labels
+
+
 def create_label_map(output_file, label_list):
     """
     Create a label map including id and name for all labels in the given list.
