@@ -38,7 +38,7 @@ class AnnotationPlugin(Plugin):
 
         self.widget = QWidget()
         context.add_widget(self.widget)
-        self.widget.resize(800, 1000)
+        self.widget.resize(1800, 1000)
 
         """left side (current image, grab img button, ...)"""
 
