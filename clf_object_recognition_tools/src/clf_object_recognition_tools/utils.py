@@ -68,6 +68,22 @@ def write_labels(file_name, labels):
     label_file.close()
 
 
+def detection_results_to_annotation_list(id_list, score_list, box_list):
+    annotation_list = []
+
+    for i in range(len(id_list)):
+        label = id_list[i]
+        prob = score_list[i]
+        x_center = (box_list[i][1] + box_list[i][3])/2.0
+        y_center = (box_list[i][0] + box_list[i][2])/2.0
+        width = box_list[i][3] - box_list[i][1]
+        height = box_list[i][2] - box_list[i][0]
+        annotation = AnnotationWithBbox(label, prob, x_center, y_center, width, height)
+        annotation_list.append(annotation)
+
+    return annotation_list
+
+
 def read_annotations(label_file):
     """
         Read annotation file of one image
@@ -149,6 +165,16 @@ def check_workspace(ws_dir):
         os.makedirs(label_dir)
         write_labels(label_file, [])
     return True
+
+
+def get_label_path_by_image(image_path):
+    label_path = image_path.replace("/images/", "/labels/").replace("jpg", "txt").replace("png", "txt")
+    return label_path
+
+
+def get_jpg_by_label_path(label_path):
+    image_path = label_path.replace("/labels/", "/images/").replace("txt", "jpg")
+    return image_path
 
 
 class AnnotatedImage:

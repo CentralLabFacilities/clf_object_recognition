@@ -88,6 +88,14 @@ def evaluate_detection(image_list, test_dict, graph_list, label_map, min_thresho
         # evaluate this graph and determine a good threshold
         for image in image_list:
             print(image)
+            label_path = utils.get_label_path_by_image(image)
+            annotation_list = utils.read_annotations(label_path)
+            print(annotation_list)
+
+            img = cv2.imread(image)
+            id_list, score_list, box_list = detector.detect(img)
+            detection_list = utils.detection_results_to_annotation_list(id_list, score_list, box_list)
+            print(detection_list)
 
 
 def evaluate_recognition(image_list, test_dict, rec_dict, graph_list, labels):
@@ -162,7 +170,7 @@ def read_test_dir(test_dir, image_suffix, id_offset):
     for dirname, dirnames, filenames in os.walk(image_dir):
         for filename in filenames:
             image_path = dirname + '/' + filename
-            label_path = image_path.replace("/images/", "/labels/").replace("jpg", "txt").replace("png", "txt")
+            label_path = utils.get_label_path_by_image(image_path)
             if (os.path.isfile(label_path) and imghdr.what(image_path)) or "/rois" in image_suffix:
                 image_list.append(image_path)
     return image_list, label_map_dict
