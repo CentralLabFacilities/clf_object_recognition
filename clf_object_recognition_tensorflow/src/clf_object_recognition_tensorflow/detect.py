@@ -59,7 +59,7 @@ class Detector:
                     detection_boxes, detection_scores, detection_classes, num_detections],
                     feed_dict={image_tensor: image_np_expanded})
                 sess.close
-        print("session should be closed now")
+        print("session closed")
         boxes = []
         scores = []
         classes = []
@@ -74,7 +74,6 @@ class Detector:
         # filter double detected objects
         num_objects = len(scores)
         remove_objects = []
-        print scores
         for i in range(0, num_objects):
             for j in range(0, num_objects):
                 if not (i == j):
@@ -140,7 +139,6 @@ class Detector:
         # alternatively match centroids of bboxes
         # or evaluate overlapping area of bboxes
         if (ratio < max_ratio):
-            print ratio
             return True
 
         if (self.inRange(xmin_det, xmin_an, maxDistX) and self.inRange(ymin_det, ymin_an, maxDistY)

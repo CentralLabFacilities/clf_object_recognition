@@ -122,7 +122,7 @@ def evaluate_detection(image_list, test_dict, graph_list, label_map, min_thresho
                             best_p = p
                     elif not do_recognition:
                         if p > best_p:
-                            hyp_list = [(detection.label, detection.score)]
+                            hyp_list = [(detection.label, detection.prob)]
                             likelihood, score = match_hypotheses(1, hyp_list, annotation.label)
                             # todo: save threshold/score
                             if likelihood > 0:
@@ -130,7 +130,7 @@ def evaluate_detection(image_list, test_dict, graph_list, label_map, min_thresho
                     else:
                         if p > best_p:
                             n = 3 #todo
-                            hyp_list = [(detection.label, detection.score)]  # todo: do recognition
+                            hyp_list = [(detection.label, detection.prob)]  # todo: do recognition
                             likelihood, score = match_hypotheses(n, hyp_list, annotation.label)
                             # todo: save threshold/score
                             if likelihood > 0:

@@ -101,6 +101,7 @@ def main(_):
                                     checkpoint_prefix,
                                     export_dir2, input_shape)
 
+    # todo: copy label map!
 
 if __name__ == '__main__':
   tf.app.run()

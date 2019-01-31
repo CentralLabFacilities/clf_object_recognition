@@ -111,7 +111,8 @@ def read_label_map(label_map_path):     # default: id's start with 1
     with open(label_map_path) as f:
         content = f.readlines()
     content = [x.strip() for x in content]
-    content.remove('')
+    if '' in content:
+        content.remove('')
 
     dict_labels = {}
     for i in range(0, int(len(content)/4)):  # 4 lines per label-id pair
