@@ -2,6 +2,7 @@
 import sys
 import os
 import copy
+import datetime
 import imghdr
 import argparse
 
@@ -49,22 +50,34 @@ def match_bounding_boxes(detected_bbox, ground_truth):
     :param ground_truth: vision_msgs/BoundingBox2D
     :return: likelihood of bounding boxes matching
     """
-    x1 = max(detected_bbox.center.x-detected_bbox.size_x/2.0, ground_truth.center.x-ground_truth.size_x/2.0)
-    y1 = max(detected_bbox.center.y-detected_bbox.size_y/2.0, ground_truth.center.y-ground_truth.size_y/2.0)
-    x2 = min(detected_bbox.center.x+detected_bbox.size_x/2.0, ground_truth.center.x+ground_truth.size_x/2.0)
-    y2 = min(detected_bbox.center.y+detected_bbox.size_y/2.0, ground_truth.center.x+ground_truth.size_y/2.0)
+    detected_corners = detected_bbox.get_corners()
+    ground_truth_corners = ground_truth.get_corners()
+    x1 = max(detected_corners[0], ground_truth_corners[0])
+    y1 = max(detected_corners[1], ground_truth_corners[1])
+    x2 = min(detected_corners[2], ground_truth_corners[2])
+    y2 = min(detected_corners[3], ground_truth_corners[3])
 
-    area_of_intersection = (x2-x1)*(y2-y1)
-    area_detected_bbox = detected_bbox.size_x*detected_bbox.size_y
-    area_ground_truth_bbox = ground_truth.size_x * ground_truth.size_y
+    # catch non-overlapping bounding boxes (use absolute values)
+    width = x2-x1
+    height = y2-y1
+
+    if width < 0 or height < 0:
+        return 0.0
+
+    area_of_intersection = width*height
+    if area_of_intersection < 0:
+        print("ERROR")
+    area_detected_bbox = detected_bbox.width*detected_bbox.height
+    area_ground_truth_bbox = ground_truth.width * ground_truth.height
     area_of_union = area_detected_bbox+area_ground_truth_bbox-area_of_intersection
 
     likelihood = area_of_intersection / area_of_union
+
     return likelihood
 
 
 def evaluate_detection(image_list, test_dict, graph_list, label_map, min_threshold=0.2, ignore_labels=False, do_recognition=False,
-                       graph_r=None, labels_r=None):
+                       graph_r=None, labels_r=None, save_images=False, logging_dir=None):
     """
     Evaluate a list of detection graphs given a minimum threshold. Analyse results to find a good threshold.
     Optionally use recognition graph to re-label results or ignore the labels completely (just compare bounding boxes).
@@ -90,12 +103,71 @@ def evaluate_detection(image_list, test_dict, graph_list, label_map, min_thresho
             print(image)
             label_path = utils.get_label_path_by_image(image)
             annotation_list = utils.read_annotations(label_path)
-            print(annotation_list)
 
             img = cv2.imread(image)
             id_list, score_list, box_list = detector.detect(img)
             detection_list = utils.detection_results_to_annotation_list(id_list, score_list, box_list)
-            print(detection_list)
+
+            match_list = []
+            for detection in detection_list:
+                best_match = -1
+                best_p = 0.2   # minimum threshold for matching
+                label_match = False
+                for i in range(len(annotation_list)):
+                    annotation = annotation_list[i]
+                    p = match_bounding_boxes(detection.bbox, annotation.bbox)
+                    if ignore_labels:
+                        if p > best_p:
+                            best_match = i
+                            best_p = p
+                    elif not do_recognition:
+                        if p > best_p:
+                            hyp_list = [(detection.label, detection.score)]
+                            likelihood, score = match_hypotheses(1, hyp_list, annotation.label)
+                            # todo: save threshold/score
+                            if likelihood > 0:
+                                label_match = True
+                    else:
+                        if p > best_p:
+                            n = 3 #todo
+                            hyp_list = [(detection.label, detection.score)]  # todo: do recognition
+                            likelihood, score = match_hypotheses(n, hyp_list, annotation.label)
+                            # todo: save threshold/score
+                            if likelihood > 0:
+                                label_match = True
+
+                match_list.append((best_match, best_p, label_match))
+
+            if save_images:
+                save_image(img, detection_list, annotation_list, match_list, logging_dir)
+
+
+def save_image(image, detection_list, annotation_list, match_list, logging_dir):
+    height, width, _ = image.shape
+
+    green = (0, 255, 0)
+    blue = (255, 0, 0)
+    red = (0, 0, 255)
+    for i in range(len(annotation_list)):
+        draw_bounding_box(image, annotation_list[i], blue, width, height, i)
+    for i in range(len(detection_list)):
+        match_index = match_list[i][0]
+        match_prob = match_list[i][1]
+        if match_index == -1:
+            draw_bounding_box(image, detection_list[i], red, width, height, match_prob)
+        else:
+            draw_bounding_box(image, detection_list[i], green, width, height, match_prob)
+
+    filename = logging_dir + "eval_image_{}.jpg".format(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S_%f"))
+    cv2.imwrite(filename, image)
+
+
+def draw_bounding_box(image, annotation, color, width, height, prob):
+    abs_box = utils.norm_to_abs_bbox(annotation.bbox, width, height)
+    xmin, ymin, xmax, ymax = abs_box.get_corners()
+    cv2.rectangle(image, (xmin, ymin), (xmax, ymax), color, 2)
+    box_label = '%s %f - %f' % (annotation.label, annotation.prob, prob)
+    cv2.putText(image, box_label, (xmin, ymin), 0, 0.6, color, 1)
 
 
 def evaluate_recognition(image_list, test_dict, rec_dict, graph_list, labels):
@@ -332,14 +404,16 @@ if __name__ == "__main__":
     # call evaluation according to selected mode
     if mode == 0:
         evaluate_detection(image_list, test_labels_dict, detection_graphs, label_map_file, min_threshold=min_threshold,
-                           ignore_labels=True, do_recognition=False, graph_r=None, labels_r=None)
+                           ignore_labels=True, do_recognition=False, graph_r=None, labels_r=None,
+                           save_images=visualize, logging_dir=logging_dir)
     elif mode == 1:
         evaluate_detection(image_list, test_labels_dict, detection_graphs, label_map_file, min_threshold=min_threshold,
-                           ignore_labels=False, do_recognition=False, graph_r=None, labels_r=None)
+                           ignore_labels=False, do_recognition=False, graph_r=None, labels_r=None,
+                           save_images=visualize, logging_dir=logging_dir)
     elif mode == 2:
         evaluate_detection(image_list, test_labels_dict, detection_graphs, label_map_file, min_threshold=min_threshold,
                            ignore_labels=True, do_recognition=True, graph_r=recognition_graphs[0],
-                           labels_r=recognition_labels)
+                           labels_r=recognition_labels, save_images=visualize, logging_dir=logging_dir)
     elif mode == 3:
         evaluate_recognition(image_list, test_labels_dict, labels_dict, recognition_graphs, recognition_labels)
 
