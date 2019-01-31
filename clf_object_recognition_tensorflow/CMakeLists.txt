@@ -14,5 +14,6 @@ install(PROGRAMS
   scripts/object_detection_node
   scripts/retrain_inception
   scripts/train_detector
+  scripts/export_graph
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

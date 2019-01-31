@@ -1,0 +1,106 @@
+#!/usr/bin/env python
+
+"""Exporting executable for detection models.
+
+This executable is used to export DetectionModels.
+
+Example usage:
+    ./train \
+        --logtostderr \
+        --train_dir=path/to/train_dir \
+        --pipeline_config_path=pipeline_config.pbtxt
+"""
+
+import functools
+import json
+import os
+import tensorflow as tf
+
+from google.protobuf import text_format
+from object_detection.builders import input_reader_builder
+from object_detection.builders import model_builder
+from object_detection.utils import config_util
+from object_detection import exporter
+from object_detection.protos import pipeline_pb2
+
+tf.logging.set_verbosity(tf.logging.INFO)
+
+flags = tf.app.flags
+
+# all modes
+flags.DEFINE_string('train_dir', None,
+                    'Directory with trained graphs.')
+flags.DEFINE_string('export_dir', None,
+                    'Directory to save exported graphs.')
+flags.DEFINE_string('pipeline_config_path', None,
+                    'Path to a pipeline_pb2.TrainEvalPipelineConfig config')
+
+
+flags.DEFINE_string('input_type', 'image_tensor', 'Type of input node. Can be '
+                    'one of [`image_tensor`, `encoded_image_string_tensor`, '
+                    '`tf_example`]')
+flags.DEFINE_string('input_shape', None,
+                    'If input_type is `image_tensor`, this can explicitly set '
+                    'the shape of this input tensor to a fixed size. The '
+                    'dimensions are to be provided as a comma-separated list '
+                    'of integers. A value of -1 can be used for unknown '
+                    'dimensions. If not specified, for an `image_tensor, the '
+                    'default shape will be partially specified as '
+                    '`[None, None, None, 3]`.')
+
+tf.app.flags.mark_flag_as_required('train_dir')
+tf.app.flags.mark_flag_as_required('export_dir')
+tf.app.flags.mark_flag_as_required('pipeline_config_path')
+
+FLAGS = flags.FLAGS
+
+
+def main(_):
+
+    # check config file and train dir exist
+    if not os.path.isfile(FLAGS.pipeline_config_path):
+        print("error: default config doesn't exist!")
+        exit(0)
+    configs = config_util.get_configs_from_pipeline_file(FLAGS.pipeline_config_path)
+
+    train_dir = FLAGS.train_dir
+    if not os.path.exists(train_dir):
+        print("create training directory: "+train_dir)
+        os.makedirs(train_dir)
+
+    export_dir = FLAGS.export_dir
+    if not os.path.exists(export_dir):
+        print("create training directory: "+export_dir)
+        os.makedirs(export_dir)
+
+    # export last checkpoint
+    pipeline_config = pipeline_pb2.TrainEvalPipelineConfig()
+    with tf.gfile.GFile(FLAGS.pipeline_config_path, 'r') as f:
+        text_format.Merge(f.read(), pipeline_config)
+
+    if FLAGS.input_shape:
+        input_shape = [
+            int(dim) if dim != '-1' else None
+            for dim in FLAGS.input_shape.split(',')
+        ]
+    else:
+        input_shape = None
+
+    for dirname, dirnames, filenames in os.walk(train_dir):
+        for filename in filenames:
+            file = dirname + '/' + filename
+            if "model.ckpt" in file and ".index" in file:
+                checkpoint_prefix = file.replace(".index","")
+                steps = checkpoint_prefix.split('-')
+                steps = steps[len(steps)-1]
+                if steps == "0":
+                    continue
+                export_dir2 = export_dir+str(steps)
+                tf.reset_default_graph()
+                exporter.export_inference_graph(FLAGS.input_type, pipeline_config,
+                                    checkpoint_prefix,
+                                    export_dir2, input_shape)
+
+
+if __name__ == '__main__':
+  tf.app.run()

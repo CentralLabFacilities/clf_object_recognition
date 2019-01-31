@@ -1,29 +1,8 @@
 #!/usr/bin/env python
 
-# this script trains a classifier for tf detection and exports several trainings steps as inference graph
-
-# Copyright 2017 The TensorFlow Authors. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
-
 """Training executable for detection models.
 
-This executable is used to train DetectionModels. There are two ways of
-configuring the training job:
-
-1) A single pipeline_pb2.TrainEvalPipelineConfig configuration file
-can be specified by --pipeline_config_path.
+This executable is used to train DetectionModels.
 
 Example usage:
     ./train \
@@ -33,19 +12,6 @@ Example usage:
         --train_steps=number_of_train_steps
         --to_keep=number_of_checkpoints_to_keep
         --save_steps=save_after_every_n_seconds
-
-2) Three configuration files can be provided: a model_pb2.DetectionModel
-configuration file to define what type of DetectionModel is being trained, an
-input_reader_pb2.InputReader file to specify what training data will be used and
-a train_pb2.TrainConfig file to configure training parameters.
-
-Example usage:
-    ./train \
-        --logtostderr \
-        --train_dir=path/to/train_dir \
-        --model_config_path=model_config.pbtxt \
-        --train_config_path=train_config.pbtxt \
-        --input_config_path=train_input_config.pbtxt
 """
 
 import functools
@@ -54,7 +20,6 @@ import os
 import tensorflow as tf
 
 import clf_object_recognition_tensorflow.trainer
-import clf_object_recognition_tensorflow.create_tf_record as creator
 
 from google.protobuf import text_format
 
@@ -73,27 +38,6 @@ flags.DEFINE_string('train_dir', None,
                     'Directory to save configs, checkpoints and training summaries.')
 flags.DEFINE_string('pipeline_config_path', None,
                     'Path to a pipeline_pb2.TrainEvalPipelineConfig config')
-
-# structure:
-
-# data-dir
-# - (classNames.txt)
-# - obj1
-#   ...
-# - objn
-
-# train-dir
-# - pipeline-config.config
-# - labelMap.pbtxt
-# - test.record
-# - train.record
-# - eval-dir
-# - checkpoints
-# - exported-graphs
-#   - exported-graph-1
-#   ...
-#   - exported-graph-n
-
 
 # train
 flags.DEFINE_string('master', '', 'Name of the TensorFlow master to use.')
@@ -115,8 +59,8 @@ flags.DEFINE_string('input_config_path', '',
 flags.DEFINE_string('model_config_path', '',
                     'Path to a model_pb2.DetectionModel config file.')
 flags.DEFINE_integer('train_steps', 40000, 'perform training for n steps')
-flags.DEFINE_integer('to_keep', 50, 'keep n checkpoints')
-flags.DEFINE_integer('save_steps', 600, 'save every n seconds')
+flags.DEFINE_integer('to_keep', 10, 'keep n checkpoints')
+flags.DEFINE_integer('save_steps', 1800, 'save every n seconds')
 flags.DEFINE_integer('batch_size', 16, 'batch size')
 
 flags.DEFINE_string('input_type', 'image_tensor', 'Type of input node. Can be '
