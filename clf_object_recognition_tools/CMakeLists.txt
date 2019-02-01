@@ -19,5 +19,6 @@ install(PROGRAMS
   scripts/annotation_gui
   scripts/test_gui
   scripts/train_gui
+  scripts/evaluate_graphs
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

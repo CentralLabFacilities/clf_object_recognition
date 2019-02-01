@@ -1,13 +1,8 @@
 # sys
-import sys
 import os
-import copy
 import datetime
 import imghdr
 import argparse
-
-# tensorflow
-import tensorflow as tf
 
 
 import cv2
