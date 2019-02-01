@@ -94,6 +94,15 @@ def evaluate_detection(image_list, test_dict, graph_list, label_map, min_thresho
     for graph in graph_list:
         detector.load_graph(graph, label_map)
         # evaluate this graph and determine a good threshold
+
+        rec_true = 0
+        rec_false = 0
+        detect_true = 0
+        detect_false = 0
+        detect_missing = 0
+        num_images = len(image_list)
+        sum_threshold = 0.0
+
         for image in image_list:
             print(image)
             label_path = utils.get_label_path_by_image(image)
@@ -104,9 +113,11 @@ def evaluate_detection(image_list, test_dict, graph_list, label_map, min_thresho
             detection_list = utils.detection_results_to_annotation_list(id_list, score_list, box_list)
 
             match_list = []
+            annotation_unmatched_list = list(range(len(annotation_list)))
             for detection in detection_list:
+
                 best_match = -1
-                best_p = 0.2   # minimum threshold for matching
+                best_p = 0.0   # minimum likelihood for matching
                 label_match = False
                 for i in range(len(annotation_list)):
                     annotation = annotation_list[i]
@@ -124,17 +135,45 @@ def evaluate_detection(image_list, test_dict, graph_list, label_map, min_thresho
                                 label_match = True
                     else:
                         if p > best_p:
-                            n = 3 #todo
+                            n = 3  # todo
                             hyp_list = [(detection.label, detection.prob)]  # todo: do recognition
                             likelihood, score = match_hypotheses(n, hyp_list, annotation.label)
                             # todo: save threshold/score
                             if likelihood > 0:
                                 label_match = True
-
+                if not best_match == -1:
+                    sum_threshold = sum_threshold + detection.prob  # get thresholds for correct(!) detections (only bbox)
                 match_list.append((best_match, best_p, label_match))
 
             if save_images:
                 save_image(img, detection_list, annotation_list, match_list, logging_dir)
+
+            for match in match_list:
+                if match[0] == -1:
+                    detect_false = detect_false + 1
+                else:
+                    detect_true = detect_true + 1
+                    if match[0] in annotation_unmatched_list:
+                        annotation_unmatched_list.remove(match[0])
+                    if match[2]:
+                        rec_true = rec_true + 1
+                    else:
+                        rec_false = rec_false + 1
+            for index in annotation_unmatched_list:
+                detect_missing = detect_missing + 1
+
+        detected = detect_true + detect_false
+        to_detect = detect_true + detect_missing
+        rec_total = rec_true + rec_false
+        detection_rate = float(detect_true) / float(to_detect)
+        correct_detected = float(detect_true) / float(detected)
+        recognition_rate = float(rec_true) / float(rec_total)
+        avg_threshold = float(sum_threshold) / float(detect_true)
+        print("Detected {} of all annotations.\n{} of detections were correct (annotated).".format(detection_rate,
+                                                                                                   correct_detected))
+        if do_recognition:
+            print("\nRecognition rate: {}\n\n".format(recognition_rate))
+        print("average threshold of correct (!) detections: {}".format(avg_threshold))
 
 
 def save_image(image, detection_list, annotation_list, match_list, logging_dir):
