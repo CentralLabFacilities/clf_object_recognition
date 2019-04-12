@@ -130,7 +130,7 @@ class TestPlugin(Plugin):
         if self._srv.service_class == Classify2D:
             self.classify_srv_call(roi_image)
         else:
-            warning_dialog("Unknown service class", "Service class is unkown!")
+            warning_dialog("Unknown service class", "Service class is unknown!")
 
     def _image_callback(self, msg):
         """
