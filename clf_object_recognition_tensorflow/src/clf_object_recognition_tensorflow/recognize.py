@@ -20,7 +20,7 @@ class TensorflowRecognition:
 
 
     def recognize(self,filename):
-        with tf.Session() as sess:
+        with tf.Session() as sess: #TODO do this in __init__? That way it only has to be done once and not for every image again
             """1. Get result tensor"""
             result_tensor = sess.graph.get_tensor_by_name("final_result:0")
 
@@ -28,7 +28,7 @@ class TensorflowRecognition:
             predictions = []
 
             #TODO: read image from memory
-            with open(filename, 'rb') as f:
+            with open(filename, 'rb') as f: #TODO instead of reading the image from a file, pass it as a numpy-array parameter to recognize(), see here https://stackoverflow.com/questions/40273109/convert-python-opencv-mat-image-to-tensorflow-image-data and here https://stackoverflow.com/questions/34484148/feeding-image-data-in-tensorflow-for-transfer-learning Problem: rgb or bgr?
                 predictions = sess.run(result_tensor, {'DecodeJpeg/contents:0': f.read()})
                 predictions = np.squeeze(predictions)
 

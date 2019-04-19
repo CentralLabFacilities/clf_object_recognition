@@ -85,7 +85,7 @@ class TensorflowObjectRecognition:
                 raise Exception(error_msg)
 
             # Write the image to file
-            # ToDo: directly in memory, saves file operations
+            # TODO: directly in memory, saves file operations
             cv2.imwrite(filename=self._filename, img=self._bgr_image)
             size = self._bgr_image.shape[:2]  # For now, we assume the entire image is the ROI
             self._size['height'] = size[0]
@@ -94,11 +94,11 @@ class TensorflowObjectRecognition:
             self._do_recognition = True
 
             # Wait until the request has been processed and return the result
-            r = rospy.Rate(1000.0)  # Not a problem to spin quickly
+            #r = rospy.Rate(1000.0)  # Not a problem to spin quickly
             if rospy.is_shutdown():
                 return {"classifications": []}
-            while self._do_recognition:
-                time.sleep(5)
+            while self._do_recognition: #TODO Call self.update() directly?
+                time.sleep(0.1)
 
         return {"classifications": self._classifications}
 
@@ -111,7 +111,7 @@ class TensorflowObjectRecognition:
 
         """2. Recognize"""
         try:
-            # ToDo: directly in memory, saves file operations
+            # TODO: directly in memory, saves file operations
             sorted_result = self._recognizer.recognize(self._filename) # best score first
         except Exception as e:
             rospy.logerr("Failed to run tensorflow session: %s", e)
