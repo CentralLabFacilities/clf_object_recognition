@@ -93,11 +93,11 @@ class TensorflowDetectionNode:
         rospy.loginfo("recognition graph successfully loaded")
 
         rospy.loginfo("waiting for rostopic: %s...", self._topic_name)
-        while (not self._sub):
-            self._sub = rospy.Subscriber(self._topic_name, Image, self._image_callback)
-            time.sleep(1)
+        #while (not self._sub):
+        #    self._sub = rospy.Subscriber(self._topic_name, Image, self._image_callback)
+        #    time.sleep(1)
 
-        rospy.loginfo("subsribed to %s...", self._topic_name)
+        #rospy.loginfo("subscribed to %s...", self._topic_name)
 
         # publish id-label mapping via rosparam
         id_list = [str(i) for i in range(0, len(label_list))]
@@ -137,7 +137,11 @@ class TensorflowDetectionNode:
                 self._bgr_image = self._cv_image
             else:
                 # alternative?
-                return {"detections": self._detectionArray}
+                try:
+                    self._bgr_image = self._bridge.imgmsg_to_cv2(rospy.wait_for_message(self._topic_name, Image), "bgr8")
+                except CvBridgeError as e:
+                    rospy.logerr(e)
+                    return {"detections": self._detectionArray}
 
         size = self._bgr_image.shape[:2]
         self._size['height'] = size[0]
