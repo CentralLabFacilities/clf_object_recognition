@@ -134,6 +134,9 @@ def save_annotations(image_file, annotation_list):
         label_str = label_str + "{} {} {} {} {}\n".format(a.label, a.bbox.x_center, a.bbox.y_center, a.bbox.width,
                                                           a.bbox.height)
     print("write labels to: "+file_name)
+    dirname = os.path.dirname(file_name)
+    if not os.path.exists(dirname):
+        os.makedirs(dirname)
     label_file = open(file_name, 'w')
     label_file.write(label_str)
 
