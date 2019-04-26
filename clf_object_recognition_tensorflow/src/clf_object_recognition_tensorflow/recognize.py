@@ -20,7 +20,9 @@ class TensorflowRecognition:
 
 
     def recognize(self,filename):
-        with tf.Session() as sess: #TODO do this in __init__? That way it only has to be done once and not for every image again
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth=True #If true, the allocator does not pre-allocate the entire specified GPU memory region, instead starting small and growing as needed.
+        with tf.Session(config=config) as sess: #TODO do this in __init__? That way it only has to be done once and not for every image again
             """1. Get result tensor"""
             result_tensor = sess.graph.get_tensor_by_name("final_result:0")
 
