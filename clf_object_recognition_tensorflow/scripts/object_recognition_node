@@ -5,6 +5,7 @@ import os
 import operator
 import sys
 import time
+import datetime
 
 # ROS
 import rospy
@@ -87,6 +88,8 @@ class TensorflowObjectRecognition:
             # Write the image to file
             # TODO: directly in memory, saves file operations
             cv2.imwrite(filename=self._filename, img=self._bgr_image)
+            imgpath = "{}/img{}.jpg".format(self._save_images_folder, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S_%f"))
+            cv2.imwrite(filename=imgpath, img=self._bgr_image)
             size = self._bgr_image.shape[:2]  # For now, we assume the entire image is the ROI
             self._size['height'] = size[0]
             self._size['width'] = size[1]
