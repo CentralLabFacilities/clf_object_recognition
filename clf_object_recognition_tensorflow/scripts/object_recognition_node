@@ -53,6 +53,8 @@ class TensorflowObjectRecognition:
         self._classifications = []  # List with Recognition s
         self._size = {'width': 0, 'height': 0}
         self._save_images_folder = save_images_folder
+        if not os.path.exists(self._save_images_folder):
+            os.makedirs(self._save_images_folder)
         self._bgr_image = None
 
         rospy.loginfo("TensorflowObjectRecognition initialized:")
