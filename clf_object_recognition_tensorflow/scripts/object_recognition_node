@@ -164,7 +164,8 @@ if __name__ == '__main__':
                                                      save_images_folder=save_images_folder)
 
     # Start update loop
-    r = rospy.Rate(100.0)
+    #r = rospy.Rate(100.0)
     while not rospy.is_shutdown():
         object_recognition.update()
-        r.sleep()
+        #r.sleep()
+        time.sleep(0.01) # Using this might be better e.g. when playing ros bags
