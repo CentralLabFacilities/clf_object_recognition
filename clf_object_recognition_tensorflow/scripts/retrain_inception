@@ -26,7 +26,7 @@ def trainInception(input_dir, output_dir, steps, batch):
     try:
         retrain.main(input_dir, model_dir, output_dir,
                      steps=steps, batch=batch)
-        print("Retrain succes", "Succesfully retrained the top layers! Check Tensorboard for the results!")
+        print("Retrain success", "Successfully retrained the top layers! Check Tensorboard for the results!")
         print("Training done :)")
     except Exception as e:
         print("Retrain failed. Something went wrong during retraining, '%s'" % str(e))

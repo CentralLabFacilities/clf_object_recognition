@@ -73,7 +73,7 @@ class TrainPlugin(Plugin):
 
         try:
             # train
-            dialog("Training finished", "Succesfully trained an object detector! Check Tensorboard for the results!")
+            dialog("Training finished", "Successfully trained an object detector! Check Tensorboard for the results!")
             self._train_button.setDisabled(True)
             self._train_button.setText("Training done :)")
         except Exception as e:
@@ -96,7 +96,7 @@ class TrainPlugin(Plugin):
         try:
             retrain.main(self.images_directory, model_dir, self.output_directory,
                          steps=self.steps, batch=self.batch)
-            dialog("Retrain succes", "Succesfully retrained the top layers! Check Tensorboard for the results!")
+            dialog("Retrain success", "Successfully retrained the top layers! Check Tensorboard for the results!")
             self._train_button.setDisabled(True)
             self._train_button.setText("Training done :)")
         except Exception as e:
