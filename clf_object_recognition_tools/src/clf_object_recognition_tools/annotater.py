@@ -436,7 +436,7 @@ class AnnotationPlugin(Plugin):
                 self.option_selector.addItem(label[0])
 
             for dirname, dirnames, filenames in os.walk(image_dir):
-                for filename in filenames:
+                for filename in sorted(filenames):
                     image_file = dirname + '/' + filename
                     label_file = image_file.replace("images", "labels").replace(".jpg", ".txt").replace(".png", ".txt")
                     annotated_image = utils.read_annotated_image(image_file, label_file)
