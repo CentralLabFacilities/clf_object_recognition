@@ -6,7 +6,7 @@ from clf_object_recognition_tensorflow.object import BoundingBox, Object
 class ObjectsetUtils():
 
     def __init__(self):
-        print "init object set utils"
+        print("init object set utils")
 
     def convert(self, size, box):
         dw = 1. / size[0]

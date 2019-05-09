@@ -69,7 +69,7 @@ class Detector:
                 scores.append(self.scores[0][i])
                 boxes.append(self.boxes[0][i])
                 classes.append(self.classes[0][i])
-                print "found ", self.get_label(self.classes[0][i]), " with score ", self.scores[0][i], "at: ", self.boxes[0][i]
+                print("found ", self.get_label(self.classes[0][i]), " with score ", self.scores[0][i], "at: ", self.boxes[0][i])
 
         # filter double detected objects
         num_objects = len(scores)

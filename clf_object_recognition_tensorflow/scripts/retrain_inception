@@ -34,7 +34,7 @@ def trainInception(input_dir, output_dir, steps, batch):
 if __name__ == '__main__':
     # check if flags are set
     if not (FLAGS.input):
-        print '\033[91m' + 'Usage: python retrain_inception.py [args]\n' \
+        print('\033[91m' + 'Usage: python retrain_inception.py [args]\n' \
                            'necessary:\n' \
                            '\t--input\n' \
                            'optional:\n' \
@@ -45,7 +45,7 @@ if __name__ == '__main__':
                            '\t--random_crop  default: 0\n' \
                            '\t--random_scale  default: 0\n' \
                            '\t--random_brightness  default: 0\n' \
-                           '\033[0m'
+                           '\033[0m')
         exit(1)
 
     # get flag values
