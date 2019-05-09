@@ -84,7 +84,7 @@ vision_msgs::BoundingBox2D bbox3Dto2D(const vision_msgs::BoundingBox3D bbox3D) {
     return estimatedBbox2D;
 }
 
-vision_msgs::BoundingBox2D bbox3Dto2Dv2(const vision_msgs::BoundingBox3D bbox3D) {
+/*vision_msgs::BoundingBox2D bbox3Dto2Dv2(const vision_msgs::BoundingBox3D bbox3D) {
     vision_msgs::BoundingBox2D estimatedBbox2D;
     float xmin=cam_image.width, ymin=cam_image.height, xmax=0.0, ymax=0.0;
     //Iterate through all 8 edges of the bounding box, project them on the camera image, and find a 2D box that includes them all.
@@ -116,7 +116,7 @@ vision_msgs::BoundingBox2D bbox3Dto2Dv2(const vision_msgs::BoundingBox3D bbox3D)
     estimatedBbox2D.size_x=xmax-xmin;
     estimatedBbox2D.size_y=ymax-ymin;
     return estimatedBbox2D;
-}
+}*/
 
 /* this service provides a list of detections with hypothesis (id, score), 3d boundingbox and pointcloud
    by merging 2d and 3d detections */
