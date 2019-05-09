@@ -40,6 +40,84 @@ void fixBoxes(std::vector<vision_msgs::Detection3D>& detections3D)
   }
 }
 
+vision_msgs::BoundingBox2D bbox3Dto2D(const vision_msgs::BoundingBox3D bbox3D) {
+    vision_msgs::BoundingBox2D estimatedBbox2D;
+    // shift from origin from image center to upper left corner
+    estimatedBbox2D.center.x = bbox3D.center.position.x / bbox3D.center.position.z + 0.5;
+    estimatedBbox2D.center.y = bbox3D.center.position.y / bbox3D.center.position.z + 0.5;
+    estimatedBbox2D.size_x = bbox3D.size.x / bbox3D.center.position.z;
+    estimatedBbox2D.size_y = bbox3D.size.y / bbox3D.center.position.z;
+
+    // estimated bboxes might be too large for the image: check and resize
+    if ((estimatedBbox2D.center.x + estimatedBbox2D.size_x / 2) > 1.0)
+    {
+      // resize x dimension
+      double x_max = estimatedBbox2D.center.x + estimatedBbox2D.size_x / 2;
+      double diff = x_max - 1.0;
+      estimatedBbox2D.size_x = estimatedBbox2D.size_x - diff;
+      estimatedBbox2D.center.x = estimatedBbox2D.center.x - diff / 2;
+    }
+    if ((estimatedBbox2D.center.x - estimatedBbox2D.size_x / 2) < 0.0)
+    {
+      // resize x dimension
+      double x_min = estimatedBbox2D.center.x - estimatedBbox2D.size_x / 2;
+      double diff = -x_min;
+      estimatedBbox2D.size_x = estimatedBbox2D.size_x - diff;
+      estimatedBbox2D.center.x = estimatedBbox2D.center.x + diff / 2;
+    }
+    if ((estimatedBbox2D.center.y + estimatedBbox2D.size_y / 2) > 1.0)
+    {
+      // resize y dimension
+      double y_max = estimatedBbox2D.center.y + estimatedBbox2D.size_y / 2;
+      double diff = y_max - 1.0;
+      estimatedBbox2D.size_y = estimatedBbox2D.size_y - diff;
+      estimatedBbox2D.center.y = estimatedBbox2D.center.y - diff / 2;
+    }
+    if ((estimatedBbox2D.center.y - estimatedBbox2D.size_y / 2) < 0.0)
+    {
+      // resize y dimension
+      double y_min = estimatedBbox2D.center.y - estimatedBbox2D.size_y / 2;
+      double diff = -y_min;
+      estimatedBbox2D.size_y = estimatedBbox2D.size_y - diff;
+      estimatedBbox2D.center.y = estimatedBbox2D.center.y + diff / 2;
+    }
+    return estimatedBbox2D;
+}
+
+vision_msgs::BoundingBox2D bbox3Dto2Dv2(const vision_msgs::BoundingBox3D bbox3D) {
+    vision_msgs::BoundingBox2D estimatedBbox2D;
+    float xmin=cam_image.width, ymin=cam_image.height, xmax=0.0, ymax=0.0;
+    //Iterate through all 8 edges of the bounding box, project them on the camera image, and find a 2D box that includes them all.
+    for(int k=-1; k<=1; k+=2) {
+        for(int l=-1; l<=1; l+=2) {
+            for(int m=-1; m<=1; m+=2) {
+                float imx, imy;
+                tf2::Vector3 vec(k*bbox3D.size.x/2.0, l*bbox3D.size.y/2.0, m*bbox3D.size.z/2.0), vec2(bbox3D.center.position.x, bbox3D.center.position.y, bbox3D.center.position.z);
+                tf2::Quaternion rot;
+                tf2::fromMsg(bbox3D.center.orientation, rot);
+                tf2::Transform trans(rot);
+                vec=trans*vec;
+                vec+=vec2;
+                imx=535.0*vec.x()/vec.z()+319.0;//TODO get camera matrix from /xtion/rgb/camera_info-topic
+                imy=535.0*vec.y()/vec.z()+253.0;
+                if(imx<xmin) xmin=imx;
+                if(imx>xmax) xmax=imx;
+                if(imy<ymin) ymin=imy;
+                if(imy>ymax) ymax=imy;
+            }
+        }
+    }
+    if(xmin<0.0) xmin=0.0;
+    if(ymin<0.0) ymin=0.0;
+    if(xmax>cam_image.width) xmax=cam_image.width;
+    if(ymax>cam_image.height) ymax=cam_image.height;
+    estimatedBbox2D.center.x=(xmin+xmax)/2.0;
+    estimatedBbox2D.center.y=(ymin+ymax)/2.0;
+    estimatedBbox2D.size_x=xmax-xmin;
+    estimatedBbox2D.size_y=ymax-ymin;
+    return estimatedBbox2D;
+}
+
 /* this service provides a list of detections with hypothesis (id, score), 3d boundingbox and pointcloud
    by merging 2d and 3d detections */
 bool detectObjectsCallback(clf_object_recognition_msgs::Detect3D::Request& req,
@@ -87,30 +165,7 @@ bool detectObjectsCallback(clf_object_recognition_msgs::Detect3D::Request& req,
   {
     vision_msgs::BoundingBox3D bbox3D = detections3D.at(i).bbox;  // in camera frame
 
-    vision_msgs::BoundingBox2D estimatedBbox2D;
-    // shift from origin from image center to upper left corner
-    estimatedBbox2D.center.x = bbox3D.center.position.x / bbox3D.center.position.z + 0.5;
-    estimatedBbox2D.center.y = bbox3D.center.position.y / bbox3D.center.position.z + 0.5;
-    estimatedBbox2D.size_x = bbox3D.size.x / bbox3D.center.position.z;
-    estimatedBbox2D.size_y = bbox3D.size.y / bbox3D.center.position.z;
-
-    // estimated bboxes might be too large for the image: check and resize
-    if ((estimatedBbox2D.center.x + estimatedBbox2D.size_x / 2) > 1.0)
-    {
-      // resize x dimension
-      double x_max = estimatedBbox2D.center.x + estimatedBbox2D.size_x / 2;
-      double diff = x_max - 1.0;
-      estimatedBbox2D.size_x = estimatedBbox2D.size_x - diff;
-      estimatedBbox2D.center.x = estimatedBbox2D.center.x - diff / 2;
-    }
-    if ((estimatedBbox2D.center.y + estimatedBbox2D.size_y / 2) > 1.0)
-    {
-      // resize y dimension
-      double y_max = estimatedBbox2D.center.y + estimatedBbox2D.size_y / 2;
-      double diff = y_max - 1.0;
-      estimatedBbox2D.size_y = estimatedBbox2D.size_y - diff;
-      estimatedBbox2D.center.y = estimatedBbox2D.center.y - diff / 2;
-    }
+    vision_msgs::BoundingBox2D estimatedBbox2D=bbox3Dto2D(bbox3D);
 
     // keep list for visualization
     estimatedBboxes.push_back(estimatedBbox2D);
