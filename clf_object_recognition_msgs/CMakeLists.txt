@@ -8,6 +8,9 @@ find_package(catkin REQUIRED COMPONENTS message_generation ${MSG_DEPS})
 #ROS messages, services and actions
 add_message_files(DIRECTORY msg FILES
     BoundingBox3DArray.msg
+
+    Hull.msg
+    HullArray.msg
 )
 
 add_service_files(DIRECTORY srv FILES

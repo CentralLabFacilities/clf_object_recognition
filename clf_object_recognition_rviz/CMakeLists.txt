@@ -40,12 +40,16 @@ set(src_files
   src/bounding_box_array_display.cpp
   src/bounding_box_visual.cpp
 
+  src/hull_array_display.cpp
+  src/hull_visual.cpp
+
   )
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 qt_wrap_cpp(${PROJECT_NAME} 
   moc_files 
   include/clf_object_recognition_rviz/bounding_box_array_display.h 
+  include/clf_object_recognition_rviz/hull_array_display.h 
   )
 
 add_library(${PROJECT_NAME} ${src_files} ${moc_files})
