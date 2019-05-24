@@ -44,7 +44,7 @@ private:
   Ogre::ManualObject* manual_object_{ nullptr };
   std::shared_ptr<rviz::BillboardLine> hull_;
 
-  QColor color_{ QColor(0, 255, 0) };
+  QColor color_{ QColor(0, 255, 186) };
 };
 }  // namespace viz
 }  // namespace objrec
