@@ -103,7 +103,7 @@ class TensorflowObjectRecognition:
             if rospy.is_shutdown():
                 return {"classifications": []}
             while self._do_recognition: #TODO Call self.update() directly?
-                time.sleep(0.1)
+                time.sleep(0.01)
 
         return {"classifications": self._classifications}
 
