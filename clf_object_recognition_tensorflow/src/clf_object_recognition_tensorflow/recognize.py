@@ -19,7 +19,7 @@ class TensorflowRecognition:
             graph_def.ParseFromString(f.read())
             _ = tf.import_graph_def(graph_def, name='')
             with open(label_path, 'rb') as f:
-                self.labels = f.read().split("\n")
+                self.labels = [x for x in (f.read().split("\n")) if x] #There may be newlines at the end of the file, those should not be in the labels list
         return self.labels
 
 
