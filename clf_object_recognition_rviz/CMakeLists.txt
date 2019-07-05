@@ -9,6 +9,7 @@ find_package(catkin REQUIRED
         COMPONENTS
             rviz
             clf_object_recognition_msgs
+            eigen_conversions
             
 )
 include_directories(${catkin_INCLUDE_DIRS})
@@ -40,6 +41,9 @@ set(src_files
   src/bounding_box_array_display.cpp
   src/bounding_box_visual.cpp
 
+  src/detection_3d_array_display.cpp
+  src/detection_3d_visual.cpp
+
   src/hull_array_display.cpp
   src/hull_visual.cpp
 
@@ -50,6 +54,7 @@ qt_wrap_cpp(${PROJECT_NAME}
   moc_files 
   include/clf_object_recognition_rviz/bounding_box_array_display.h 
   include/clf_object_recognition_rviz/hull_array_display.h 
+  include/clf_object_recognition_rviz/detection_3d_array_display.h 
   )
 
 add_library(${PROJECT_NAME} ${src_files} ${moc_files})

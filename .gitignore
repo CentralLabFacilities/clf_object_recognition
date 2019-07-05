@@ -9,8 +9,5 @@
 .kdev5
 *.kdev4
 
-             cmake -
-    build -
-    debug / build /
-
-        *.pyc.Rproj.user
+build
+*.pyc.Rproj.user

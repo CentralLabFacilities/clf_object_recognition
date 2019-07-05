@@ -55,6 +55,7 @@ void BoundingBoxVisual::setMessage(const vision_msgs::BoundingBox3D msg)
   auto max_point = Eigen::Vector3d(size.x / 2, size.y / 2, size.z / 2);
 
   Eigen::Isometry3d pose;
+  
   tf::poseMsgToEigen(center, pose);
 
   // Extract 8 cuboid vertices
