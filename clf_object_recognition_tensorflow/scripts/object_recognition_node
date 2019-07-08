@@ -127,8 +127,9 @@ class TensorflowObjectRecognition:
 
         classification.results = []
         for res in reversed(sorted_result):
-            hypothesis = ObjectHypothesis(id=res[0], score=res[1])
-            classification.results.append(hypothesis)
+            if res[1] > 0.01: # Only append to result list if the score is not too low
+                hypothesis = ObjectHypothesis(id=res[0], score=res[1])
+                classification.results.append(hypothesis)
 
         self._classifications.append(classification)
 
