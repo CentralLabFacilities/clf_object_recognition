@@ -125,6 +125,6 @@ if __name__ == "__main__":
                            ignore_labels=True, do_recognition=True, graph_r=recognition_graphs[0],
                            labels_r=recognition_labels, save_images=visualize, logging_dir=logging_dir)
     elif mode == 3:
-        evaluation.evaluate_recognition(image_list, test_labels_dict, labels_dict, recognition_graphs, recognition_labels)
+        evaluation.evaluate_recognition(image_list, labels_dict, recognition_graphs, recognition_labels, logging_dir)
 
     print("Done")

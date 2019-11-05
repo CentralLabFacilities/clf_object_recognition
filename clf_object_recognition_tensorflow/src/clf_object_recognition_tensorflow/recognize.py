@@ -6,7 +6,8 @@ import numpy as np
 class TensorflowRecognition:
 
     def __init__(self):
-        self.labels = []
+        tf.reset_default_graph() # Clears the default graph stack and resets the global default graph
+        self.labels = [] # This is actually unnecessary/unused
         config = tf.ConfigProto()
         config.gpu_options.allow_growth=True #If true, the allocator does not pre-allocate the entire specified GPU memory region, instead starting small and growing as needed.
         config.gpu_options.per_process_gpu_memory_fraction=0.25 #Don't use so much GPU memory!
@@ -14,13 +15,15 @@ class TensorflowRecognition:
 
 
     def load_graph(self, graph_path, label_path):
+        print("load_graph called, graph_path=", graph_path, ", label_path=", label_path)
         with open(graph_path, 'rb') as f:
             graph_def = tf.GraphDef()
             graph_def.ParseFromString(f.read())
             _ = tf.import_graph_def(graph_def, name='')
             with open(label_path, 'rb') as f:
                 self.labels = [x for x in (f.read().split("\n")) if x] #There may be newlines at the end of the file, those should not be in the labels list
-        return self.labels
+                # TODO maybe warn if the graph does not have the same number of outputs as there are labels?
+        return (self.labels, self.sess.graph.get_tensor_by_name("final_result:0").get_shape()[1]) # Second return is the number of outputs of the graph
 
 
     def recognize(self,filename):

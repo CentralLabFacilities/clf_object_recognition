@@ -1,10 +1,12 @@
+from __future__ import print_function
+
 # sys
 import os
 import datetime
 import imghdr
 import argparse
 
-
+from numpy import zeros, array_repr, set_printoptions
 import cv2
 
 # object rec
@@ -14,25 +16,26 @@ from clf_object_recognition_tensorflow import detect
 from clf_object_recognition_tensorflow import recognize
 
 
-def match_hypotheses(num_hyp, hypotheses_list, ground_truth_id):
+def match_hypotheses(num_hyp, hypotheses_list, ground_truth_id, logfile):
     """
     Compare the best n hypotheses with the ground truth label.
     :param num_hyp: number of hypotheses that shall be compared with the ground truth
     :param hypotheses_list: list of tuples (id, score)
     :param ground_truth_id: vision_msgs/ObjectHypothesisWithPose
+    :param logfile: the file to print output to (can be sys.stdout)
     :return: likelihood of hypotheses matching
     """
     n = num_hyp
     if len(hypotheses_list) < num_hyp:
         n = len(hypotheses_list)
     print("Got {} hypotheses. Compare the best {} with ground truth ({})".format(len(hypotheses_list), n,
-                                                                                 ground_truth_id))
+                                                                                 ground_truth_id), file=logfile)
     likelihood = 0.0
     score = 0
     for i in range(len(hypotheses_list)):
         if hypotheses_list[i][0] == ground_truth_id:
             if i < n:
-                print("hypotheses {} matches".format(i))
+                print("hypothesis {} matches".format(i), file=logfile)
                 likelihood = 1.0/float(i+1)
             score = hypotheses_list[i][1]
     return likelihood, score
@@ -204,33 +207,39 @@ def draw_bounding_box(image, annotation, color, width, height, prob):
     cv2.putText(image, box_label, (xmin, ymin), 0, 0.6, color, 1)
 
 
-def evaluate_recognition(image_list, test_dict, rec_dict, graph_list, labels):
+def evaluate_recognition(image_list, rec_dict, graph_list, labels, logging_dir):
     """
     Evaluate list of recognition graphs. Either use a detection graph to get bounding boxes or have already filtered
     image regions in the image list. Threshold for detection and minimum threshold for recognition can be adjusted.
     A good threshold for recognition results will be found by evaluation.
     :param image_list: list of images to evaluate (either whole images (labels do exist) or rois)
-    :param test_dict: dictionary of test set
     :param rec_dict: dictionary of recognition graph
     :param graph_list: list of recognition graph files
     :param labels: label file for recognition
+    :param logging_dir: directory to save logs to
     :return:
     """
-    recognizer = recognize.TensorflowRecognition()
     hypotheses_to_compare = 3
+    #print("length of image_list=", len(image_list), ", length of rec_dict=", len(rec_dict), ", length of graph_list=", len(graph_list))
 
     for graph in graph_list:
+        print("See more output at " + logging_dir + os.path.basename(graph) + ".log")
+        logfile=open(logging_dir + os.path.basename(graph) + ".log", 'w')
+        recognizer = recognize.TensorflowRecognition() # Create a new recognizer for each graph because otherwise the graph might not load correctly
         print("load graph: "+graph)
-        recognizer.load_graph(graph, labels)
+        print("load graph: "+graph, file=logfile) # Print twice: to stdout and to the logfile
+        recognizer_labels, graph_outputs = recognizer.load_graph(graph, labels)
+        prob_conf_mat = zeros((graph_outputs, len(rec_dict))) # Confusion matrix with probabilities. Not square if the graph does not give the same number of outputs as there are labels/categories. Does not really make sense, but well ...
+        conf_mat = zeros((graph_outputs, len(rec_dict))) # Normal confusion matrix
         # evaluate this graph and determine a good threshold
         results = []
 
         for image in image_list:
-            print(image)
+            print(image, file=logfile)
 
             res = recognizer.recognize(image)
             res = list(reversed(res))
-            print(res)  # sorted result (list of tupel: (id, prob)
+            print(res, file=logfile)  # sorted result (list of tupel: (id, prob))
             image_path_arr = image.split('/')
             label_name = image_path_arr[len(image_path_arr)-2]
             label_id = -1
@@ -240,9 +249,13 @@ def evaluate_recognition(image_list, test_dict, rec_dict, graph_list, labels):
                     break
             if label_id == -1:
                 print("WARNING: annotated roi has type \"{}\", that is not in the dictionary.".format(label_name))
-            match = match_hypotheses(hypotheses_to_compare, res, label_id)
-            print("match: "+str(match))
+                print("WARNING: annotated roi has type \"{}\", that is not in the dictionary.".format(label_name), file=logfile)
+            match = match_hypotheses(hypotheses_to_compare, res, label_id, logfile)
+            print("match: "+str(match), file=logfile)
             results.append(match)
+            for res_item in res: # Fill the confusion matrix
+                prob_conf_mat[res_item[0], label_id]+=res_item[1]
+            conf_mat[res[0][0], label_id]+=1.0 # Only consider the first entry (with the highest probability)
 
         sum_match = 0.0
         sum_threshold = 0.0
@@ -253,8 +266,14 @@ def evaluate_recognition(image_list, test_dict, rec_dict, graph_list, labels):
 
         recognition_rate = sum_match/sum_total
         average_threshold = sum_threshold/sum_total
+        set_printoptions(suppress=True) # Suppress the scientific notation for numpy prints
+        print("Confusion matrix (with probabilities, columns are the actual classes, rows are the predicted classes):\n", array_repr(prob_conf_mat, max_line_width=200, precision=3))
+        print("Confusion matrix (columns are the actual classes, rows are the predicted classes):\n", array_repr(conf_mat, max_line_width=200, precision=0))
         print("average threshold: " + str(average_threshold))
         print("recognition rate: " + str(recognition_rate))
+        print("average threshold: " + str(average_threshold), file=logfile)
+        print("recognition rate: " + str(recognition_rate), file=logfile)
+        logfile.close()
 
 
 def read_test_dir(test_dir, image_suffix, id_offset):
@@ -324,7 +343,7 @@ def get_recognition_graphs_and_labels(graph_dir, label_file):
 
             if "output_graph.pb" in file_path:
                 graph_list.append(file_path)
-
+    print("Found recognition graphs:", graph_list, "and labels:", label_dict)
     return graph_list, label_dict
 
 
@@ -449,7 +468,7 @@ if __name__ == "__main__":
                            ignore_labels=True, do_recognition=True, graph_r=recognition_graphs[0],
                            labels_r=recognition_labels, save_images=visualize, logging_dir=logging_dir)
     elif mode == 3:
-        evaluate_recognition(image_list, test_labels_dict, labels_dict, recognition_graphs, recognition_labels)
+        evaluate_recognition(image_list, labels_dict, recognition_graphs, recognition_labels)
 
     print("Done")
 
