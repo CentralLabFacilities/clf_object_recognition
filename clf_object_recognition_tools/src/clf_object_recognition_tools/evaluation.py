@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from __future__ import print_function
 
 # sys
@@ -468,7 +469,7 @@ if __name__ == "__main__":
                            ignore_labels=True, do_recognition=True, graph_r=recognition_graphs[0],
                            labels_r=recognition_labels, save_images=visualize, logging_dir=logging_dir)
     elif mode == 3:
-        evaluate_recognition(image_list, labels_dict, recognition_graphs, recognition_labels)
+        evaluate_recognition(image_list, labels_dict, recognition_graphs, recognition_labels, logging_dir)
 
     print("Done")
 
