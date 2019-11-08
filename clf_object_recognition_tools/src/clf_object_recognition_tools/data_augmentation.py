@@ -7,7 +7,6 @@ import imghdr
 import argparse
 
 import numpy as np
-import scipy.misc as misc
 from scipy import ndimage
 import random
 from random import randint
@@ -72,7 +71,7 @@ def change_scale(scale_image, bboxes, new_path, min_scale, max_scale):
     tmp_image = scale_image.copy()
 
     h, w, _ = tmp_image.shape
-    tmp_image = misc.imresize(tmp_image, sf)
+    tmp_image = cv2.resize(tmp_image, (0,0), fx=sf, fy=sf)
     new_h, new_w, _ = tmp_image.shape
     offset_h = int((h - new_h) / 2)
     offset_w = int((w - new_w) / 2)
@@ -348,7 +347,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
         description='Data augmentation.py: Use this script to generate a new set of training data based on a smaller '
-                    'annotated set or a set of images with masks images, defining object recgions. The orignal data'
+                    'annotated set or a set of images with masks images, defining object regions. The original data '
                     'be copied to a new directory and varied by scaling, blurring, illumination and if possible '
                     'rotation & background changing')
 
@@ -360,8 +359,8 @@ if __name__ == "__main__":
 
     parser.add_argument('-bg', '--background', type=int, default=0, help='number of background images to use (default=all)')
     parser.add_argument('-l', '--lighting', type=int, default=2, help='number of lighting changes (default=2)')
-    parser.add_argument('-s', '--scale', type=int, default=2, help='number of scaling changs (default=2)')
-    parser.add_argument('-b', '--blur', type=int, default=2, help='number of bluring the image (default=2)')
+    parser.add_argument('-s', '--scale', type=int, default=2, help='number of scaling changes (default=2)')
+    parser.add_argument('-b', '--blur', type=int, default=2, help='number of blurring the image (default=2)')
     parser.add_argument('-r', '--rotate', type=int, default=2, help='number of rotations of the image (default=2)')
 
     args = parser.parse_args()
