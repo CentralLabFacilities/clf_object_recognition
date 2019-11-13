@@ -63,7 +63,7 @@ class TensorflowObjectRecognition:
         rospy.loginfo(" - save_images_folder=%s", save_images_folder)
 
         """1. Create a graph from saved GraphDef file """
-        label_list = self._recognizer.load_graph(graph_path, labels_path)
+        label_list, num_graph_outputs = self._recognizer.load_graph(graph_path, labels_path)
 
         id_list = [str(i) for i in range(0,len(label_list))]
         id_label_dict = dict(zip(id_list, label_list))

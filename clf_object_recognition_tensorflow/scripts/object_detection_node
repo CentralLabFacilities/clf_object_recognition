@@ -89,7 +89,7 @@ class TensorflowDetectionNode:
         self._detector.load_graph(graph_path, labels_path)
         rospy.loginfo("detection graph successfully loaded")
 
-        label_list = self._recognizer.load_graph(graph_r, labels_r)
+        label_list, num_graph_outputs = self._recognizer.load_graph(graph_r, labels_r)
         rospy.loginfo("recognition graph successfully loaded")
 
         rospy.loginfo("waiting for rostopic: %s...", self._topic_name)
