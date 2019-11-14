@@ -69,8 +69,6 @@ class TestPlugin(Plugin):
         self._sub = None
         self._srv = None
 
-        self._unknown_probability = 0.1
-
         self.id_label_list = []
         self._srv_detect = None
         self._cv_image = None
@@ -95,7 +93,7 @@ class TestPlugin(Plugin):
 
         c = result.classifications[0]
         text_array = []
-        best = ObjectHypothesis(id=0, score=self._unknown_probability) # 0 -> unknown
+        best = ObjectHypothesis(id=0, score=0.0)
 
         for r in c.results:
             if len(self.id_label_list) >= r.id:
@@ -108,9 +106,7 @@ class TestPlugin(Plugin):
         self._image_widget.add_detection(0, 0, 1, 1, str(best.id))
 
         if text_array:
-            option_dialog("Classification results (Unknown probability=%.2f)" %
-                          self._unknown_probability,
-                          text_array)  # Show all results in a dropdown
+            option_dialog("Classification results", text_array)  # Show all results in a dropdown
 
 
     def image_roi_callback(self, roi_image):
