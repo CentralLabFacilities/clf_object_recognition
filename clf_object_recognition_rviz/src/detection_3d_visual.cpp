@@ -126,8 +126,13 @@ std::string Detection3DVisual::getName(int id, std::string fixed_name)
 
 void Detection3DVisual::updateHypothesis(const vision_msgs::Detection3D msg)
 {
-  cur_prob_ = msg.results.front().score;
-  cur_hyp_ = getName(msg.results.front().id);
+  if(!msg.results.empty()) {
+    cur_prob_ = msg.results.front().score;
+    cur_hyp_ = getName(msg.results.front().id);
+  } else {
+    cur_prob_ = 0.0;
+    cur_hyp_ = "Unknown";
+  }
 }
 
 }  // namespace viz
