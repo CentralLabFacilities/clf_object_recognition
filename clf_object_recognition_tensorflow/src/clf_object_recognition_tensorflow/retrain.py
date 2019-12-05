@@ -25,6 +25,7 @@ def mkdir_p(path):
 
 
 def main(image_dir, model_dir, output_dir, steps, batch):
+    tf.app.flags.DEFINE_string('s', '' , '') # This line is to avoid warning that command line flag 's' is unknown. The flag is introduced in train_gui: "rqt -s ..."
     tf.app.flags.FLAGS.image_dir = image_dir
     tf.app.flags.FLAGS.model_dir = model_dir
 
