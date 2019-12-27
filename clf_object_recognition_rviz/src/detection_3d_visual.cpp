@@ -102,7 +102,7 @@ void Detection3DVisual::updateLabel() {
   out << std::fixed << cur_prob_;
   auto txt = cur_hyp_ + ((show_prob_) ? " - " + out.str() : "");
   text_->setCaption(txt);
-  ROS_INFO_STREAM("caption:" << txt);
+  ROS_DEBUG_STREAM("caption:" << txt);
 }
 
 template <template<class,class,class...> class C, typename K, typename V, typename... Args>
