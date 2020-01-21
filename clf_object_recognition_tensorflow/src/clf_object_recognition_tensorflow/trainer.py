@@ -223,6 +223,9 @@ def train(create_tensor_dict_fn,
           worker_job_name,
           is_chief,
           train_dir,
+          train_steps,
+          to_keep,
+          save_steps,
           graph_hook_fn=None):
   """Training function for detection models.
 
@@ -240,6 +243,9 @@ def train(create_tensor_dict_fn,
     worker_job_name: Name of the worker job.
     is_chief: Whether this replica is the chief replica.
     train_dir: Directory to write checkpoints and training summaries to.
+    train_steps: Number of training steps
+    to_keep: Number of checkpoints to keep
+    save_steps: Save after every n seconds
     graph_hook_fn: Optional function that is called after the inference graph is
       built (before optimization). This is helpful to perform additional changes
       to the training graph such as adding FakeQuant ops. The function should
@@ -377,7 +383,7 @@ def train(create_tensor_dict_fn,
     # Save checkpoints regularly.
     keep_checkpoint_every_n_hours = train_config.keep_checkpoint_every_n_hours
     saver = tf.train.Saver(
-        keep_checkpoint_every_n_hours=keep_checkpoint_every_n_hours)
+        keep_checkpoint_every_n_hours=keep_checkpoint_every_n_hours, max_to_keep=to_keep)
 
     # Create ops required to initialize the model from a given checkpoint.
     init_fn = None
@@ -403,6 +409,7 @@ def train(create_tensor_dict_fn,
         init_saver.restore(sess, train_config.fine_tune_checkpoint)
       init_fn = initializer_fn
 
+    train_config.num_steps = train_steps
     slim.learning.train(
         train_tensor,
         logdir=train_dir,
@@ -415,5 +422,6 @@ def train(create_tensor_dict_fn,
         number_of_steps=(
             train_config.num_steps if train_config.num_steps else None),
         save_summaries_secs=120,
+        save_interval_secs=save_steps,
         sync_optimizer=sync_optimizer,
         saver=saver)
