@@ -1,4 +1,4 @@
-
+from __future__ import print_function
 import tensorflow as tf
 import numpy as np
 
@@ -35,8 +35,11 @@ class TensorflowRecognition:
 
         #TODO: read image from memory
         with open(filename, 'rb') as f: #TODO instead of reading the image from a file, pass it as a numpy-array parameter to recognize(), see here https://stackoverflow.com/questions/40273109/convert-python-opencv-mat-image-to-tensorflow-image-data and here https://stackoverflow.com/questions/34484148/feeding-image-data-in-tensorflow-for-transfer-learning Problem: rgb or bgr?
+            print("opened file %s"%filename)
             predictions = self.sess.run(result_tensor, {'DecodeJpeg/contents:0': f.read()})
             predictions = np.squeeze(predictions)
+
+        print("predictions are ", predictions)
 
         """3. Construct list with labels and probabilities"""
         result = zip(list(range(len(predictions))), predictions)
