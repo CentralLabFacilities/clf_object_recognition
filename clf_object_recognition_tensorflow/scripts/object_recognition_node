@@ -66,8 +66,8 @@ class TensorflowObjectRecognition:
         label_list, num_graph_outputs = self._recognizer.load_graph(graph_path, labels_path)
 
         id_list = [str(i) for i in range(0,len(label_list))]
-        id_label_dict = dict(zip(id_list, label_list))
-        rospy.set_param('object_labels', id_label_dict)
+        self.id_label_dict = dict(zip(id_list, label_list))
+        rospy.set_param('object_labels', self.id_label_dict)
 
     def _classify_srv_callback(self, req):
         """ Callback function for the recognize. It saves the image on a temporary location and sets _do_recognition
@@ -89,7 +89,7 @@ class TensorflowObjectRecognition:
 
             # Write the image to file
             # TODO: directly in memory, saves file operations
-            cv2.imwrite(filename=self._filename, img=self._bgr_image)
+            cv2.imwrite(filename=self._filename, img=self._bgr_image) # TODO check return value to see if succeeded
             imgpath = "{}/img{}.jpg".format(self._save_images_folder, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S_%f"))
             cv2.imwrite(filename=imgpath, img=self._bgr_image)
             size = self._bgr_image.shape[:2]  # For now, we assume the entire image is the ROI
@@ -138,7 +138,7 @@ class TensorflowObjectRecognition:
             best_label = sorted_result[-1][0]
             best_prob = sorted_result[-1][1]
 
-            rospy.loginfo("Best recognition result: {} with probability: {}".format(best_label, best_prob))
+            rospy.loginfo("Best recognition result: {} ({}) with probability: {}".format(best_label, self.id_label_dict[str(best_label)], best_prob))
 
         self._do_recognition = False
 
