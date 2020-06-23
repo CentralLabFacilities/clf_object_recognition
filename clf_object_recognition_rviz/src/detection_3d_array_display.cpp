@@ -2,6 +2,7 @@
 
 #include <QString>
 #include <memory>
+#include <OGRE/OgreSceneNode.h>
 
 #include <rviz/properties/bool_property.h>
 #include <rviz/properties/float_property.h>

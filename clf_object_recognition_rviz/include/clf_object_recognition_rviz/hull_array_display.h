@@ -9,17 +9,6 @@
 
 #include <mutex>
 
-namespace Ogre
-{
-class SceneNode;
-}
-
-namespace rviz
-{
-class BoolProperty;
-class FloatProperty;
-}
-
 namespace objrec
 {
 namespace viz

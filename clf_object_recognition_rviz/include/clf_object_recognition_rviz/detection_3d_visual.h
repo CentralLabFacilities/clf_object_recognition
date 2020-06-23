@@ -1,31 +1,22 @@
 #pragma once
 
 #include "vision_msgs/Detection3D.h"
-
-#include <QColor>
-#include <tf2_eigen/tf2_eigen.h>
-
-#include <clf_object_recognition_rviz/bounding_box_visual.h>
+#include <memory> // for unique_ptr
+#include <string> // for string
 
 namespace Ogre
 {
-class Entity;
-class Vector3;
-class Quaternion;
-class ManualObject;
 class SceneManager;
 class SceneNode;
 }  // namespace Ogre
 
-namespace rviz
-{
-class MovableText;
-}
+namespace rviz { class MovableText; }
 
 namespace objrec
 {
 namespace viz
 {
+class BoundingBoxVisual;
 class Detection3DVisual
 {
 public:

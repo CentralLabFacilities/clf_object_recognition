@@ -3,27 +3,17 @@
 #ifndef Q_MOC_RUN
 #include <clf_object_recognition_msgs/BoundingBox3DArray.h>
 
-#include "clf_object_recognition_rviz/bounding_box_visual.h"
 #include "rviz/message_filter_display.h"
 #endif
 
 #include <mutex>
 
-namespace Ogre
-{
-class SceneNode;
-}
-
-namespace rviz
-{
-class BoolProperty;
-class FloatProperty;
-}
-
 namespace objrec
 {
 namespace viz
 {
+class BoundingBoxVisual;
+
 class BoundingBoxArrayDisplay : public rviz::MessageFilterDisplay<clf_object_recognition_msgs::BoundingBox3DArray>
 {
   Q_OBJECT

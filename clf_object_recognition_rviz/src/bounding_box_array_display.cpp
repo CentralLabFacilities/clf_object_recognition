@@ -1,7 +1,9 @@
 #include "clf_object_recognition_rviz/bounding_box_array_display.h"
 
+#include "clf_object_recognition_rviz/bounding_box_visual.h"
 #include <QString>
 #include <memory>
+#include <OGRE/OgreSceneNode.h>
 
 #include <rviz/properties/bool_property.h>
 #include <rviz/properties/float_property.h>

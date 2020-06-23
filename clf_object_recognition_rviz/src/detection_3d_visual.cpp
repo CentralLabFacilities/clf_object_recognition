@@ -1,28 +1,15 @@
 #include "clf_object_recognition_rviz/detection_3d_visual.h"
 
-#include <OGRE/OgreManualObject.h>
 #include <OGRE/OgreMaterialManager.h>
 #include <OGRE/OgreSceneManager.h>
 #include <OGRE/OgreSceneNode.h>
 #include <OGRE/OgreSharedPtr.h>
 #include <OGRE/OgreTechnique.h>
 #include <OGRE/OgreTextureManager.h>
-#include <OGRE/OgreEntity.h>
-#include <OGRE/OgreQuaternion.h>
-
-#include <tf2_eigen/tf2_eigen.h>
-#include <eigen_conversions/eigen_msg.h>
-
-#include <QColor>
 
 #include <ros/ros.h>
 
 #include <rviz/ogre_helpers/movable_text.h>
-#include <rviz/properties/parse_color.h>
-#include <rviz/mesh_loader.h>
-#include <rviz/geometry.h>
-
-#include <memory>
 
 
 
