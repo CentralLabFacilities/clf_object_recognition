@@ -4,6 +4,7 @@
 #include <vision_msgs/Detection3DArray.h>
 
 #include "clf_object_recognition_rviz/detection_3d_visual.h"
+#include "clf_object_recognition_rviz/bounding_box_visual.h"
 #include "rviz/message_filter_display.h"
 #endif
 
