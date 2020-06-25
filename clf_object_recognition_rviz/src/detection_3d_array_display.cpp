@@ -1,4 +1,5 @@
 #include "clf_object_recognition_rviz/detection_3d_array_display.h"
+#include "clf_object_recognition_rviz/bounding_box_visual.h"
 
 #include <QString>
 #include <memory>
