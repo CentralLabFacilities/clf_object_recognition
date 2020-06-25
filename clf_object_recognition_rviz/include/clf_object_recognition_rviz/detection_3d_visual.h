@@ -4,6 +4,8 @@
 #include <memory> // for unique_ptr
 #include <string> // for string
 
+#include "clf_object_recognition_rviz/bounding_box_visual.h"
+
 namespace Ogre
 {
 class SceneManager;
@@ -16,7 +18,6 @@ namespace objrec
 {
 namespace viz
 {
-class BoundingBoxVisual;
 class Detection3DVisual
 {
 public:
