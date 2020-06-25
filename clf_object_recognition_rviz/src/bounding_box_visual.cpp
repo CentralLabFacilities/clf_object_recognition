@@ -1,17 +1,11 @@
 #include <OGRE/OgreManualObject.h>
-#include <OGRE/OgreMaterialManager.h>
 #include <OGRE/OgreSceneManager.h>
 #include <OGRE/OgreSceneNode.h>
-#include <OGRE/OgreSharedPtr.h>
-#include <OGRE/OgreTechnique.h>
-
+#include <OGRE/OgreColourValue.h> // for ColourValue
+#include <vision_msgs/BoundingBox3D.h> // for BoundingBox3D
 #include <eigen_conversions/eigen_msg.h>
 
-#include <ros/ros.h>
-
 #include <rviz/properties/parse_color.h>
-#include <rviz/mesh_loader.h>
-#include <rviz/geometry.h>
 
 #include "clf_object_recognition_rviz/bounding_box_visual.h"
 
