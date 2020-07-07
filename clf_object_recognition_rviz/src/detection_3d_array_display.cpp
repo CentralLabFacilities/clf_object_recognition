@@ -1,6 +1,6 @@
 #include "clf_object_recognition_rviz/detection_3d_array_display.h"
+#include "clf_object_recognition_rviz/detection_3d_visual.h"
 
-#include <QString>
 #include <memory>
 #include <OGRE/OgreSceneNode.h>
 

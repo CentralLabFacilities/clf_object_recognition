@@ -6,13 +6,7 @@
 #include "rviz/message_filter_display.h"
 #endif
 
-#include "clf_object_recognition_rviz/detection_3d_visual.h"
 #include <mutex>
-
-namespace Ogre
-{
-class SceneNode;
-}
 
 namespace rviz
 {
@@ -24,6 +18,8 @@ namespace objrec
 {
 namespace viz
 {
+class Detection3DVisual;
+
 class Detection3DArrayDisplay : public rviz::MessageFilterDisplay<vision_msgs::Detection3DArray>
 {
   Q_OBJECT

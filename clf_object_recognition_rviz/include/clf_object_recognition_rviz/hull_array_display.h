@@ -3,7 +3,6 @@
 #ifndef Q_MOC_RUN
 #include <clf_object_recognition_msgs/HullArray.h>
 
-#include "clf_object_recognition_rviz/hull_visual.h"
 #include "rviz/message_filter_display.h"
 #endif
 
@@ -13,6 +12,8 @@ namespace objrec
 {
 namespace viz
 {
+class HullVisual;
+
 class HullArrayDisplay : public rviz::MessageFilterDisplay<clf_object_recognition_msgs::HullArray>
 {
   Q_OBJECT
