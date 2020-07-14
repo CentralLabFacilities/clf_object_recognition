@@ -30,9 +30,6 @@ set(QT_LIBRARIES Qt5::Widgets)
 add_definitions(-DQT_NO_KEYWORDS)
 #set(CMAKE_AUTOMOC ON)
 
-## Etc
-include_directories(include)
-
 ###########
 ## Build ##
 ###########
@@ -62,6 +59,9 @@ add_library(${PROJECT_NAME} ${src_files} ${moc_files})
 target_link_libraries(${PROJECT_NAME}
     ${QT_LIBRARIES} ${catkin_LIBRARIES}
  )
+
+## Etc
+include_directories(include)
 
 #############
 ## Install ##
