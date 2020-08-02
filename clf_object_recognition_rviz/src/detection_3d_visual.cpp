@@ -112,6 +112,11 @@ std::string Detection3DVisual::getName(int id, std::string fixed_name)
   return GetWithDef(labels,std::to_string(id),std::string("unknown"));
 }
 
+std::string Detection3DVisual::getName(const std::string& id, std::string fixed_name)
+{
+  return id; // TODO maybe other behaviour?
+}
+
 void Detection3DVisual::updateHypothesis(const vision_msgs::Detection3D msg)
 {
   if(!msg.results.empty()) {

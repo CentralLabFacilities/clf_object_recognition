@@ -36,6 +36,7 @@ public:
 protected:
 
   std::string getName(int id, std::string fixed_name = "");
+  std::string getName(const std::string& id, std::string fixed_name = "");
   void updateHypothesis(const vision_msgs::Detection3D msg);
   void updateLabel();
 
