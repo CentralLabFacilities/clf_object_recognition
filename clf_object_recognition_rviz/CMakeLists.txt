@@ -12,7 +12,6 @@ find_package(catkin REQUIRED
             eigen_conversions
             
 )
-include_directories(${catkin_INCLUDE_DIRS})
 
 catkin_package(
   INCLUDE_DIRS include
@@ -20,7 +19,6 @@ catkin_package(
 )
 
 find_package (Eigen3 REQUIRED)
-include_directories(${EIGEN3_INCLUDE_DIR})
 
 link_directories(${catkin_LIBRARY_DIRS})
 
@@ -46,7 +44,7 @@ set(src_files
 
   )
 
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(include ${CMAKE_CURRENT_BINARY_DIR} ${EIGEN3_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
 qt_wrap_cpp(${PROJECT_NAME} 
   moc_files 
   include/clf_object_recognition_rviz/bounding_box_array_display.h 
@@ -59,9 +57,6 @@ add_library(${PROJECT_NAME} ${src_files} ${moc_files})
 target_link_libraries(${PROJECT_NAME}
     ${QT_LIBRARIES} ${catkin_LIBRARIES}
  )
-
-## Etc
-include_directories(include)
 
 #############
 ## Install ##
