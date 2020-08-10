@@ -36,7 +36,7 @@ add_definitions(${PCL_DEFINITIONS})
 ## Build ##
 ###########
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -std=c++0x")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 
 add_executable(object_merger src/object_merger.cpp) 
 target_link_libraries(object_merger ${catkin_LIBRARIES} ${OpenCV_LIBS} ${PCL_LIBRARIES})
