@@ -1,18 +1,15 @@
 #pragma once
 
+#include <Eigen/Eigenvalues> // for SelfAdjointEigenSolver
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_types.h>
 #include <pcl/PCLPointCloud2.h>
 #include <pcl/conversions.h>
-#include <pcl_ros/transforms.h>
-
 #include <pcl/common/common.h>
-#include <pcl/common/pca.h>
-#include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/common/transforms.h> // for transformPointCloud
 
 #include <vision_msgs/BoundingBox3D.h>
 #include <sensor_msgs/PointCloud2.h>
-#include <pcl/visualization/point_cloud_color_handlers.h>
 
 namespace OOBB_Calculate
 {
