@@ -27,7 +27,7 @@ FIND_PACKAGE(OpenCV REQUIRED COMPONENTS
 )
 include_directories(${OpenCV_INCLUDE_DIRS})
 
-find_package(PCL REQUIRED)
+find_package(PCL REQUIRED COMPONENTS common)
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
