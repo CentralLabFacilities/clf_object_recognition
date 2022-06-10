@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package>
+  <name>clf_object_recognition_3d</name>
+  <version>0.0.0</version>
+  <description>Clf object recognition nodes</description>
+
+  <maintainer email="lruegeme@techfak.uni-bielefeld.de">Leroy Ruegemer</maintainer>
+
+  <license>Apache 2.0</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>clf_object_recognition_msgs</build_depend>
+
+  <run_depend>rospy</run_depend>
+  <run_depend>clf_object_recognition_msgs</run_depend>
+
+</package>

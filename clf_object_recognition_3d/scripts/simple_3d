@@ -1,0 +1,15 @@
+#!/usr/bin/env python
+
+# ros
+import rospy
+import rostopic
+import rosservice
+
+from clf_object_recognition_3d import simple
+
+if __name__ == '__main__':
+    rospy.init_node('simple_detect')
+    publish_detections = rospy.get_param('publish_detections', True)
+    rospy.logwarn(("not " if not publish_detections else "")+"publishing detections")
+    simple.SimpleDetect(publish_detections)
+    rospy.spin()
