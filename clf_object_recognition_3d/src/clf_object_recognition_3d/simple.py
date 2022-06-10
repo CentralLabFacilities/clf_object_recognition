@@ -20,13 +20,8 @@ class SimpleDetect():
 
         self.publish_detections = publish_detections
 
-        # Bridge for opencv conversion
-        self.bridge = CvBridge()
-
-        self.sub_classify = rospy.ServiceProxy("/classify", Classify2D)
-        self.sub_detect = rospy.ServiceProxy('/detect', Detect2D)
-        #self.sub_images = rospy.Subscriber("~input", Image, self._image_callback)
-        #rospy.logwarn("Listening to %s" % self.sub_images.name)
+        self.srv_classify = rospy.ServiceProxy("/classify", Classify2D)
+        self.srv_detect = rospy.ServiceProxy('/detect', Detect2D)
 
         self.pub = rospy.Publisher('/simple_detections', Detection3DArray, queue_size=10)
 
@@ -34,7 +29,7 @@ class SimpleDetect():
 
     def callback_detect_3d(self, req):
         try:
-            rospy.wait_for_message("~input", Image, timeout=2)
+            image = rospy.wait_for_message("~input", Image, timeout=2)
         except rospy.ROSException as e:
             s = "could not get image from '"+rospy.resolve_name("~input")+"'"
             rospy.logerr(s)
@@ -42,8 +37,8 @@ class SimpleDetect():
 
         resp = Detect3DResponse()
 
-        detections = self._get_detections(self._image)
-        for d2d in detections:
+        detections = self._get_detections(image)
+        for d2d in detections.detections:
             d3d = Detection3D()
             d3d.header = d2d.header
             # todo call classify for better hypotheses
@@ -62,34 +57,23 @@ class SimpleDetect():
             resp.detections.append(d3d)
 
         if self.publish_detections:
-            self.pub.publish(resp.detections)
+            msg = Detection3DArray()
+            msg.header = d3d.header
+            msg.detections = resp.detections
+            self.pub.publish(msg)
 
         return resp
 
-    def _image_callback(self, msg):
-        """
-        Sensor_msgs/Image callback
-        :param msg: The image message
-        """
-        self._image = msg
-
     def _get_classifications(self, images):
         try:
-            result = self.sub_classify(images)
+            result = self.srv_classify(images)
             return result
         except Exception as e:
             rospy.logerr("Service call failed: %s"%e)
 
     def _get_detections(self, image):
         try:
-            result = self._srv_detect(image)
+            result = self.srv_detect(image)
             return result
         except Exception as e:
             rospy.logerr("Service call failed: %s"%e)
-
-#if __name__ == '__main__':
-#    rospy.init_node('simple_detect')
-#    publish_detections = rospy.get_param('publish_detections', True)
-#    rospy.loginfo(("not " if not publish_detections else "")+"publishing detections")
-#    SimpleDetect(publish_detections)
-#    rospy.spin()
