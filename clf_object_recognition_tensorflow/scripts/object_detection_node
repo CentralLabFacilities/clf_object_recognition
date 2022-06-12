@@ -92,11 +92,10 @@ class TensorflowDetectionNode:
         label_list, num_graph_outputs = self._recognizer.load_graph(graph_r, labels_r)
         rospy.loginfo("recognition graph successfully loaded")
 
-        rospy.loginfo("waiting for rostopic: %s...", self._topic_name)
+        #rospy.loginfo("waiting for rostopic: %s...", self._topic_name)
         #while (not self._sub):
         #    self._sub = rospy.Subscriber(self._topic_name, Image, self._image_callback)
         #    time.sleep(1)
-
         #rospy.loginfo("subscribed to %s...", self._topic_name)
 
         # publish id-label mapping via rosparam
@@ -152,6 +151,8 @@ class TensorflowDetectionNode:
         r = rospy.Rate(1000.0)  # Not a problem to spin quickly
         while not rospy.is_shutdown():
             if not self._do_detection:
+                for i in self._detectionArray:
+                    i.header = req.image.header
                 detectRes = {"detections": self._detectionArray}
                 return detectRes
         # Return an empty result if rospy has been shutdown
@@ -162,7 +163,7 @@ class TensorflowDetectionNode:
         The result is stored in the _detection member and afterwards _do_detection is set to False. This function
         is called at a fixed frequency in the mean thread, hence NOT from the service callback. """
 
-        if self._bgr_image is not None:
+        if self._show_results and self._bgr_image is not None:
             self.show_image(self._bgr_image)
             time.sleep(0.05)
 

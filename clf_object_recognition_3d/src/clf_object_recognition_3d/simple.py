@@ -19,8 +19,6 @@ class SimpleDetect():
     def __init__(self, publish_detections):
 
         self.publish_detections = publish_detections
-
-        self.srv_classify = rospy.ServiceProxy("/classify", Classify2D)
         self.srv_detect = rospy.ServiceProxy('/detect', Detect2D)
 
         self.pub = rospy.Publisher('/simple_detections', Detection3DArray, queue_size=10)
@@ -41,7 +39,6 @@ class SimpleDetect():
         for d2d in detections.detections:
             d3d = Detection3D()
             d3d.header = d2d.header
-            # todo call classify for better hypotheses
             d3d.results = d2d.results
             # todo calc bbox real poses
             d3d.bbox.center.position.x = d2d.bbox.center.x 
@@ -56,7 +53,7 @@ class SimpleDetect():
 
             resp.detections.append(d3d)
 
-        if self.publish_detections:
+        if len(detections.detections) > 0 and self.publish_detections:
             msg = Detection3DArray()
             msg.header = d3d.header
             msg.detections = resp.detections
@@ -69,11 +66,11 @@ class SimpleDetect():
             result = self.srv_classify(images)
             return result
         except Exception as e:
-            rospy.logerr("Service call failed: %s"%e)
+            raise rospy.ServiceException(e)
 
     def _get_detections(self, image):
         try:
             result = self.srv_detect(image)
             return result
         except Exception as e:
-            rospy.logerr("Service call failed: %s"%e)
+            raise rospy.ServiceException(e)
