@@ -41,8 +41,8 @@ class SimpleDetect():
             d3d.header = d2d.header
             d3d.results = d2d.results
             # todo calc bbox real poses
-            d3d.bbox.center.position.x = d2d.bbox.center.x 
-            d3d.bbox.center.position.y = d2d.bbox.center.y 
+            d3d.bbox.center.position.x = d2d.bbox.center.x - 0.5
+            d3d.bbox.center.position.y = d2d.bbox.center.y - 0.5
             d3d.bbox.center.position.z = 1
 
             d3d.bbox.center.orientation.w = 1
