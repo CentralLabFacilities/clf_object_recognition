@@ -29,7 +29,7 @@ from sensor_msgs.msg import Image
 class TensorflowDetectionNode:
     """ Performs object detection using Tensorflow neural networks """
     def __init__(self, graph_path, labels_path, rec_path, save_images_folder,num_classes=99,detection_threshold=0.5,
-                 image_topic="/usb_cam/image_raw",show_results=True):
+                 classification_threshold=0.3,image_topic="/usb_cam/image_raw",show_results=True):
         """ Constructor
         :param graph_path: string with path + filename (incl. extension) indicating the database location
         :param labels_path: string with path + filename (incl. extension) indicating the location of the text file
@@ -82,8 +82,11 @@ class TensorflowDetectionNode:
         rospy.loginfo(" - save_images_folder=%s", save_images_folder)
         rospy.loginfo(" - num_classes=%s", num_classes)
         rospy.loginfo(" - detection_threshold=%s", detection_threshold)
+        rospy.loginfo(" - classification_threshold=%s", classification_threshold)
         rospy.loginfo(" - rec_graph=%s",graph_r)
         rospy.loginfo(" - rec_labels=%s",labels_r)
+
+        self.classification_threshold = classification_threshold
 
         """1. Load graph from saved GraphDef file """
         self._detector.load_graph(graph_path, labels_path)
@@ -203,7 +206,13 @@ class TensorflowDetectionNode:
 
         # add results
         for i in range(0,len(classes)):
-            # TODO: use a threshold?
+            
+            # skip if best < threshold
+            best_score = score_hypotheses_list[i][0]
+            if best_score < self.classification_threshold:
+                name = label_hypotheses_list[i][0]
+                rospy.logwarn("items best hypo under classification_threshold (%s:%.2f)" % (name, best_score) )
+                continue
 
             detection2D = Detection2D()
             detection2D.source_img = self._bridge.cv2_to_imgmsg(self._bgr_image, "bgr8")
@@ -322,6 +331,7 @@ if __name__ == '__main__':
         _labels_path = os.path.expanduser(rospy.get_param("~labels_path"))
         num_classes = rospy.get_param("~num_classes", 99)
         detection_threshold = rospy.get_param("~detection_threshold", 0.5)
+        classification_threshold = rospy.get_param("~classification_threshold", 0.3)
         save_images = rospy.get_param("~save_images", True)
         image_topic = rospy.get_param("~image_topic", "/xtion/rgb/image_raw")
         _rec_path = os.path.expanduser(rospy.get_param("~rec_path"))
@@ -341,6 +351,7 @@ if __name__ == '__main__':
                                                save_images_folder=save_images_folder,
                                                num_classes=num_classes,
                                                detection_threshold=detection_threshold,
+                                               classification_threshold=classification_threshold,
                                                image_topic=image_topic,
                                                show_results=_show_results)
     # Start update loop
