@@ -10,12 +10,13 @@ from object_detection.utils import label_map_util
 from clf_object_recognition_tensorflow.object import Object
 
 class Detector:
-    def __init__(self, num_classes=99, detection_threshold=0.5):
+    def __init__(self, num_classes=99, detection_threshold=0.5, filter_double=True):
         self.detection_threshold = detection_threshold
         self.label_map = None
         self.categories = None
         self.category_index = None
         self.num_classes = num_classes
+        self.filter_double = filter_double
 
     def load_graph(self, pathToCkpt, pathToLabels):
         print(pathToCkpt)
@@ -72,25 +73,26 @@ class Detector:
                 print("found ", self.get_label(self.classes[0][i]), " with score ", self.scores[0][i], "at: ", self.boxes[0][i])
 
         # filter double detected objects
-        num_objects = len(scores)
-        remove_objects = []
-        for i in range(0, num_objects):
-            for j in range(0, num_objects):
-                if not (i == j):
-                    detected_i = Object(classes[i], scores[i], boxes[i][1], boxes[i][3], boxes[i][0], boxes[i][2])
-                    detected_j = Object(classes[j], scores[j], boxes[j][1], boxes[j][3], boxes[j][0], boxes[j][2])
-                    if self.doubleTest(detected_j, detected_i) and (j not in remove_objects):
-                        remove_objects.append(j)
-                        print("remove double detected object {} with prob. {}".format(self.get_label(classes[j]),scores[j]))
+        if self.filter_double:
+            num_objects = len(scores)
+            remove_objects = []
+            for i in range(0, num_objects):
+                for j in range(0, num_objects):
+                    if not (i == j):
+                        detected_i = Object(classes[i], scores[i], boxes[i][1], boxes[i][3], boxes[i][0], boxes[i][2])
+                        detected_j = Object(classes[j], scores[j], boxes[j][1], boxes[j][3], boxes[j][0], boxes[j][2])
+                        if self.doubleTest(detected_j, detected_i) and (j not in remove_objects):
+                            remove_objects.append(j)
+                            print("remove double detected object {} with prob. {}".format(self.get_label(classes[j]),scores[j]))
 
-        # sort list (large indices first)
-        remove_objects = list(reversed(sorted(remove_objects)))
-        print("delete doubles: {}".format(remove_objects))
-        for i in range(0, len(remove_objects)):
-            j = remove_objects[i]
-            del scores[j]
-            del classes[j]
-            del boxes[j]
+            # sort list (large indices first)
+            remove_objects = list(reversed(sorted(remove_objects)))
+            print("delete doubles: {}".format(remove_objects))
+            for i in range(0, len(remove_objects)):
+                j = remove_objects[i]
+                del scores[j]
+                del classes[j]
+                del boxes[j]
 
         return classes, scores, boxes
 
