@@ -1,2 +1,6 @@
 # clf_object_recognition
-new interpretation of object detection and recognition
+
+## Packages
+
+- [clf_object_recognition_3d](clf_object_recognition_3d/README.md)
+	- 

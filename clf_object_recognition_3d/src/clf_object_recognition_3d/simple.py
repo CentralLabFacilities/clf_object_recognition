@@ -1,17 +1,11 @@
 # ros
 import rospy
-import rostopic
-import rosservice
-
-#cv
-from cv_bridge import CvBridge, CvBridgeError
 
 #msgs
-from vision_msgs.msg import ObjectHypothesis, Classification2D, Detection3D, Detection2D, Detection3DArray
-from sensor_msgs.msg import Image
+from vision_msgs.msg import  Detection3D, Detection3DArray
 
 #srv
-from clf_object_recognition_msgs.srv import Classify2D, Detect3D, Detect2D, Detect3DResponse
+from clf_object_recognition_msgs.srv import Detect3D, Detect2D, Detect3DResponse
 
 
 class SimpleDetect():
@@ -26,21 +20,15 @@ class SimpleDetect():
         self.service = rospy.Service("simple_detect", Detect3D, self.callback_detect_3d)
 
     def callback_detect_3d(self, req):
-        try:
-            image = rospy.wait_for_message("~input", Image, timeout=2)
-        except rospy.ROSException as e:
-            s = "could not get image from '"+rospy.resolve_name("~input")+"'"
-            rospy.logerr(s)
-            raise rospy.ServiceException(s)
-
         resp = Detect3DResponse()
 
-        detections = self._get_detections(image)
+        detections = self._get_detections()
         for d2d in detections.detections:
             d3d = Detection3D()
             d3d.header = d2d.header
             d3d.results = d2d.results
-            # todo calc bbox real poses
+
+            # todo estimate bbox poses
             d3d.bbox.center.position.x = d2d.bbox.center.x - 0.5
             d3d.bbox.center.position.y = d2d.bbox.center.y - 0.5
             d3d.bbox.center.position.z = 1
@@ -61,16 +49,9 @@ class SimpleDetect():
 
         return resp
 
-    def _get_classifications(self, images):
+    def _get_detections(self):
         try:
-            result = self.srv_classify(images)
-            return result
-        except Exception as e:
-            raise rospy.ServiceException(e)
-
-    def _get_detections(self, image):
-        try:
-            result = self.srv_detect(image)
+            result = self.srv_detect()
             return result
         except Exception as e:
             raise rospy.ServiceException(e)

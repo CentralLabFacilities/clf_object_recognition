@@ -1,3 +1,0 @@
-#!/bin/bash
-
-rqt -s clf_object_recognition_tools.train.TrainPlugin

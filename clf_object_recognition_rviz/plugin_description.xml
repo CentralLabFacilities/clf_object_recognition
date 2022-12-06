@@ -1,12 +1,12 @@
 <library path="lib/libclf_object_recognition_rviz">
 
-  <class name="clf_object_recognition_rviz/BoundingBoxes"
+  <class name="vision_msgs/BoundingBoxes"
          type="objrec::viz::BoundingBoxArrayDisplay"
          base_class_type="rviz::Display">
     <description>
-      Displays data from clf_object_recognition_msgs/BoundingBox3DArray messages.
+      Displays data from vision_msgs/BoundingBox3DArray messages.
     </description>
-    <message_type>clf_object_recognition_msgs/BoundingBox3DArray</message_type>
+    <message_type>vision_msgs/BoundingBox3DArray</message_type>
   </class>
 
   <class name="clf_object_recognition_rviz/Detections3D"

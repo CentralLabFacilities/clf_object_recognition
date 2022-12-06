@@ -20,7 +20,7 @@ void BoundingBoxArrayDisplay::reset()
   MFDClass::reset();
 }
 
-void BoundingBoxArrayDisplay::processMessage(const clf_object_recognition_msgs::BoundingBox3DArray::ConstPtr& msg)
+void BoundingBoxArrayDisplay::processMessage(const vision_msgs::BoundingBox3DArray::ConstPtr& msg)
 {
   Ogre::Quaternion orientation;
   Ogre::Vector3 position;
