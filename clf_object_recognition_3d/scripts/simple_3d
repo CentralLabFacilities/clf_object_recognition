@@ -9,7 +9,8 @@ from clf_object_recognition_3d import simple
 
 if __name__ == '__main__':
     rospy.init_node('simple_detect')
-    publish_detections = rospy.get_param('publish_detections', True)
+    publish_detections = rospy.get_param('~publish_detections', True)
+    detect2d_topic = rospy.get_param('~detect2d_topic', "/detect")
     rospy.logwarn(("not " if not publish_detections else "")+"publishing detections")
-    simple.SimpleDetect(publish_detections)
+    simple.SimpleDetect(detect2d_topic, publish_detections)
     rospy.spin()

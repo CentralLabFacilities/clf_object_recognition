@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package>
+  <name>clf_object_recognition_yolox</name>
+  <version>0.0.0</version>
+  <description>Object recognition with yolox</description>
+
+  <maintainer email="lruegeme@techfak.uni-bielefeld.de">Leroy Rügemer</maintainer>
+
+  <license>Apache 2.0</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>rospy</build_depend>
+  <build_depend>vision_msgs</build_depend>
+
+  <run_depend>rospy</run_depend>
+  <run_depend>vision_msgs</run_depend>
+  <run_depend>python-numpy</run_depend>
+
+</package>

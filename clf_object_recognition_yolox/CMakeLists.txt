@@ -1,10 +1,8 @@
 cmake_minimum_required(VERSION 2.8.12)
-project(clf_object_recognition_3d)
+project(clf_object_recognition_yolox)
 
 find_package(catkin REQUIRED COMPONENTS
   rospy
-  rqt_gui
-  rqt_gui_py
 )
 
 catkin_python_setup()
@@ -12,6 +10,10 @@ catkin_python_setup()
 catkin_package()
 
 install(PROGRAMS
-  scripts/simple_3d
+  scripts/yolox_recognition_node
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(DIRECTORY launch config
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )

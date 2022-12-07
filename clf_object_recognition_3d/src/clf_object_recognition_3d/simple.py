@@ -10,12 +10,13 @@ from clf_object_recognition_msgs.srv import Detect3D, Detect2D, Detect3DResponse
 
 class SimpleDetect():
 
-    def __init__(self, publish_detections):
+    def __init__(self, detect2d_topic, publish_detections = True):
 
         self.publish_detections = publish_detections
-        self.srv_detect = rospy.ServiceProxy('/detect', Detect2D)
+        self.srv_detect = rospy.ServiceProxy(detect2d_topic, Detect2D)
 
-        self.pub = rospy.Publisher('/simple_detections', Detection3DArray, queue_size=10)
+        if publish_detections:
+            self.pub = rospy.Publisher('/simple_detections', Detection3DArray, queue_size=10)
 
         self.service = rospy.Service("simple_detect", Detect3D, self.callback_detect_3d)
 
@@ -29,8 +30,8 @@ class SimpleDetect():
             d3d.results = d2d.results
 
             # todo estimate bbox poses
-            d3d.bbox.center.position.x = d2d.bbox.center.x - 0.5
-            d3d.bbox.center.position.y = d2d.bbox.center.y - 0.5
+            d3d.bbox.center.position.x = d2d.bbox.center.x / 640 - 0.5
+            d3d.bbox.center.position.y = d2d.bbox.center.y / 480 - 0.5
             d3d.bbox.center.position.z = 1
 
             d3d.bbox.center.orientation.w = 1

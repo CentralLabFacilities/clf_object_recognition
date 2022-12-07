@@ -1,8 +1,0 @@
-<launch>
-
-    <node name="simple_detection_3d" pkg="clf_object_recognition_3d" type="simple_3d">
-		<remap from="~input" to="/camera/color/image_rect_color" />
-		<param name="publish_detections" value="True"/>
-	</node>
-
-</launch>
