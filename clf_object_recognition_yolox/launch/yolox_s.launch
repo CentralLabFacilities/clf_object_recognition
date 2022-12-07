@@ -2,8 +2,8 @@
     <rosparam command="load" ns="object_labels" file="$(find clf_object_recognition_yolox)/config/coco_labels.yaml"/>
 
     <arg name="config" default="$(find clf_object_recognition_yolox)/config/config.yaml"/>
-    <arg name="checkpoint" default="$(find clf_object_recognition_yolox)/../yolox-models/yolox-s.pth" />
-    <arg name="exp" default="$(find clf_object_recognition_yolox)/config/exp/yolox-s.py"/>
+    <arg name="checkpoint" default="$(find clf_object_recognition_yolox)/../yolox-models/yolox_s.pth" />
+    <arg name="exp" default="$(find clf_object_recognition_yolox)/config/exp/yolox_s.py"/>
 
     <node pkg="clf_object_recognition_yolox" type="yolox_recognition_node" name="yolox" output="screen">
         <remap from="~input" to="/xtion/rgb/image_raw" />
