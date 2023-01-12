@@ -14,7 +14,11 @@ class Recognizer(object):
 		model.eval()
 		
 		ckpt = torch.load(ckpt_file, map_location="cpu")
-		model.load_state_dict(ckpt["model"])
+
+		if "model" in ckpt:
+			model.load_state_dict(ckpt["model"])
+		else:
+			model.load_state_dict(ckpt)
 
 		self.model = model
 
