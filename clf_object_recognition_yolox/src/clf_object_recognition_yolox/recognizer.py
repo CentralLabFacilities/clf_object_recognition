@@ -48,6 +48,9 @@ class Recognizer(object):
 					self.exp.nmsthre, class_agnostic=True
 				)
 		
+		if outputs[0] is None:
+			return ([],[],[])
+
 		output = outputs[0].cpu()
 		bboxes = output[:, 0:4]
 		bboxes /= ratio

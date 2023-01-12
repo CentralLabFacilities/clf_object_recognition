@@ -1,12 +1,14 @@
 <launch>
-    <rosparam command="load" ns="object_labels" file="$(find clf_object_recognition_yolox)/config/coco_labels.yaml"/>
+    <arg name="object_labels" default="$(find clf_object_recognition_yolox)/config/coco_labels.yaml"/>
+    <rosparam command="load" ns="object_labels" file="$(arg object_labels)"/>
 
     <arg name="config" default="$(find clf_object_recognition_yolox)/config/config.yaml"/>
     <arg name="checkpoint" default="$(find clf_object_recognition_yolox)/../yolox-models/yolox_l.pth" />
     <arg name="exp" default="$(find clf_object_recognition_yolox)/config/exp/yolox_l.py"/>
+    <arg name="image_topic" default="/xtion/rgb/image_raw"/>
 
     <node pkg="clf_object_recognition_yolox" type="yolox_recognition_node" name="yolox" output="screen">
-        <remap from="~input" to="/xtion/rgb/image_raw" />
+        <remap from="~input" to="$(arg image_topic)" />
         <param name="checkpoint" value="$(arg checkpoint)"/>
         <param name="exp" value="$(arg exp)"/>
         <rosparam command="load" file="$(arg config)" />

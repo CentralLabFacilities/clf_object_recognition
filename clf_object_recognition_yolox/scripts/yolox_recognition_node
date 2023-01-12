@@ -26,11 +26,11 @@ class YOLOXNode():
 		rospy.loginfo(" - save_image=%s", save_image)
 		rospy.loginfo(" - timeout=%s", timeout)
 
-		exp = get_exp(exp_path,"")
+		self.exp = get_exp(exp_path,"")
 		if "conf" in config:
-			exp.test_conf = config["conf"]
+			self.exp.test_conf = config["conf"]
 
-		self.recognizer = recognizer.Recognizer(checkpoint, exp)
+		self.recognizer = recognizer.Recognizer(checkpoint, self.exp)
 
 		self.save_image = save_image
 		self._bridge = CvBridge()
