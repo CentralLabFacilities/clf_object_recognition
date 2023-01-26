@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>clf_object_recognition_cfg</name>
+  <version>0.1.0</version>
+  <description>The clf_object_recognition_cfg package</description>
+  <maintainer email="lruegeme@techfak.uni-bielefeld.de">Leroy Ruegemer</maintainer>
+  <license>Apache 2.0</license>
+
+  <author>Leroy Ruegemer</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>rospy</depend>
+  <depend>dynamic_reconfigure</depend>
+
+</package>

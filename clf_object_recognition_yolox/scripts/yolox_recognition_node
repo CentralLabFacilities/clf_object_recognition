@@ -16,15 +16,27 @@ from clf_object_recognition_msgs.srv import Detect2D
 
 from sensor_msgs.msg import Image as ImgMsg
 
+from dynamic_reconfigure.server import Server
+from clf_object_recognition_cfg.cfg import YoloxConfig
+
 import std_msgs.msg
 
 class YOLOXNode():
-	def __init__(self, checkpoint, exp_path, config, save_image = False, timeout = 10):
-		rospy.loginfo("YOLOXNode initializing:")
-		rospy.loginfo(" - checkpoint=%s", checkpoint)
-		rospy.loginfo(" - exp_path=%s", exp_path)
-		rospy.loginfo(" - save_image=%s", save_image)
-		rospy.loginfo(" - timeout=%s", timeout)
+	def __init__(self, checkpoint, exp_path, config, timeout = 10):
+		rospy.loginfo(logger_name="YOLOXNode", msg="initializing:")
+		rospy.loginfo(logger_name="YOLOXNode", msg=f" - checkpoint={checkpoint}")
+		rospy.loginfo(logger_name="YOLOXNode", msg=f" - exp_path={exp_path}")
+		rospy.loginfo(logger_name="YOLOXNode", msg=f" - timeout={timeout}")
+
+		if rospy.has_param('/object_labels'):
+			labels = rospy.get_param('/object_labels')
+			self.classes = ()
+			for id in labels:
+				self.classes = self.classes + (labels[id],)
+		else:
+			from yolox.data.datasets import COCO_CLASSES
+			self.classes = COCO_CLASSES
+			rospy.logwarn(logger_name="YOLOXNode", msg="no /object_labels param found")
 
 		self.exp = get_exp(exp_path,"")
 		if "conf" in config:
@@ -32,12 +44,21 @@ class YOLOXNode():
 
 		self.recognizer = recognizer.Recognizer(checkpoint, self.exp)
 
-		self.save_image = save_image
 		self._bridge = CvBridge()
 
 		self.srv = rospy.Service('~recognize', Detect2D, self._recognize_srv_callback)
+		self.result_pub = rospy.Publisher('~last_detection', ImgMsg, queue_size=1)
+
+		self.reconf_srv = Server(YoloxConfig, self._reconfigure)
 
 		self.timeout=timeout
+
+		
+
+	def _reconfigure(self, config, level):
+		rospy.loginfo(logger_name="YOLOXNode", msg="Reconfigured")
+		self.config = config
+		return config
 
 
 	def _recognize_srv_callback(self, req):
@@ -45,17 +66,17 @@ class YOLOXNode():
 		#img = cv2.imread("/media/mediassd/workspace/yolox/src/YOLOX/assets/dog.jpg")
 
 		try:
-			rospy.loginfo("service called, waiting to recieve a message from the camera")
+			rospy.loginfo(logger_name="YOLOXNode", msg="service called, waiting to recieve a message from the camera")
 			img_msg = rospy.wait_for_message('~input', ImgMsg, timeout=self.timeout)
 		except rospy.ROSException as e:
-			rospy.logerr(e)
+			rospy.logerr(logger_name="YOLOXNode", msg=e)
 			raise Exception("Could not get image in %is" % self.timeout)
 
 		try:
 			img = self._bridge.imgmsg_to_cv2(img_msg, "bgr8")
 		except CvBridgeError as e:
 			error_msg = "Could not convert to opencv image: %s" % e
-			rospy.logerr(error_msg)
+			rospy.logerr(logger_name="YOLOXNode", msg=error_msg)
 			raise Exception(error_msg)
 
 		(cls, scores, bboxes) = self.recognizer.inference(img)
@@ -65,13 +86,16 @@ class YOLOXNode():
 
 		result = util.tensorsToVisionMessage(cls, scores, bboxes, img_msg.header, thresh = self.exp.test_conf)
 
-		if self.save_image:
-			from yolox.data.datasets import COCO_CLASSES
+		if self.config.save_image or self.config.publish_detections:
 			from yolox.utils import vis
-			result_image = vis(img, bboxes, scores, cls, self.exp.test_conf, COCO_CLASSES)
-			cv2.imwrite("/tmp/yolox_output.jpg", result_image)
+			result_image = vis(img, bboxes, scores, cls, self.exp.test_conf, self.classes)
+			if self.config.save_image:
+				cv2.imwrite("/tmp/yolox_output.jpg", result_image)
+			if self.config.publish_detections:
+				msg = self._bridge.cv2_to_imgmsg(result_image)
+				self.result_pub.publish(msg)
 
-		rospy.loginfo("detected %s objects" % len(result))
+		rospy.loginfo(logger_name="YOLOXNode", msg=f"detected {len(result)} objects")
 		return {"detections": result}
 
 if __name__ == '__main__':
@@ -82,14 +106,13 @@ if __name__ == '__main__':
 	try:
 		_checkpoint = os.path.expanduser(rospy.get_param("~checkpoint"))
 		_exp_path = os.path.expanduser(rospy.get_param("~exp"))
-		_save_image = rospy.get_param("~save_image", False)
 		_config = rospy.get_param("~")
 	except KeyError as e:
-		rospy.logerr("Parameter %s not found" % e)
+		rospy.logerr(logger_name="YOLOXNode", msg="Parameter %s not found" % e)
 		sys.exit(1)
 
-	node = YOLOXNode(_checkpoint, _exp_path, _config, _save_image)
+	node = YOLOXNode(_checkpoint, _exp_path, _config)
 
-	rospy.loginfo("\nyolox running")
+	rospy.loginfo(logger_name="YOLOXNode", msg="\nyolox running")
 
 	rospy.spin()

@@ -3,6 +3,7 @@ project(clf_object_recognition_yolox)
 
 find_package(catkin REQUIRED COMPONENTS
   rospy
+  clf_object_recognition_cfg
 )
 
 catkin_python_setup()
