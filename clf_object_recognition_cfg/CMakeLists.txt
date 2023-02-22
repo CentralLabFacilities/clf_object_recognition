@@ -9,6 +9,7 @@ find_package(catkin REQUIRED
 ## Gencfg
 generate_dynamic_reconfigure_options(
   cfg/Yolox.cfg
+  cfg/Detect3d.cfg
 )
 
 catkin_package()

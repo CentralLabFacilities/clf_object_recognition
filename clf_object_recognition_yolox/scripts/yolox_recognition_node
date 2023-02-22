@@ -12,7 +12,7 @@ from cv_bridge import CvBridge, CvBridgeError
 from yolox.exp import get_exp
 
 from clf_object_recognition_yolox import recognizer, util
-from clf_object_recognition_msgs.srv import Detect2D
+from clf_object_recognition_msgs.srv import Detect2D, Detect2DImage
 
 from sensor_msgs.msg import Image as ImgMsg
 
@@ -47,6 +47,7 @@ class YOLOXNode():
 		self._bridge = CvBridge()
 
 		self.srv = rospy.Service('~recognize', Detect2D, self._recognize_srv_callback)
+		self.srv = rospy.Service('~recognize_from_image', Detect2DImage, self._recognize_srv_img_callback)
 		self.result_pub = rospy.Publisher('~last_detection', ImgMsg, queue_size=1)
 
 		self.reconf_srv = Server(YoloxConfig, self._reconfigure)
@@ -85,6 +86,34 @@ class YOLOXNode():
 		h.stamp = rospy.Time.now()
 
 		result = util.tensorsToVisionMessage(cls, scores, bboxes, img_msg.header, thresh = self.exp.test_conf)
+
+		if self.config.save_image or self.config.publish_detections:
+			from yolox.utils import vis
+			result_image = vis(img, bboxes, scores, cls, self.exp.test_conf, self.classes)
+			if self.config.save_image:
+				cv2.imwrite("/tmp/yolox_output.jpg", result_image)
+			if self.config.publish_detections:
+				msg = self._bridge.cv2_to_imgmsg(result_image)
+				self.result_pub.publish(msg)
+
+		rospy.loginfo(logger_name="YOLOXNode", msg=f"detected {len(result)} objects")
+		return {"detections": result}
+
+	def _recognize_srv_img_callback(self, req):
+
+		try:
+			img = self._bridge.imgmsg_to_cv2(req.image, "bgr8")
+		except CvBridgeError as e:
+			error_msg = "Could not convert to opencv image: %s" % e
+			rospy.logerr(logger_name="YOLOXNode", msg=error_msg)
+			raise Exception(error_msg)
+
+		(cls, scores, bboxes) = self.recognizer.inference(img)
+
+		h = std_msgs.msg.Header()
+		h.stamp = rospy.Time.now()
+
+		result = util.tensorsToVisionMessage(cls, scores, bboxes, req.image.header, thresh = self.exp.test_conf)
 
 		if self.config.save_image or self.config.publish_detections:
 			from yolox.utils import vis

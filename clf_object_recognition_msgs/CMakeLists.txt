@@ -14,6 +14,7 @@ add_message_files(DIRECTORY msg FILES
 add_service_files(DIRECTORY srv FILES
     Classify2D.srv
     Detect2D.srv
+    Detect2DImage.srv
     Detect3D.srv
 )
 
