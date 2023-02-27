@@ -47,7 +47,7 @@ int main(int argc, char** argv)
   ros::init(argc, argv, "point_cloud_registration_service");
   ros::NodeHandle nh;
 
-  ros::ServiceServer service = nh.advertiseService("register_point_clouds", registerPointClouds);
+  ros::ServiceServer service = nh.advertiseService("register_point_cloud", registerPointClouds);
   ROS_INFO("Ready to register point clouds.");
   ros::spin();
 

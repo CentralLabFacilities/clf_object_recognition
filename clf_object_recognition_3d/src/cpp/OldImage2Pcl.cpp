@@ -190,6 +190,8 @@ private:
                 // Add detection to response message
                 res.detections.push_back(detection);
             }
+        }
+    }
 
     Image2Pcl::~Image2Pcl() {
         delete ts_;

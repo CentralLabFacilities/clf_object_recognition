@@ -8,3 +8,7 @@
 
 Provides a Detect3D service endpoint for Detect2D services. Does a simple estimate for the 3d pose.
 Use in cases where you only need the detected classes but require a Detect3D service provider.
+
+# Rename?
+
+Consider renaming this package to object_pose_estimation.

@@ -1,0 +1,5 @@
+sensor_msgs/PointCloud2 pcl
+string class_name
+float32 score
+---
+object_msgs/Detection3D detection

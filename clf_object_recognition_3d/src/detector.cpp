@@ -1,5 +1,4 @@
 #include "clf_object_recognition_3d/detector.h"
-
 #include <clf_object_recognition_msgs/Detect2D.h>
 
 Detector::Detector(ros::NodeHandle nh) {
@@ -29,14 +28,14 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
         return false;
     }*/
 
-    for(auto& detection : param.response.detections) {
+    //for(auto& detection : param.response.detections) {
+	// do something with detections
+    //}
 
-    }
-
-    if(config.publish_detections) ROS_INFO_STREAM_NAMED("detector", "publishing detections ");
+    //if(config.publish_detections) ROS_INFO_STREAM_NAMED("detector", "publishing detections ");
 
 
-    ROS_INFO_STREAM_NAMED("detector", "got detections " << param.response);
+    // ROS_INFO_STREAM_NAMED("detector", "got detections " << param.response);
 
     return true;
 
