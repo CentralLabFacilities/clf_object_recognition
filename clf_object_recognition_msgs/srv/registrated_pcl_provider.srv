@@ -1,0 +1,7 @@
+# Service request message
+sensor_msgs/PointCloud2 raw_cloud     # Raw point cloud to register (ROS PointCloud2 message)
+sensor_msgs/PointCloud2 ref_cloud     # Reference point cloud for registration (ROS PointCloud2 message)
+
+---
+# Service response message
+sensor_msgs/PointCloud2 registered_cloud  # Clean, registered point cloud (ROS PointCloud2 message)

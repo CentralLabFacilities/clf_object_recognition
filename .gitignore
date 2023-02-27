@@ -13,3 +13,4 @@ build
 *.pyc.Rproj.user
 
 .DS_Store
+.vscode

@@ -1,7 +1,7 @@
 #include <ros/ros.h>
 #include <boost/filesystem.hpp>
 #include <sensor_msgs/PointCloud2.h>
-#include "your_package_name/convert_mesh_to_pcl.h" // replace with your actual package and header name
+// #include "your_package_name/convert_mesh_to_pcl.h" // replace with your actual package and header name
 
 int main(int argc, char** argv)
 {
