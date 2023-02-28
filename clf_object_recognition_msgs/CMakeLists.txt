@@ -16,6 +16,11 @@ add_service_files(DIRECTORY srv FILES
     Detect2D.srv
     Detect2DImage.srv
     Detect3D.srv
+    
+    Img2RawPointCloudProvider.srv
+    LoadPointCloudProvider.srv
+    RegistratedPclProvider.srv
+    PclToDetectionProvider.srv
 )
 
 #add_action_files(DIRECTORY action FILES

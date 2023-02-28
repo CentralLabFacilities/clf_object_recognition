@@ -6,7 +6,8 @@
 #include <pcl/registration/icp.h>
 #include <pcl/filters/voxel_grid.h>
 #include <sensor_msgs/PointCloud2.h>
-#include <your_package_name/RegisterPointClouds.h>
+// #include <your_package_name/RegisterPointClouds.h>
+#include <clf_object_recognition_msgs/RegistratedPclProvider.h>
 
 bool registerPointClouds(your_package_name::RegisterPointClouds::Request& req,
                          your_package_name::RegisterPointClouds::Response& res)

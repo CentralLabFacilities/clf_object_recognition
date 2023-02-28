@@ -9,6 +9,8 @@
 #include <pcl/point_types.h>
 #include <opencv2/opencv.hpp>
 
+#include <clf_object_recognition_msgs/Img2RawPointCloudProvider.h>
+
 /*
 Service Name:
     pointcloud_from_depth_image

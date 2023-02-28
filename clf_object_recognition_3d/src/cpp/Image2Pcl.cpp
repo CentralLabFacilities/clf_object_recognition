@@ -51,6 +51,8 @@ public:
 private:
     ros::NodeHandle nh_; ///< Node handle for this class
     bool publish_raw_pcl_; ///< Whether or not to publish the raw point cloud
+    bool publish_clean_pcl_;
+    bool publish_detections_;
     ros::ServiceClient srv_detect_; ///< Service client for 2D object detection
     ros::ServiceServer service_; ///< Service server for publishing point clouds
     ros::Publisher raw_pcl_pub_; ///< Publisher for the raw point cloud

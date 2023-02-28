@@ -2,7 +2,8 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <sensor_msgs/PointCloud2.h>
-#include <your_package/LoadPointCloud.h>
+// #include <your_package/LoadPointCloud.h>
+#include <clf_object_recognition_msgs/LoadPointCloudProvider.h>
 
 
 bool loadPointCloud(your_package::LoadPointCloud::Request& req,
