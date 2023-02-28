@@ -6,13 +6,13 @@ import rostopic
 import rosservice
 
 #from clf_object_recognition_3d import simple
-from clf_object_recognition_3d import image_2_pcl
+from clf_object_recognition_3d import Image2Pcl
 
 if __name__ == '__main__':
     rospy.init_node('pcl_registration')
-    publish_detections = rospy.get_param('~publish_detections', True)
     publish_raw_pcl = rospy.get_param('~publish_raw_pcl', True)
     publish_clean_pcl = rospy.get_param('~publish_clean_pcl', True)
+    publish_detections = rospy.get_param('~publish_detections', True)
     
     detect_2d_topic = rospy.get_param('~detect_2d_topic', "/detect")
 
@@ -21,6 +21,6 @@ if __name__ == '__main__':
     rospy.logwarn(logger_name="pcl_registration", msg=("not " if not publish_clean_pcl else "")+"publishing reference object pcl of detections")
     
     #simple.SimpleDetect(detect_2d_topic, publish_detections)
-    image_2_pcl.Image2Pcl(detect_2d_topic, publish_detections=publish_detections, publish_raw_pcl=publish_raw_pcl, publish_clean_pcl=publish_clean_pcl)
+    Image2Pcl.Image2Pcl(detect_2d_topic, publish_detections=publish_detections, publish_raw_pcl=publish_raw_pcl, publish_clean_pcl=publish_clean_pcl)
     
     rospy.spin()

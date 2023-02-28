@@ -13,6 +13,6 @@ float32 certainty  # Object detection score
 bool success  # True if processing was successful
 string class_name  # Object class name
 float32 certainty  # Object detection certainty score
-object_detection/BoundingBox2D bbox  # 2D bounding box coordinates
+vision_msgs/BoundingBox2D bbox  # 2D bounding box coordinates
 sensor_msgs/PointCloud2 pointcloud  # Output point cloud in ROS message format
 
