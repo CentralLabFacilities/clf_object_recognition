@@ -14,5 +14,7 @@
   <depend>clf_object_recognition_msgs</depend>
   <depend>clf_object_recognition_cfg</depend>
   <depend>vision_msgs</depend>
+  <depend> pcl </depend>
+  <depend> pcl_ros </depend>
 
 </package>
