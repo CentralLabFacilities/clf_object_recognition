@@ -11,7 +11,9 @@ find_package(catkin REQUIRED COMPONENTS
   clf_object_recognition_cfg
   dynamic_reconfigure
   pcl_conversions
+  pcl_ros
   cv_bridge
+  geometry_msgs
 )
 include_directories(${catkin_INCLUDE_DIRS})
 find_package(PCL REQUIRED)
@@ -26,10 +28,10 @@ add_executable(
   3d_detector 
   src/node.cpp 
   src/detector.cpp 
-  src/clf_object_recognition_3d/img_2_raw_point_cloud_provider.cpp 
-  src/clf_object_recognition_3d/load_point_cloud_provider.cpp 
-  src/clf_object_recognition_3d/registrated_pcl_provider.cpp 
-  src/clf_object_recognition_3d/pcl_to_detection_provider.cpp
+  src/img_2_raw_point_cloud_provider.cpp 
+  src/load_point_cloud_provider.cpp 
+  src/registrated_pcl_provider.cpp 
+  src/pcl_to_detection_provider.cpp
   src/Image2Pcl.cpp
   )
 target_link_libraries(3d_detector ${catkin_LIBRARIES})
