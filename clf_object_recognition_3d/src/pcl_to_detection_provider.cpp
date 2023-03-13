@@ -24,21 +24,31 @@ vision_msgs::Detection3D pcl_to_detection(const sensor_msgs::PointCloud2& pcl_ms
     vision_msgs::Detection3D detection;
 
     // convert pcl_msg to a pcl::PointCloud<pcl::PointXYZ> object
-    //pcl::PCLPointCloud2 pcl_pc2;
-    //pcl_conversions::toPCL(pcl_msg, pcl_pc2);
-    //pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
-    //pcl::fromPCLPointCloud2(pcl_pc2, *cloud);
-    // pcl::PointCloud<pcl::PointXYZ> cloud;
-    // pcl::fromROSMsg(pcl_msg, cloud);
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::fromROSMsg(pcl_msg, *cloud);
 
+    // calculate centroid and covariance
+    Eigen::Vector4f centroid;
+    Eigen::Matrix3f covariance_matrix;
+    pcl::compute3DCentroid(*cloud, centroid);
+    pcl::computeCovarianceMatrixNormalized(*cloud, centroid, covariance_matrix);
+
+    // convert the centroid and covariance to geometry_msgs::PoseWithCovariance message
+    geometry_msgs::PoseWithCovariance pose_with_cov;
+    pose_with_cov.pose.position.x = centroid[0];
+    pose_with_cov.pose.position.y = centroid[1];
+    pose_with_cov.pose.position.z = centroid[2];
+    // convert the covariance matrix to a 1D array (row-major order)
+    for (int i = 0; i < 9; ++i) {
+        pose_with_cov.covariance[i] = covariance_matrix.data()[i];
+    }
 
     // set the results field based on the object classification
     // vision_msgs::ObjectHypothesis hypothesis;
     // Create a vision_msgs::ObjectHypothesisWithPose message
     vision_msgs::ObjectHypothesisWithPose hypothesis;
     // hypothesis.class_id = class_name;
+    hypothesis.pose = pose_with_cov;
     // hypothesis.id = id; // TODO This has to be populated with the int class id
     hypothesis.score = score;
     detection.results.push_back(hypothesis);
@@ -58,14 +68,6 @@ vision_msgs::Detection3D pcl_to_detection(const sensor_msgs::PointCloud2& pcl_ms
     pose.position.z = (min_pt[2] + max_pt[2]) / 2.0;  // z position of the center of the bounding box
     pose.orientation.w = 1.0;  // quaternion representing the orientation of the object
     detection.bbox.center = pose;
-
-    // set the pose field based on the point cloud
-    Eigen::Vector4f centroid;
-    pcl::compute3DCentroid(*cloud, centroid);
-    geometry_msgs::PoseStamped pose_stamped;
-    pose_stamped.header.frame_id = pcl_msg.header.frame_id;
-    pose_stamped.pose = pose;
-    detection.pose = pose_stamped;
 
     return detection;
 }
