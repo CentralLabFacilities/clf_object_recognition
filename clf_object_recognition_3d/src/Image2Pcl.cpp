@@ -9,10 +9,11 @@
 #include "clf_object_recognition_msgs/Detect3D.h"
 #include "clf_object_recognition_msgs/Detect2DImage.h"
 
-#include "include/clf_object_recognition_3d/img_2_raw_point_cloud_provider.h"
-#include "include/clf_object_recognition_3d/load_point_cloud_provider.h"
-#include "include/clf_object_recognition_3d/registrated_pcl_provider.h"
-#include "include/clf_object_recognition_3d/pcl_to_detection_provider.h"
+
+#include "img_2_raw_point_cloud_provider.h"
+#include "load_point_cloud_provider.h"
+#include "registrated_pcl_provider.h"
+#include "pcl_to_detection_provider.h"
 
 
 /**
@@ -62,6 +63,8 @@ private:
     ros::ServiceClient srv_detect_; ///< Service client for 2D object detection
     ros::ServiceServer service_; ///< Service server for publishing point clouds
     ros::Publisher raw_pcl_pub_; ///< Publisher for the raw point cloud
+    ros::Publisher pcl_pub_; ///< Publisher for the registered point cloud
+    ros::Publisher detection_pub_; ///< Publisher for the detection3D
     message_filters::Subscriber<sensor_msgs::Image> image_sub_; ///< Subscriber for RGB images
     message_filters::Subscriber<sensor_msgs::Image> depth_sub_; ///< Subscriber for depth images
     message_filters::Subscriber<sensor_msgs::CameraInfo> info_sub_; ///< Subscriber for camera information

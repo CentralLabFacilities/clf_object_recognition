@@ -1,5 +1,5 @@
-#include "clf_object_recognition_3d/detector.h"
-#include <clf_object_recognition_msgs/Detect2D.h>
+#include "detector.h"
+#include "clf_object_recognition_msgs/Detect2D.h"
 
 Detector::Detector(ros::NodeHandle nh) {
     srv_detect2d = nh.serviceClient<clf_object_recognition_msgs::Detect2D>("/yolox/recognize");

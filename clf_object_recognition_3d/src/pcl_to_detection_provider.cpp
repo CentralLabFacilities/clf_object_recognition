@@ -11,23 +11,41 @@
 #include <vision_msgs/ObjectHypothesis.h>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
+#include <pcl/common/common.h>
+#include <pcl/common/centroid.h>
 
-vision_msgs::Detection3D pcl_to_detection(const sensor_msgs::PointCloud2& pcl_msg, const std::string& class_name, const float& score)
+
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl_ros/point_cloud.h>
+
+
+vision_msgs::Detection3D pcl_to_detection(const sensor_msgs::PointCloud2& pcl_msg, const float &score) // const std::string& class_name
 {
     vision_msgs::Detection3D detection;
+
     // convert pcl_msg to a pcl::PointCloud<pcl::PointXYZ> object
-    pcl::PointCloud<pcl::PointXYZ> cloud;
-    pcl::fromROSMsg(pcl_msg, cloud);
+    //pcl::PCLPointCloud2 pcl_pc2;
+    //pcl_conversions::toPCL(pcl_msg, pcl_pc2);
+    //pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    //pcl::fromPCLPointCloud2(pcl_pc2, *cloud);
+    // pcl::PointCloud<pcl::PointXYZ> cloud;
+    // pcl::fromROSMsg(pcl_msg, cloud);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::fromROSMsg(pcl_msg, *cloud);
+
 
     // set the results field based on the object classification
-    vision_msgs::ObjectHypothesis hypothesis;
-    hypothesis.class_id = class_name;
+    // vision_msgs::ObjectHypothesis hypothesis;
+    // Create a vision_msgs::ObjectHypothesisWithPose message
+    vision_msgs::ObjectHypothesisWithPose hypothesis;
+    // hypothesis.class_id = class_name;
+    // hypothesis.id = id; // TODO This has to be populated with the int class id
     hypothesis.score = score;
     detection.results.push_back(hypothesis);
 
     // set the bounding box field based on the point cloud
     Eigen::Vector4f min_pt, max_pt;
-    pcl::getMinMax3D(cloud, min_pt, max_pt);
+    pcl::getMinMax3D(*cloud, min_pt, max_pt);
     geometry_msgs::Vector3 size;
     size.x = max_pt[0] - min_pt[0];  // size of the bounding box in x direction
     size.y = max_pt[1] - min_pt[1];  // size of the bounding box in y direction
@@ -43,7 +61,7 @@ vision_msgs::Detection3D pcl_to_detection(const sensor_msgs::PointCloud2& pcl_ms
 
     // set the pose field based on the point cloud
     Eigen::Vector4f centroid;
-    pcl::compute3DCentroid(cloud, centroid);
+    pcl::compute3DCentroid(*cloud, centroid);
     geometry_msgs::PoseStamped pose_stamped;
     pose_stamped.header.frame_id = pcl_msg.header.frame_id;
     pose_stamped.pose = pose;
@@ -58,8 +76,9 @@ vision_msgs::Detection3D pcl_to_detection(const sensor_msgs::PointCloud2& pcl_ms
 bool detection_service(vision_msgs::DetectObject::Request& req,
                        vision_msgs::DetectObject::Response& res)
 {
-    vision_msgs::Detection3D detection = pcl_to_detection(req.pcl, req.class_name, req.score);
+    vision_msgs::Detection3D detection = pcl_to_detection(req.pcl, req.score);
     res.detection = detection;
+    res.class_name = req.class_name
     return true;
 }
 
