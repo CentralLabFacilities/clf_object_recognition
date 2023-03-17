@@ -12,14 +12,14 @@
 #include <vision_msgs/Detection3D.h>
 #include <vision_msgs/ObjectHypothesis.h>
 
-#include "clf_object_recognition_msgs/PclToDetectionProvider.h"
+#include "clf_object_recognition_msgs/PclToDetectionMsg.h"
 
 vision_msgs::Detection3D pcl_to_detection(const sensor_msgs::PointCloud2& pcl_msg, 
                                           const std::string& class_name, const float& score);
 
 
-bool detection_service(vision_msgs::DetectObject::Request& req,
-                       vision_msgs::DetectObject::Response& res);
+bool detection_service(clf_object_recognition_msgs::PclToDetectionMsg::Request& req,
+                       clf_object_recognition_msgs::PclToDetectionMsg::Response& res);
 
 int main(int argc, char** argv);
 

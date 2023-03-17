@@ -4,14 +4,12 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <pcl_conversions/pcl_conversions.h>
 
-#include "clf_object_recognition_msgs/LoadPointCloudProvider.h"
-// #include <your_package/LoadPointCloud.h>
-//#include <clf_object_recognition_msgs/LoadPointCloudProvider.h>
+#include "clf_object_recognition_msgs/LoadPointCloudMsg.h"
 #include "load_point_cloud_provider.h"
 
 
-bool loadPointCloud(clf_object_recognition_msgs::LoadPointCloudProvider::Request& req,
-                    clf_object_recognition_msgs::LoadPointCloudProvider::Response& res)
+bool loadPointCloud(clf_object_recognition_msgs::LoadPointCloudMsg::Request& req,
+                    clf_object_recognition_msgs::LoadPointCloudMsg::Response& res)
 {
     // Load the PCD file from disk
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);

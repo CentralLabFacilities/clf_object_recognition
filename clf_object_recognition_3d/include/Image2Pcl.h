@@ -5,13 +5,14 @@
 #include <pcl_ros/point_cloud.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/statistical_outlier_removal.h>
+
 #include "clf_object_recognition_msgs/Detect3D.h"
 #include "clf_object_recognition_msgs/Detect2DImage.h"
 
-#include "include/clf_object_recognition_3d/img_2_raw_point_cloud_provider.h"
-#include "include/clf_object_recognition_3d/load_point_cloud_provider.h"
-#include "include/clf_object_recognition_3d/registrated_pcl_provider.h"
-#include "include/clf_object_recognition_3d/pcl_to_detection_provider.h"
+// #include "include/clf_object_recognition_3d/img_2_raw_point_cloud_provider.h"
+// #include "include/clf_object_recognition_3d/load_point_cloud_provider.h"
+// #include "include/clf_object_recognition_3d/registrated_pcl_provider.h"
+// #include "include/clf_object_recognition_3d/pcl_to_detection_provider.h"
 
 
 /**

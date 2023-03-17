@@ -11,7 +11,7 @@
 #include <pcl/point_types.h>
 #include <opencv2/opencv.hpp>
 
-// #include "clf_object_recognition_msgs/Img2RawPointCloudProvider.h"
+#include "clf_object_recognition_msgs/Img2RawPointCloudMsg.h"
 
 /*
 Service Name:
@@ -48,8 +48,8 @@ Outputs:
 
 
 bool pointcloud_from_depth_image_service_callback(
-        sensor_msgs::PointCloud2::Request& req,
-        sensor_msgs::PointCloud2::Response& res);
+        clf_object_recognition_msgs::Img2RawPointCloudMsg::Request& req,
+        clf_object_recognition_msgs::Img2RawPointCloudMsg::Response& res);
 
 int main(int argc, char** argv);
 

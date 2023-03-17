@@ -9,12 +9,14 @@
 #include <pcl/filters/voxel_grid.h>
 #include <sensor_msgs/PointCloud2.h>
 
+#include "clf_object_recognition_msgs/RegistratedPclMsg.h"
+
 //bool registerPointClouds(your_package_name::RegisterPointClouds::Request& req,
 //                         your_package_name::RegisterPointClouds::Response& res);
 
 
-bool registerPointClouds(sensor_msgs::PointCloud2::Request& req,
-                         sensor_msgs::PointCloud2::Response& res)                         
+bool registerPointClouds(clf_object_recognition_msgs::RegistratedPclMsg::Request& req,
+                         clf_object_recognition_msgs::RegistratedPclMsg::Response& res);                     
 
 int main(int argc, char** argv);
 

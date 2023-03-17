@@ -8,9 +8,10 @@
 #include <sensor_msgs/PointCloud2.h>
 
 #include "registrated_pcl_provider.h"
+#include "clf_object_recognition_msgs/RegistratedPclMsg.h"
 
-bool registerPointClouds(sensor_msgs::PointCloud2::Request& req,
-                         sensor_msgs::PointCloud2::Response& res)
+bool registerPointClouds(clf_object_recognition_msgs::RegistratedPclMsg::Request& req,
+                         clf_object_recognition_msgs::RegistratedPclMsg::Response& res)
 {
   // Load the raw point cloud
   pcl::PointCloud<pcl::PointXYZ>::Ptr raw_cloud(new pcl::PointCloud<pcl::PointXYZ>);
@@ -18,7 +19,7 @@ bool registerPointClouds(sensor_msgs::PointCloud2::Request& req,
 
   // Load the reference point cloud
   pcl::PointCloud<pcl::PointXYZ>::Ptr ref_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-  pcl_conversions::fromROSMsg(req.ref_cloud, *ref_cloud);
+  pcl::fromROSMsg(req.ref_cloud, *ref_cloud);
 
   // Apply voxel grid filter to the reference point cloud
   pcl::VoxelGrid<pcl::PointXYZ> voxel_grid;

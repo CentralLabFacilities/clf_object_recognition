@@ -6,9 +6,13 @@
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/statistical_outlier_removal.h>
 
+
+#include <message_filters/subscriber.h>
+#include <message_filters/time_synchronizer.h>
+#include <tf2_ros/transform_listener.h>
+
 #include "clf_object_recognition_msgs/Detect3D.h"
 #include "clf_object_recognition_msgs/Detect2DImage.h"
-
 
 #include "img_2_raw_point_cloud_provider.h"
 #include "load_point_cloud_provider.h"
