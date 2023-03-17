@@ -14,10 +14,10 @@
 #include <pcl/common/common.h>
 #include <pcl/common/centroid.h>
 
-
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl_ros/point_cloud.h>
 
+#include "clf_object_recognition_msgs/PclToDetectionMsg.h"
 
 vision_msgs::Detection3D pcl_to_detection(const sensor_msgs::PointCloud2& pcl_msg, const float &score) // const std::string& class_name
 {
@@ -75,12 +75,13 @@ vision_msgs::Detection3D pcl_to_detection(const sensor_msgs::PointCloud2& pcl_ms
 // bool detection_service(vision_msgs::DetectObject::Request& req,
 //                       vision_msgs::DetectObject::Response& res)
 
-bool detection_service(vision_msgs::DetectObject::Request& req,
-                       vision_msgs::DetectObject::Response& res)
+bool detection_service(clf_object_recognition_msgs::PclToDetectionMsg::Request& req,
+                       clf_object_recognition_msgs::PclToDetectionMsg::Response& res)
 {
     vision_msgs::Detection3D detection = pcl_to_detection(req.pcl, req.score);
     res.detection = detection;
-    res.class_name = req.class_name
+    res.class_name = req.class_name;
+    
     return true;
 }
 

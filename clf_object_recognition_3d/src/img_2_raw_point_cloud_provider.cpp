@@ -9,7 +9,10 @@
 #include <pcl/point_types.h>
 #include <opencv2/opencv.hpp>
 
-// #include <clf_object_recognition_msgs/Img2RawPointCloudProvider.h>
+#include <tf2_ros/transform_listener.h>
+#include <geometry_msgs/TransformStamped.h>
+
+#include "clf_object_recognition_msgs/Img2RawPointCloudMsg.h"
 
 /*
 Service Name:
@@ -46,8 +49,8 @@ Outputs:
 
 
 bool pointcloud_from_depth_image_service_callback(
-        sensor_msgs::PointCloud2::Request& req,
-        sensor_msgs::PointCloud2::Response& res) {
+        clf_object_recognition_msgs::Img2RawPointCloudMsg::Request& req,
+        clf_object_recognition_msgs::Img2RawPointCloudMsg::Response& res) {
 
     // Extract inputs from request
     cv_bridge::CvImagePtr img = cv_bridge::toCvCopy(req.image, sensor_msgs::image_encodings::BGR8);
@@ -57,16 +60,16 @@ bool pointcloud_from_depth_image_service_callback(
     float certainty = req.certainty;
 
     // Check if bounding box is specified
-    bool is_bbox_specified = (req.bounding_box.xmin != 0 || req.bounding_box.ymin != 0 ||
-                              req.bounding_box.xmax != 0 || req.bounding_box.ymax != 0);
+    bool is_bbox_specified = (req.bbox.xmin != 0 || req.bbox.ymin != 0 ||
+                              req.bbox.xmax != 0 || req.bbox.ymax != 0);
 
     // Extract bounding box coordinates if specified
     int xmin = 0, ymin = 0, xmax = img->image.cols, ymax = img->image.rows;
     if (is_bbox_specified) {
-        int xmin = req.bounding_box.xmin;
-        int ymin = req.bounding_box.ymin;
-        int xmax = req.bounding_box.xmax;
-        int ymax = req.bounding_box.ymax;
+        int xmin = req.bbox.xmin;
+        int ymin = req.bbox.ymin;
+        int xmax = req.bbox.xmax;
+        int ymax = req.bbox.ymax;
     }
 
     // Extract bounding box coordinates
