@@ -12,6 +12,8 @@
 #include <tf2_ros/transform_listener.h>
 #include <geometry_msgs/TransformStamped.h>
 
+#include <tf/transform_listener.h>
+
 #include "clf_object_recognition_msgs/Img2RawPointCloudMsg.h"
 
 /*
@@ -47,6 +49,49 @@ Outputs:
 
 */
 
+cv::Point3f depthTo3D(cv::Point2i pixel, float depth_val, sensor_msgs::CameraInfoPtr info_msg)
+{
+    // Get the intrinsics matrix
+    cv::Mat K = cv::Mat::zeros(3, 3, CV_64F);
+    K.at<double>(0, 0) = info_msg->K[0];
+    K.at<double>(0, 2) = info_msg->K[2];
+    K.at<double>(1, 1) = info_msg->K[4];
+    K.at<double>(1, 2) = info_msg->K[5];
+    K.at<double>(2, 2) = 1.0;
+
+    // Convert pixel to camera coordinates
+    cv::Mat uv = cv::Mat::zeros(3, 1, CV_64F);
+    uv.at<double>(0, 0) = pixel.x;
+    uv.at<double>(1, 0) = pixel.y;
+    uv.at<double>(2, 0) = 1.0;
+    cv::Mat Kinv = K.inv();
+    cv::Mat p_cam = Kinv * uv;
+
+    // Calculate 3D point in camera coordinates
+    cv::Point3f pt_cam;
+    pt_cam.x = p_cam.at<double>(0, 0) * depth_val;
+    pt_cam.y = p_cam.at<double>(1, 0) * depth_val;
+    pt_cam.z = depth_val;
+
+    // Convert to world coordinates
+    cv::Mat R = cv::Mat::zeros(3, 3, CV_64F);
+    cv::Mat t = cv::Mat::zeros(3, 1, CV_64F);
+    for (int i = 0; i < 3; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            R.at<double>(i, j) = info_msg->R[i * 3 + j];
+        }
+        t.at<double>(i, 0) = info_msg->P[i * 4 + 3];
+    }
+    cv::Mat Rinv = R.inv();
+    cv::Mat p_world = Rinv * (cv::Mat)pt_cam + t;
+    cv::Point3f pt_world(p_world.at<double>(0, 0), p_world.at<double>(1, 0), p_world.at<double>(2, 0));
+
+    return pt_world;
+}
+
+
 
 bool pointcloud_from_depth_image_service_callback(
         clf_object_recognition_msgs::Img2RawPointCloudMsg::Request& req,
@@ -60,23 +105,28 @@ bool pointcloud_from_depth_image_service_callback(
     float certainty = req.certainty;
 
     // Check if bounding box is specified
-    bool is_bbox_specified = (req.bbox.xmin != 0 || req.bbox.ymin != 0 ||
-                              req.bbox.xmax != 0 || req.bbox.ymax != 0);
+    //bool is_bbox_specified = (req.bbox.xmin != 0 || req.bbox.ymin != 0 ||
+    //                          req.bbox.xmax != 0 || req.bbox.ymax != 0);
+    bool is_bbox_specified = (req.bbox.center.x != 0 || req.bbox.center.y != 0 || req.bbox.size_x != 0 || req.bbox.size_y != 0);
 
     // Extract bounding box coordinates if specified
     int xmin = 0, ymin = 0, xmax = img->image.cols, ymax = img->image.rows;
     if (is_bbox_specified) {
-        int xmin = req.bbox.xmin;
-        int ymin = req.bbox.ymin;
-        int xmax = req.bbox.xmax;
-        int ymax = req.bbox.ymax;
+        int xmin = req.bbox.center.x - req.bbox.size_x / 2;
+        int xmax = req.bbox.center.x + req.bbox.size_x / 2;
+        int ymin = req.bbox.center.y - req.bbox.size_y / 2;
+        int ymax = req.bbox.center.y + req.bbox.size_y / 2;
     }
 
     // Extract bounding box coordinates
-    float xc = (xmin + xmax) / 2.0;
-    float yc = (ymin + ymax) / 2.0;
-    float width = xmax - xmin;
-    float height = ymax - ymin;
+    //float xc = (xmin + xmax) / 2.0;
+    //float yc = (ymin + ymax) / 2.0;
+    //float width = xmax - xmin;
+    //float height = ymax - ymin;
+    float xc = req.bbox.center.x;
+    float yc = req.bbox.center.y;
+    float width = req.bbox.size_x;
+    float height = req.bbox.size_y;
 
     // Extract camera transformation from the transform tree
     tf2_ros::Buffer tf_buffer;
@@ -108,11 +158,14 @@ bool pointcloud_from_depth_image_service_callback(
     pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointXYZ point;
     point.z = 0;
-    for (int r = 0; r < depth_crop.rows; r++) {
-        for (int c = 0; c < depth_crop.cols; c++) {
-            ushort depth_val = depth_crop.at<ushort>(r, c);
+    for (int r = 0; r < depth_mat.rows; r++) {
+        for (int c = 0; c < depth_mat.cols; c++) {
+            ushort depth_val = depth_mat.at<ushort>(r, c);
             if (depth_val != 0) {
-                cv::Point3f pt = depthTo3D(cv::Point2i(c + xmin, r + ymin), depth_val, info_msg);
+                boost::shared_ptr<sensor_msgs::CameraInfo> info_msg_ptr = boost::make_shared<sensor_msgs::CameraInfo>(info_msg);
+                cv::Point3f pt = depthTo3D(cv::Point2i(c + xmin, r + ymin), depth_val, info_msg_ptr);
+
+                //cv::Point3f pt = depthTo3D(cv::Point2i(c + xmin, r + ymin), depth_val, info_msg);
                 point.x = pt.x;
                 point.y = pt.y;
                 pcl_cloud->points.push_back(point);
@@ -152,14 +205,15 @@ bool pointcloud_from_depth_image_service_callback(
     pcl::copyPointCloud(*pcl_colored_cloud, *pcl_outliers_removed_cloud);
 
     // Create the response message
-    object_detection::GetPointCloudResponse response;
+    clf_object_recognition_msgs::Img2RawPointCloudMsg::Response response;
     response.success = true;
     response.class_name = class_name;
     response.certainty = certainty;
-    response.bbox.xmin = xmin;
-    response.bbox.ymin = ymin;
-    response.bbox.xmax = xmax;
-    response.bbox.ymax = ymax;
+    //response.bbox.xmin = xmin;
+    //response.bbox.ymin = ymin;
+    //response.bbox.xmax = xmax;
+    //response.bbox.ymax = ymax;
+    response.bbox = req.bbox;
 
     // Convert PCL point cloud to ROS point cloud message
     sensor_msgs::PointCloud2 pcl_output;
