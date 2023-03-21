@@ -1,0 +1,35 @@
+Errors     << clf_object_recognition_3d:make /home/lvonseelstrang/workspaces/3d_pose/logs/clf_object_recognition_3d/build.make.001.log      
+In file included from /opt/ros/noetic/include/ros/serialization.h:37,
+                 from /opt/ros/noetic/include/ros/publisher.h:34,
+                 from /opt/ros/noetic/include/ros/node_handle.h:32,
+                 from /opt/ros/noetic/include/ros/ros.h:45,
+                 from /home/lvonseelstrang/workspaces/3d_pose/src/clf_object_recognition/clf_object_recognition_3d/src/Image2Pcl.cpp:1:
+/opt/ros/noetic/include/ros/message_traits.h: In instantiation of ‘static const char* ros::message_traits::MD5Sum<M>::value() [with M = clf_object_recognition_msgs::Detect3D]’:
+/opt/ros/noetic/include/ros/message_traits.h:227:102:   required from ‘const char* ros::message_traits::md5sum() [with M = clf_object_recognition_msgs::Detect3D]’
+/opt/ros/noetic/include/ros/advertise_options.h:92:39:   required from ‘void ros::AdvertiseOptions::init(const string&, uint32_t, const SubscriberStatusCallback&, const SubscriberStatusCallback&) [with M = clf_object_recognition_msgs::Detect3D; std::string = std::__cxx11::basic_string<char>; uint32_t = unsigned int; ros::SubscriberStatusCallback = boost::function<void(const ros::SingleSubscriberPublisher&)>]’
+/opt/ros/noetic/include/ros/node_handle.h:252:7:   required from ‘ros::Publisher ros::NodeHandle::advertise(const string&, uint32_t, bool) [with M = clf_object_recognition_msgs::Detect3D; std::string = std::__cxx11::basic_string<char>; uint32_t = unsigned int]’
+/home/lvonseelstrang/workspaces/3d_pose/src/clf_object_recognition/clf_object_recognition_3d/src/Image2Pcl.cpp:60:102:   required from here
+/opt/ros/noetic/include/ros/message_traits.h:120:28: error: ‘__s_getMD5Sum’ is not a member of ‘clf_object_recognition_msgs::Detect3D’
+  120 |     return M::__s_getMD5Sum().c_str();
+      |            ~~~~~~~~~~~~~~~~^~
+/opt/ros/noetic/include/ros/message_traits.h: In instantiation of ‘static const char* ros::message_traits::DataType<M>::value() [with M = clf_object_recognition_msgs::Detect3D]’:
+/opt/ros/noetic/include/ros/message_traits.h:236:104:   required from ‘const char* ros::message_traits::datatype() [with M = clf_object_recognition_msgs::Detect3D]’
+/opt/ros/noetic/include/ros/advertise_options.h:93:43:   required from ‘void ros::AdvertiseOptions::init(const string&, uint32_t, const SubscriberStatusCallback&, const SubscriberStatusCallback&) [with M = clf_object_recognition_msgs::Detect3D; std::string = std::__cxx11::basic_string<char>; uint32_t = unsigned int; ros::SubscriberStatusCallback = boost::function<void(const ros::SingleSubscriberPublisher&)>]’
+/opt/ros/noetic/include/ros/node_handle.h:252:7:   required from ‘ros::Publisher ros::NodeHandle::advertise(const string&, uint32_t, bool) [with M = clf_object_recognition_msgs::Detect3D; std::string = std::__cxx11::basic_string<char>; uint32_t = unsigned int]’
+/home/lvonseelstrang/workspaces/3d_pose/src/clf_object_recognition/clf_object_recognition_3d/src/Image2Pcl.cpp:60:102:   required from here
+/opt/ros/noetic/include/ros/message_traits.h:137:30: error: ‘__s_getDataType’ is not a member of ‘clf_object_recognition_msgs::Detect3D’
+  137 |     return M::__s_getDataType().c_str();
+      |            ~~~~~~~~~~~~~~~~~~^~
+/opt/ros/noetic/include/ros/message_traits.h: In instantiation of ‘static const char* ros::message_traits::Definition<M>::value() [with M = clf_object_recognition_msgs::Detect3D]’:
+/opt/ros/noetic/include/ros/message_traits.h:245:106:   required from ‘const char* ros::message_traits::definition() [with M = clf_object_recognition_msgs::Detect3D]’
+/opt/ros/noetic/include/ros/advertise_options.h:94:55:   required from ‘void ros::AdvertiseOptions::init(const string&, uint32_t, const SubscriberStatusCallback&, const SubscriberStatusCallback&) [with M = clf_object_recognition_msgs::Detect3D; std::string = std::__cxx11::basic_string<char>; uint32_t = unsigned int; ros::SubscriberStatusCallback = boost::function<void(const ros::SingleSubscriberPublisher&)>]’
+/opt/ros/noetic/include/ros/node_handle.h:252:7:   required from ‘ros::Publisher ros::NodeHandle::advertise(const string&, uint32_t, bool) [with M = clf_object_recognition_msgs::Detect3D; std::string = std::__cxx11::basic_string<char>; uint32_t = unsigned int]’
+/home/lvonseelstrang/workspaces/3d_pose/src/clf_object_recognition/clf_object_recognition_3d/src/Image2Pcl.cpp:60:102:   required from here
+/opt/ros/noetic/include/ros/message_traits.h:154:39: error: ‘__s_getMessageDefinition’ is not a member of ‘clf_object_recognition_msgs::Detect3D’
+  154 |     return M::__s_getMessageDefinition().c_str();
+      |            ~~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+make[2]: *** [CMakeFiles/3d_detector.dir/build.make:141: CMakeFiles/3d_detector.dir/src/Image2Pcl.cpp.o] Error 1
+make[1]: *** [CMakeFiles/Makefile2:230: CMakeFiles/3d_detector.dir/all] Error 2
+make: *** [Makefile:141: all] Error 2
+cd /home/lvonseelstrang/workspaces/3d_pose/build/clf_object_recognition_3d; catkin build --get-env clf_object_recognition_3d | catkin env -si  /usr/bin/make --jobserver-auth=3,4; cd -
+

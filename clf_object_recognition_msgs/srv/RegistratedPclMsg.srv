@@ -4,4 +4,4 @@ sensor_msgs/PointCloud2 ref_cloud     # Reference point cloud for registration (
 
 ---
 # Service response message
-sensor_msgs/PointCloud2 registered_cloud  # Clean, registered point cloud (ROS PointCloud2 message)
+sensor_msgs/PointCloud2 pointcloud  # Clean, registered point cloud (ROS PointCloud2 message)

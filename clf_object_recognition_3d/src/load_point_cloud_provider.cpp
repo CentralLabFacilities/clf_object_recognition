@@ -25,7 +25,7 @@ bool loadPointCloud(clf_object_recognition_msgs::LoadPointCloudMsg::Request& req
     msg.header.frame_id = req.frame_id;
 
     // Populate the response with the ROS message
-    res.cloud = msg;
+    res.pointcloud = msg;
 
     return true;
 }

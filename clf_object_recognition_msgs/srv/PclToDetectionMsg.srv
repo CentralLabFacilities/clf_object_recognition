@@ -1,6 +1,5 @@
-sensor_msgs/PointCloud2 pcl
-string class_name
+sensor_msgs/PointCloud2 pointcloud
+int64 class_id # Object class name
 float32 score
 ---
-string class_name  # Object class name
 vision_msgs/Detection3D detection

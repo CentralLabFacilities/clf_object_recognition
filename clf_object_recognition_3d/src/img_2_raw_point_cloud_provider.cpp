@@ -101,8 +101,8 @@ bool pointcloud_from_depth_image_service_callback(
     cv_bridge::CvImagePtr img = cv_bridge::toCvCopy(req.image, sensor_msgs::image_encodings::BGR8);
     cv_bridge::CvImagePtr depth_img = cv_bridge::toCvCopy(req.depth_image, sensor_msgs::image_encodings::TYPE_16UC1);
     sensor_msgs::CameraInfo info_msg = req.camera_info;
-    std::string class_name = req.class_name;
-    float certainty = req.certainty;
+    // std::string class_name = req.class_name;
+    // float certainty = req.certainty;
 
     // Check if bounding box is specified
     //bool is_bbox_specified = (req.bbox.xmin != 0 || req.bbox.ymin != 0 ||
@@ -207,8 +207,8 @@ bool pointcloud_from_depth_image_service_callback(
     // Create the response message
     clf_object_recognition_msgs::Img2RawPointCloudMsg::Response response;
     response.success = true;
-    response.class_name = class_name;
-    response.certainty = certainty;
+    response.class_id = req.class_id;
+    response.certainty = req.certainty;
     //response.bbox.xmin = xmin;
     //response.bbox.ymin = ymin;
     //response.bbox.xmax = xmax;
