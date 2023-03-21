@@ -197,6 +197,8 @@ private:
             // Do something with the results
             // ...
 
+            return true;
+
         } // end for detections
 
     }
@@ -204,6 +206,4 @@ private:
     //Image2Pcl::~Image2Pcl() {
     //    delete ts_;
     //}
-
-return true;
 };

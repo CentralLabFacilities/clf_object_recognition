@@ -3,10 +3,7 @@ string fixed_frame  # Name of fixed frame ID
 sensor_msgs/Image image  # RGB image
 sensor_msgs/Image depth_image  # Depth image
 sensor_msgs/CameraInfo camera_info  # Camera intrinsic parameters
-int32 xmin  # Minimum x-coordinate of bounding box
-int32 ymin  # Minimum y-coordinate of bounding box
-int32 xmax  # Maximum x-coordinate of bounding box
-int32 ymax  # Maximum y-coordinate of bounding box
+vision_msgs/BoundingBox2D bbox  # 2D bounding box coordinates
 string class_name  # Object class name
 float32 certainty  # Object detection score
 ---
@@ -15,4 +12,4 @@ string class_name  # Object class name
 float32 certainty  # Object detection certainty score
 vision_msgs/BoundingBox2D bbox  # 2D bounding box coordinates
 sensor_msgs/PointCloud2 pointcloud  # Output point cloud in ROS message format
-
+geometry_msgs/TransformStamped transform # Transformation to the cropped region

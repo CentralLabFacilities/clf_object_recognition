@@ -222,12 +222,21 @@ bool pointcloud_from_depth_image_service_callback(
     pcl_output.header.frame_id = req.camera_link;
     response.pointcloud = pcl_output;
 
+    // Create a tf2 buffer and transform listener
+    tf2_ros::Buffer tf_buffer_2;
+    tf2_ros::TransformListener tf_listener_2(tf_buffer_2);
+
     // Compute the transform from the camera to the cropped region
-    tf::StampedTransform transform;
+    // tf::StampedTransform transform;
+    geometry_msgs::TransformStamped transformStamped_c;
+    
     try
         {
-            //tf_listener.lookupTransform("camera_link", img->header.frame_id, ros::Time(0), transform);
-            tf_listener.lookupTransform(req.camera_link, req.fixed_frame, ros::Time(0), transform);
+            transformStamped_c = tf_buffer.lookupTransform(
+            std::string(req.camera_link), // cast to string
+            std::string(req.fixed_frame), // cast to string
+            ros::Time(0), 
+            ros::Duration(1.0));
         }
     catch (tf::TransformException& ex)
         {
@@ -236,11 +245,24 @@ bool pointcloud_from_depth_image_service_callback(
             return false;
         }
     tf::Transform crop_transform;
+    //geometry_msgs::TransformStamped crop_transform;
     crop_transform.setOrigin(
         tf::Vector3(xmin * info_msg.K[0] + info_msg.K[2], ymin * info_msg.K[4] + info_msg.K[5], 0));
     crop_transform.setRotation(tf::Quaternion::getIdentity());
-    transform = transform * crop_transform;
-    tf::transformStampedTFToMsg(transform, response.transform);
+
+    tf::StampedTransform stamped_transform_c;
+    tf::transformStampedMsgToTF(transformStamped_c, stamped_transform_c);
+    stamped_transform_c *= crop_transform;
+
+    //transformStamped_c = transformStamped_c * crop_transform;
+    // Convert geometry_msgs::TransformStamped to tf::StampedTransform
+    tf::StampedTransform stampedTransform;
+    tf::transformStampedMsgToTF(transformStamped_c, stampedTransform);
+
+    // Convert tf::StampedTransform to geometry_msgs::TransformStamped
+    tf::transformStampedTFToMsg(stampedTransform, response.transform);
+
+    //tf::transformStampedTFToMsg(transformStamped_c, response.transform);
 
     // Send the response message
     res = response;
