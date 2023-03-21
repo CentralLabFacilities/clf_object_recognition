@@ -19,7 +19,7 @@
 
 #include "clf_object_recognition_msgs/PclToDetectionMsg.h"
 
-vision_msgs::Detection3D pcl_to_detection(const sensor_msgs::PointCloud2& pcl_msg, const float &score) // const std::string& class_name
+vision_msgs::Detection3D pcl_to_detection(const sensor_msgs::PointCloud2& pcl_msg, const int64_t &id, const float &score) // const std::string& class_name
 {
     vision_msgs::Detection3D detection;
 
@@ -51,6 +51,7 @@ vision_msgs::Detection3D pcl_to_detection(const sensor_msgs::PointCloud2& pcl_ms
     hypothesis.pose = pose_with_cov;
     // hypothesis.id = id; // TODO This has to be populated with the int class id
     hypothesis.score = score;
+    hypothesis.id = id;
     detection.results.push_back(hypothesis);
 
     // set the bounding box field based on the point cloud
@@ -78,9 +79,9 @@ vision_msgs::Detection3D pcl_to_detection(const sensor_msgs::PointCloud2& pcl_ms
 bool detection_service(clf_object_recognition_msgs::PclToDetectionMsg::Request& req,
                        clf_object_recognition_msgs::PclToDetectionMsg::Response& res)
 {
-    vision_msgs::Detection3D detection = pcl_to_detection(req.pcl, req.score);
-    res.detection = detection;
-    res.class_name = req.class_name;
+    vision_msgs::Detection3D detection = pcl_to_detection(req.pointcloud, req.class_id, req.score);
+    //res.detection = detection;
+    //res.class_name = req.class_name;
     
     return true;
 }

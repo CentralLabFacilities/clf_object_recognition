@@ -11,13 +11,15 @@
 #include <message_filters/time_synchronizer.h>
 #include <tf2_ros/transform_listener.h>
 
+#include <vision_msgs/Detection2D.h>
+#include "clf_object_recognition_msgs/Detect2D.h"
 #include "clf_object_recognition_msgs/Detect3D.h"
 #include "clf_object_recognition_msgs/Detect2DImage.h"
 
-#include "img_2_raw_point_cloud_provider.h"
-#include "load_point_cloud_provider.h"
-#include "registrated_pcl_provider.h"
-#include "pcl_to_detection_provider.h"
+#include "clf_object_recognition_msgs/Img2RawPointCloudMsg.h"
+#include "clf_object_recognition_msgs/LoadPointCloudMsg.h"
+#include "clf_object_recognition_msgs/RegistratedPclMsg.h"
+#include "clf_object_recognition_msgs/PclToDetectionMsg.h"
 
 
 /**
@@ -44,12 +46,18 @@ public:
         publish_raw_pcl_(publish_raw_pcl),
         publish_clean_pcl_(publish_clean_pcl),
         publish_detections_(publish_detections),
+
         srv_detect_(nh_.serviceClient<clf_object_recognition_msgs::Detect2DImage>(detect_2d_topic)),
+        srv_img_2_raw_pcl_(nh_.serviceClient<clf_object_recognition_msgs::Img2RawPointCloudMsg>("img_2_raw_pcl")),
+        srv_load_pcl_(nh_.serviceClient<clf_object_recognition_msgs::LoadPointCloudMsg>("load_point_cloud")),
+        srv_registrated_pcl_(nh_.serviceClient<clf_object_recognition_msgs::RegistratedPclMsg>("pcl_registration")),
+        srv_detect_3d_(nh_.serviceClient<clf_object_recognition_msgs::PclToDetectionMsg>("pcl_2_detection")),
+
         service_(nh_.advertiseService("pcl_registration", &Image2Pcl::service_callback_pcl_pub, this))
     {
         raw_pcl_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/raw_object_pcl", 1);
         pcl_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/object_pcl", 1);
-        detection_pub_ = nh_.advertise<clf_object_recognition_msgs::Detection3DArray>("/object_detections", 1);
+        detection_pub_ = nh_.advertise<clf_object_recognition_msgs::Detect3D>("/object_detections", 1);
         
         image_sub_.subscribe(nh_, "/xtion/rgb/image_raw", 1);
         depth_sub_.subscribe(nh_, "/xtion/depth_registered/image_raw", 1);
@@ -65,6 +73,11 @@ private:
     bool publish_clean_pcl_;
     bool publish_detections_;
     ros::ServiceClient srv_detect_; ///< Service client for 2D object detection
+    ros::ServiceClient srv_img_2_raw_pcl_; ///< Service client for PCL detection
+    ros::ServiceClient srv_load_pcl_; ///< Service client for loading a pcl by path
+    ros::ServiceClient srv_registrated_pcl_; ///< Service client for registering a pcl
+    ros::ServiceClient srv_detect_3d_; ///< Service client for 3D object detection
+
     ros::ServiceServer service_; ///< Service server for publishing point clouds
     ros::Publisher raw_pcl_pub_; ///< Publisher for the raw point cloud
     ros::Publisher pcl_pub_; ///< Publisher for the registered point cloud
@@ -105,9 +118,9 @@ private:
         clf_object_recognition_msgs::Detect2DImage srv_detect;
         srv_detect.request.image = img;
 
-        clf_object_recognition_msgs::Detect2DImageResponse detections;
+        clf_object_recognition_msgs::Detect2DImageResponse detections_resp;
         if (srv_detect_.call(srv_detect)) {
-            detections = srv_detect.response;
+            detections_resp = srv_detect.response;
         } else {
             ROS_ERROR("Failed to call 2D object detection service");
             return false;
@@ -116,30 +129,40 @@ private:
         bool success = true;
 
         // Iterate through the detections
-        for (auto detection : detections) {
+        //for (auto detection : detections) {
+        for (vision_msgs::Detection2D detection : detections_resp.detections) {
             // Extract detection parameters
-            std::string class_name = detection.class_name;
-            float certainty = detection.certainty;
-            int xmin = detection.bbox.xmin;
-            int ymin = detection.bbox.ymin;
-            int xmax = detection.bbox.xmax;
-            int ymax = detection.bbox.ymax;
+            // vision_msgs::ObjectHypothesisWithPose[] results = detection.results;
+            const auto& results = detection.results; // Assuming results is a vector or other container type
+            int class_id = results[0].id; 
+            //std::string class_name = detection.class_name;
+            float certainty = results[0].score;
+            //int xmin = detection.bbox.xmin;
+            //int ymin = detection.bbox.ymin;
+            //int xmax = detection.bbox.xmax;
+            //int ymax = detection.bbox.ymax;
 
             // Call img_2_raw_point_cloud_provider
-            img_2_raw_point_cloud_provider::Request req;
-            img_2_raw_point_cloud_provider::Response resp;
+            //img_2_raw_point_cloud_provider::Request req;
+            //img_2_raw_point_cloud_provider::Response resp;
+            clf_object_recognition_msgs::Img2RawPointCloudMsg::Request req;
+            clf_object_recognition_msgs::Img2RawPointCloudMsg::Response resp;
             req.camera_link = "camera_link";
             req.fixed_frame = "world";
             req.image = img;
             req.depth_image = depth_img;
             req.camera_info = info_msg;
-            req.xmin = xmin;
-            req.ymin = ymin;
-            req.xmax = xmax;
-            req.ymax = ymax;
-            req.class_name = class_name;
-            req.certainty = certainty;
-            bool success = img_2_raw_point_cloud_provider_client.call(req, resp);
+
+            req.bbox  = detection.bbox; // 2D bounding box coordinates
+            req.class_id =  class_id; // Object class_id 
+            req.certainty = certainty; // Object detection score
+            // req.xmin = xmin;
+            // req.ymin = ymin;
+            // req.xmax = xmax;
+            // req.ymax = ymax;
+            // req.class_name = class_name;
+            // req.certainty = certainty;
+            bool success = srv_img_2_raw_pcl_.call(req, resp);
 
             if (!success) {
                 ROS_ERROR("Failed to call img_2_raw_point_cloud_provider service");
@@ -148,15 +171,18 @@ private:
 
             // Publish the point clouds and Detection3Ds
             if (publish_raw_pcl_) {
-                raw_pcl_pub_.publish(*raw_point_cloud);
+                // raw_pcl_pub_.publish(*raw_point_cloud);
+                raw_pcl_pub_.publish(resp.pointcloud);
             }
+            // TODO get class_name from class_id
+            std::string class_name = "class_name";
 
             // Call load_point_cloud_provider
-            load_point_cloud_provider::Request load_req;
-            load_point_cloud_provider::Response load_resp;
+            clf_object_recognition_msgs::LoadPointCloudMsg::Request load_req;
+            clf_object_recognition_msgs::LoadPointCloudMsg::Response load_resp;
             load_req.filename = "/path/to/point/cloud/for/" + class_name;
             load_req.frame_id = "world";
-            success = load_point_cloud_provider_client.call(load_req, load_resp);
+            success = srv_load_pcl_.call(load_req, load_resp);
 
             if (!success) {
                 ROS_ERROR("Failed to call load_point_cloud_provider service");
@@ -164,11 +190,11 @@ private:
             }
 
             // Call registrated_pcl_provider
-            registrated_pcl_provider::Request reg_req;
-            registrated_pcl_provider::Response reg_resp;
+            clf_object_recognition_msgs::RegistratedPclMsg::Request reg_req;
+            clf_object_recognition_msgs::RegistratedPclMsg::Response reg_resp;
             reg_req.raw_cloud = resp.pointcloud;
-            reg_req.ref_cloud = load_resp.cloud;
-            success = registrated_pcl_provider_client.call(reg_req, reg_resp);
+            reg_req.ref_cloud = load_resp.pointcloud;
+            success = srv_registrated_pcl_.call(reg_req, reg_resp);
 
             if (!success) {
                 ROS_ERROR("Failed to call registrated_pcl_provider service");
@@ -176,14 +202,14 @@ private:
             }
 
             if (publish_clean_pcl_) {
-                pcl_pub_.publish(*registered_point_cloud);
+                pcl_pub_.publish(reg_resp.pointcloud);
             }
 
             // Call pcl_to_detection_provider
-            pcl_to_detection_provider::Request pcl_req;
-            pcl_to_detection_provider::Response pcl_resp;
-            pcl_req.cloud = reg_resp.registered_cloud;
-            success = pcl_to_detection_provider_client.call(pcl_req, pcl_resp);
+            clf_object_recognition_msgs::PclToDetectionMsg::Request det_req;
+            clf_object_recognition_msgs::PclToDetectionMsg::Response det_resp;
+            det_req.pointcloud = reg_resp.pointcloud;
+            success = srv_detect_3d_.call(det_req, det_resp);
 
             if (!success) {
                 ROS_ERROR("Failed to call pcl_to_detection_provider service");
@@ -191,7 +217,7 @@ private:
             }
 
             if (publish_detections_) {
-                detection_pub_.publish(detections_3d);
+                detection_pub_.publish(det_resp.detection);
             }
 
             // Do something with the results

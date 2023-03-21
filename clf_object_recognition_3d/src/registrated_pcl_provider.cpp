@@ -39,7 +39,7 @@ bool registerPointClouds(clf_object_recognition_msgs::RegistratedPclMsg::Request
   sensor_msgs::PointCloud2 registered_cloud_msg;
   pcl::toROSMsg(registered_cloud, registered_cloud_msg);
   registered_cloud_msg.header = req.raw_cloud.header;
-  res.registered_cloud = registered_cloud_msg;
+  res.pointcloud = registered_cloud_msg;
 
   return true;
 }
