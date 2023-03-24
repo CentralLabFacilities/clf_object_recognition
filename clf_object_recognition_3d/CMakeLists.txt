@@ -24,11 +24,12 @@ catkin_python_setup()
 catkin_package()
 
 include_directories(include)
-add_executable(
-  3d_detector 
+
+add_executable(3d_detector 
   src/node.cpp 
   src/detector.cpp 
-  )
+)
+
 target_link_libraries(3d_detector ${catkin_LIBRARIES})
 
 install(TARGETS 3d_detector
