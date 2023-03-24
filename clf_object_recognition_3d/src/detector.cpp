@@ -18,7 +18,8 @@ Detector::Detector(ros::NodeHandle nh)
     srv_detect_3d = nh.advertiseService("simple_detections", &Detector::ServiceDetect3D, this);
 
     // del me later
-    pub = nh.advertise<vision_msgs::Detection3DArray>("last_detection", 1);
+    pub_detections_3d = nh.advertise<vision_msgs::Detection3DArray>("last_detection", 1);
+    pub_raw_pcl = nh.advertise<sensor_msgs::PointCloud2>("raw_pcl", 1);
 
     //vision_msgs::Detection3DArray
 
@@ -82,12 +83,10 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
         
         Eigen::Vector4d cloud_from_depth_image_centroid = Eigen::Vector4d::Random();
         auto centroid_size = pcl::compute3DCentroid(*cloud_from_depth_image, cloud_from_depth_image_centroid);
-        // ROS_ERROR_STREAM_NAMED("detector", cloud_from_depth_image_centroid);
-        // del me later
+
         sensor_msgs::PointCloud2 pcl_msg;
-        //pcl_conversions::toROSMsg(*cloud_from_depth_image, pcl_msg);
         pcl::toROSMsg(*cloud_from_depth_image, pcl_msg);
-        //raw_pcl_pub.publish(pcl_msg);
+        pub_raw_pcl.publish(pcl_msg);
 
         d3d.header = detection.header;
         d3d.bbox.center.orientation.w = 1;
@@ -97,7 +96,6 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
         d3d.bbox.size.x = 0.1;
         d3d.bbox.size.y = 0.1;
         d3d.bbox.size.z = 0.1;
-        
 
         for(auto hypo : detection.results) {
            vision_msgs::ObjectHypothesisWithPose hyp;
@@ -118,7 +116,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
             a.header = b.header;
             a.detections.push_back(b);
         }
-        pub.publish(a);
+        pub_detections_3d.publish(a);
     }
 
     
