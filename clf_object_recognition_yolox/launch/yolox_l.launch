@@ -16,7 +16,7 @@
 
     <node name="yolox_detection_3d" pkg="clf_object_recognition_3d" type="simple_3d">
 		<param name="publish_detections" value="True"/>
-        <param name="detect2d_topic" value="/yolox/recognize"/>
+        <param name="detect_2d_topic" value="/yolox/recognize"/>
 	</node>
 
 </launch> 
