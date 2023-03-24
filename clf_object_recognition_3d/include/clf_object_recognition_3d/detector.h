@@ -14,6 +14,7 @@
 // message types in
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
+#include <sensor_msgs/PointCloud2.h>
 #include <vision_msgs/BoundingBox2D.h>
 #include <vision_msgs/BoundingBox3D.h>
 #include <vision_msgs/Detection3DArray.h>
@@ -57,7 +58,8 @@ private:
     message_filters::Subscriber<sensor_msgs::CameraInfo> camera_info_sub_;
 
     // publisher
-    ros::Publisher pub;
+    ros::Publisher pub_detections_3d;
+    ros::Publisher pub_raw_pcl;
 
     // sync with exact policy
     message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::CameraInfo> sync_;
