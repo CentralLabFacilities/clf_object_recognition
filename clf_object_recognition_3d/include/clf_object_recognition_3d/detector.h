@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ros/ros.h"
 #include <ros/node_handle.h>     // for NodeHandle
 #include <ros/service_server.h>  // for ServiceServer
 #include <ros/service_client.h>
@@ -15,6 +16,7 @@
 #include <sensor_msgs/CameraInfo.h>
 #include <vision_msgs/BoundingBox2D.h>
 #include <vision_msgs/BoundingBox3D.h>
+#include <vision_msgs/Detection3DArray.h>
 
 // message types out
 #include <sensor_msgs/PointCloud2.h>
@@ -35,7 +37,7 @@ private:
     void ReconfigureCallback(const clf_object_recognition_cfg::Detect3dConfig& config, uint32_t level);
     void Callback(const sensor_msgs::ImageConstPtr& image, const sensor_msgs::ImageConstPtr& depth_image, const sensor_msgs::CameraInfoConstPtr& camera_info);
     bool ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& req,  clf_object_recognition_msgs::Detect3D::Response& res);
-    pointcloud_type* createPointCloudFromDepthImage(const sensor_msgs::ImageConstPtr& depth_msg, const vision_msgs::BoundingBox2D& bbox, const sensor_msgs::CameraInfoConstPtr& cam_info);
+    pointcloud_type* createPointCloudFromDepthImage(const sensor_msgs::Image& depth_msg, const vision_msgs::BoundingBox2D& bbox, const sensor_msgs::CameraInfoConstPtr& cam_info);
     pointcloud_type* createPointCloudFromMesh(const std::string& mesh_name);
 
     ros::NodeHandle nh_;
@@ -53,6 +55,9 @@ private:
     message_filters::Subscriber<sensor_msgs::Image> image_sub_;
     message_filters::Subscriber<sensor_msgs::Image> depth_image_sub_;
     message_filters::Subscriber<sensor_msgs::CameraInfo> camera_info_sub_;
+
+    // publisher
+    ros::Publisher pub;
 
     // sync with exact policy
     message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::CameraInfo> sync_;
