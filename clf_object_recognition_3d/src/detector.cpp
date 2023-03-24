@@ -143,14 +143,14 @@ pointcloud_type* Detector::createPointCloudFromDepthImage(const sensor_msgs::Ima
     //principal point and focal lengths
     float cx, cy, fx, fy;
     
-    //cloud->height = bbox.size_y;
+    cloud->height = bbox.size_y;
     cloud->width = bbox.size_x;
     cx = cam_info->K[2]; //(cloud->width >> 1) - 0.5f;
     cy = cam_info->K[5]; //(cloud->height >> 1) - 0.5f;
     fx = 1.0f / cam_info->K[0]; 
     fy = 1.0f / cam_info->K[4]; 
     
-    cloud->points.resize (cloud->height * cloud->width);
+    cloud->points.resize (bbox.size_y * bbox.size_x);
     
     const float* depth_buffer = reinterpret_cast<const float*>(&depth_msg.data[0]);
 
