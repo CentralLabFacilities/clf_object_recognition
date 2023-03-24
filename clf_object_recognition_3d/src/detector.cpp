@@ -1,14 +1,38 @@
-#include "detector.h"
-#include "clf_object_recognition_msgs/Detect2D.h"
+#include "clf_object_recognition_3d/detector.h"
+#include "clf_object_recognition_msgs/Detect2DImage.h"
 
-Detector::Detector(ros::NodeHandle nh) {
-    srv_detect2d = nh.serviceClient<clf_object_recognition_msgs::Detect2D>("/yolox/recognize");
+#include "pcl/point_cloud.h"
+#include "pcl/point_types.h"
+
+#include "pcl/common/centroid.h"
+#include "pcl/common/eigen.h"
+
+#include <ros/console.h>
+
+Detector::Detector(ros::NodeHandle nh)
+    : sync_(image_sub_, depth_image_sub_, camera_info_sub_, 10) 
+ {
+    srv_detect_2d = nh.serviceClient<clf_object_recognition_msgs::Detect2DImage>("/yolox/recognize");
     srv_detect_3d = nh.advertiseService("/simple_detections", &Detector::ServiceDetect3D, this);
+
+    // subscribe to camera topics
+    image_sub_.subscribe(nh, "image", 1);
+    depth_image_sub_.subscribe(nh, "depth_image", 1);
+    camera_info_sub_.subscribe(nh, "camera_info", 1);
+
+    // sync incoming camera messages
+    sync_.registerCallback(boost::bind(&Detector::Callback, this, _1, _2, _3));
 
     auto f = [this](auto&& PH1, auto&& PH2) { ReconfigureCallback(PH1, PH2); };
     reconfigure_server.setCallback(f);
     ros::spinOnce();
+}
 
+void Detector::Callback(const sensor_msgs::ImageConstPtr& image, const sensor_msgs::ImageConstPtr& depth_image, const sensor_msgs::CameraInfoConstPtr& camera_info) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    image_ = image;
+    depth_image_ = depth_image;
+    camera_info_ = camera_info;
 }
 
 void Detector::ReconfigureCallback(const clf_object_recognition_cfg::Detect3dConfig& input, uint32_t /*level*/)
@@ -18,25 +42,92 @@ void Detector::ReconfigureCallback(const clf_object_recognition_cfg::Detect3dCon
 }
     
 bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& req, clf_object_recognition_msgs::Detect3D::Response& res) {
+    std::lock_guard<std::mutex> lock(mutex_);
 
     ROS_INFO_STREAM_NAMED("detector", "ServiceDetect3D() called " << req);
 
-    /*clf_object_recognition_msgs::Detect2D param;
-    auto ok = srv_detect2d.call(param);
+    clf_object_recognition_msgs::Detect2DImage param;
+    auto ok = srv_detect_2d.call(param);
     if(!ok) {
         ROS_ERROR_STREAM_NAMED("detector", "cant call detections ");
         return false;
-    }*/
+    }
 
-    //for(auto& detection : param.response.detections) {
-	// do something with detections
-    //}
+    
+    ROS_INFO_STREAM_NAMED("detector", "got detections " << param.response);
+    for(auto& detection : param.response.detections) {
+        // generate point cloud from incoming depth image for detection bounding box
+        pointcloud_type* cloud_from_depth_image = createPointCloudFromDepthImage(depth_image_, detection.bbox, camera_info_);
+        // pointcloud_type* cloud_from_mesh = createPointCloudFromMesh(mesh_name);
+        
+        Eigen::Vector4d cloud_from_depth_image_centroid = Eigen::Vector4d::Random();
+        auto centroid_size = pcl::compute3DCentroid(*cloud_from_depth_image, cloud_from_depth_image_centroid);
+    }
 
-    //if(config.publish_detections) ROS_INFO_STREAM_NAMED("detector", "publishing detections ");
+    
+    if(config.publish_detections) {
+        ROS_INFO_STREAM_NAMED("detector", "publishing detections ");
+        // publish
+    }
 
-
-    // ROS_INFO_STREAM_NAMED("detector", "got detections " << param.response);
+    
 
     return true;
 
+}
+
+pointcloud_type* Detector::createPointCloudFromMesh(const std::string& mesh_name) {
+    pointcloud_type* cloud (new pointcloud_type());
+    // generate point cloud
+    return cloud;
+}
+
+pointcloud_type* Detector::createPointCloudFromDepthImage(const sensor_msgs::ImageConstPtr& depth_msg, const vision_msgs::BoundingBox2D& bbox, const sensor_msgs::CameraInfoConstPtr& cam_info) 
+{
+    pointcloud_type* cloud (new pointcloud_type());
+
+    cloud->header.stamp     = ros::Time(depth_msg->header.stamp).toSec();
+    cloud->header.frame_id  = depth_msg->header.frame_id;
+    //single point of view, 2d rasterized
+    cloud->is_dense         = true; 
+    
+    //principal point and focal lengths
+    float cx, cy, fx, fy;
+    
+    cloud->height = bbox.size_y;
+    cloud->width = bbox.size_x;
+    cx = cam_info->K[2]; //(cloud->width >> 1) - 0.5f;
+    cy = cam_info->K[5]; //(cloud->height >> 1) - 0.5f;
+    fx = 1.0f / cam_info->K[0]; 
+    fy = 1.0f / cam_info->K[4]; 
+    
+    cloud->points.resize (cloud->height * cloud->width);
+    
+    const float* depth_buffer = reinterpret_cast<const float*>(&depth_msg->data[0]);
+    
+    int depth_idx = 0;
+    
+    pointcloud_type::iterator pt_iter = cloud->begin ();
+    for (int v = bbox.center.x - (int)(cloud->height / 2); v < (int)cloud->height; ++v)
+    {
+        for (int u = bbox.center.x - (int)(cloud->width / 2); u < (int)cloud->width; ++u, ++depth_idx, ++pt_iter)
+        {
+            point_type& pt = *pt_iter;
+            float Z = depth_buffer[depth_idx];
+        
+            // Check for invalid measurements
+            if (std::isnan(Z))
+            {
+                pt.x = pt.y = pt.z = Z;
+            }
+            else // Fill in XYZ
+            {
+                pt.x = (u - cx) * Z * fx;
+                pt.y = (v - cy) * Z * fy;
+                pt.z = Z;
+            }
+        }
+    }
+ 
+   return cloud;
 }
