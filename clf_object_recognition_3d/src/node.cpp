@@ -1,5 +1,5 @@
 #include <ros/ros.h>
-#include "detector.h"
+#include "clf_object_recognition_3d/detector.h"
 
 int main(int argc, char** argv)
 {
