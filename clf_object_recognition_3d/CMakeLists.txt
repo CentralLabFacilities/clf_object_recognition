@@ -28,11 +28,6 @@ add_executable(
   3d_detector 
   src/node.cpp 
   src/detector.cpp 
-  src/img_2_raw_point_cloud_provider.cpp 
-  src/load_point_cloud_provider.cpp 
-  src/registrated_pcl_provider.cpp 
-  src/pcl_to_detection_provider.cpp
-  src/Image2Pcl.cpp
   )
 target_link_libraries(3d_detector ${catkin_LIBRARIES})
 
