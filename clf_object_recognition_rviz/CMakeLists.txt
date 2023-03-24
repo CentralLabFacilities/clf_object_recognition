@@ -43,6 +43,8 @@ set(src_files
   src/hull_array_display.cpp
   src/hull_visual.cpp
 
+  src/point_cloud_visual.cpp
+
   )
 
 include_directories(include ${CMAKE_CURRENT_BINARY_DIR} ${EIGEN3_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})

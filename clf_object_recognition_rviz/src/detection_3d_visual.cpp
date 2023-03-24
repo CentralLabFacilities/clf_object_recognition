@@ -1,6 +1,9 @@
 #include "clf_object_recognition_rviz/detection_3d_visual.h"
 #include "clf_object_recognition_rviz/bounding_box_visual.h"
 
+#include <rviz/default_plugin/point_cloud_common.h>
+#include <rviz/default_plugin/point_cloud_transformers.h>
+
 #include <OGRE/OgreMaterialManager.h>
 #include <OGRE/OgreSceneManager.h>
 #include <OGRE/OgreSceneNode.h>
@@ -29,11 +32,13 @@ Detection3DVisual::Detection3DVisual(Ogre::SceneManager* scene_manager, Ogre::Sc
   points_node_ = main_node_->createChildSceneNode();
 
   bbox_ = std::make_unique<BoundingBoxVisual>(scene_manager, bb_node_);
+  pc_ = std::make_unique<PointCloudVisual>(scene_manager, points_node_);
   text_ = new rviz::MovableText("unknown object - 0.0");
   text_->setTextAlignment(rviz::MovableText::H_LEFT, rviz::MovableText::V_CENTER);
   text_node_->attachObject(text_);
 
 }
+
 
 Detection3DVisual::~Detection3DVisual()
 {
@@ -41,6 +46,7 @@ Detection3DVisual::~Detection3DVisual()
   scene_manager_->destroySceneNode(text_node_);
   scene_manager_->destroySceneNode(points_node_);
   scene_manager_->destroySceneNode(main_node_);
+  delete point_cloud_common_;
 }
 
 void Detection3DVisual::setShowBox(const bool show) {
@@ -76,6 +82,7 @@ void Detection3DVisual::setShowPropability(const bool show)
 void Detection3DVisual::setMessage(const vision_msgs::Detection3D msg)
 {
   bbox_->setMessage(msg.bbox);
+  pc_->setMessage(msg.source_cloud);
   updateHypothesis(msg);
   updateLabel();
   auto center = msg.bbox.center.position;
