@@ -1,5 +1,0 @@
-sensor_msgs/PointCloud2 pointcloud
-int64 class_id # Object class name
-float32 score
----
-vision_msgs/Detection3D detection
