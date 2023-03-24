@@ -1,6 +1,0 @@
-# Request
-string filename
-string frame_id # reference frame
----
-# Response
-sensor_msgs/PointCloud2 pointcloud
