@@ -143,26 +143,26 @@ pointcloud_type* Detector::createPointCloudFromDepthImage(const sensor_msgs::Ima
     //principal point and focal lengths
     float cx, cy, fx, fy;
     
-    cloud->height = bbox.size_y;
-    cloud->width = bbox.size_x;
+    cloud->height = depth_msg.height;
+    cloud->width = depth_msg.width;
     cx = cam_info->K[2]; //(cloud->width >> 1) - 0.5f;
     cy = cam_info->K[5]; //(cloud->height >> 1) - 0.5f;
     fx = 1.0f / cam_info->K[0]; 
     fy = 1.0f / cam_info->K[4]; 
     
-    cloud->points.resize (bbox.size_y * bbox.size_x);
+    cloud->points.resize (cloud->height * cloud->width);
     
     const float* depth_buffer = reinterpret_cast<const float*>(&depth_msg.data[0]);
 
     int depth_idx = 0;
     
     pointcloud_type::iterator pt_iter = cloud->begin();
-    for (int v = bbox.center.y - bbox.size_y/2; v < bbox.size_y; ++v)
+    for (int v = 0; v < (int)cloud->height; ++v)
     {
-        for (int u = bbox.center.x - bbox.size_x / 2; u < bbox.size_x; ++u)
+        for (int u = 0; u < (int)cloud->width; ++u, ++depth_idx, ++pt_iter)
         {
-            point_type& pt = *pt_iter++;
-            float Z = depth_buffer[depth_idx++];
+            point_type& pt = *pt_iter;
+            float Z = depth_buffer[depth_idx];
         
             // Check for invalid measurements
             if (std::isnan(Z))
