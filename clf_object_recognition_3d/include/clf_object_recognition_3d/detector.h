@@ -41,8 +41,8 @@ private:
     void ReconfigureCallback(const clf_object_recognition_cfg::Detect3dConfig& config, uint32_t level);
     void Callback(const sensor_msgs::ImageConstPtr& image, const sensor_msgs::ImageConstPtr& depth_image, const sensor_msgs::CameraInfoConstPtr& camera_info);
     bool ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& req,  clf_object_recognition_msgs::Detect3D::Response& res);
-    pointcloud_type* createPointCloudFromDepthImage(const sensor_msgs::Image& depth_msg, const vision_msgs::BoundingBox2D& bbox, const sensor_msgs::CameraInfoConstPtr& cam_info);
-    pointcloud_type* createPointCloudFromMesh(const std::string& mesh_name);
+    pointcloud_type::Ptr createPointCloudFromDepthImage(const sensor_msgs::Image& depth_msg, const vision_msgs::BoundingBox2D& bbox, const sensor_msgs::CameraInfoConstPtr& cam_info);
+    pointcloud_type::Ptr createPointCloudFromMesh(const std::string& mesh_name);
 
     ros::NodeHandle nh_;
     clf_object_recognition_cfg::Detect3dConfig config;

@@ -11,6 +11,8 @@
 //#include "pcl_ros/io/pcl_conversions.h"
 #include <pcl_conversions/pcl_conversions.h>
 
+#include <pcl/registration/icp.h>
+
 #include <ros/console.h>
 
 Detector::Detector(ros::NodeHandle nh)
@@ -83,12 +85,8 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
     for(auto& detection : param.response.detections) {
         vision_msgs::Detection3D d3d;
         // generate point cloud from incoming depth image for detection bounding box
-        pointcloud_type* cloud_from_depth_image = createPointCloudFromDepthImage(depth, detection.bbox, camera_info_);
+        pointcloud_type::Ptr cloud_from_depth_image = createPointCloudFromDepthImage(depth, detection.bbox, camera_info_);
         // pointcloud_type* cloud_from_mesh = createPointCloudFromMesh(mesh_name);
-
-        sensor_msgs::PointCloud2 pcl_msg;
-        pcl::toROSMsg(*cloud_from_depth_image, pcl_msg);
-        pub_raw_pcl.publish(pcl_msg);
         
         Eigen::Vector4d cloud_from_depth_image_centroid = Eigen::Vector4d::Random();
         auto centroid_size = pcl::compute3DCentroid(*cloud_from_depth_image, cloud_from_depth_image_centroid);
@@ -122,6 +120,21 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
             }
             //do something with path
 
+            pcl::IterativeClosestPoint<point_type, point_type> icp;
+            icp.setInputSource(cloud_from_depth_image);
+            icp.setInputTarget(cloud_from_depth_image);
+            pointcloud_type final_point_cloud;
+            icp.align(final_point_cloud);
+
+            // TODO: remove later
+            sensor_msgs::PointCloud2 pcl_msg;
+            pcl::toROSMsg(final_point_cloud, pcl_msg);
+            pub_raw_pcl.publish(pcl_msg); 
+
+            ROS_INFO_STREAM_NAMED("detector", "has converged: " << icp.hasConverged());
+            // ROS_INFO_STREAM_NAMED("detector", "has converged: " << icp.hasConverged() << " score: " << icp.getFitnessScore());
+            // ROS_INFO_STREAM_NAMED("detector", "final transformation: " << icp.getFinalTransformation());
+
             d3d.results.push_back(hyp); 
         }
 
@@ -145,15 +158,15 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
 
 }
 
-pointcloud_type* Detector::createPointCloudFromMesh(const std::string& mesh_name) {
-    pointcloud_type* cloud (new pointcloud_type());
+pointcloud_type::Ptr Detector::createPointCloudFromMesh(const std::string& mesh_name) {
+    pointcloud_type::Ptr cloud (new pointcloud_type());
     // generate point cloud
     return cloud;
 }
 
-pointcloud_type* Detector::createPointCloudFromDepthImage(const sensor_msgs::Image& depth_msg, const vision_msgs::BoundingBox2D& bbox, const sensor_msgs::CameraInfoConstPtr& cam_info) 
+pointcloud_type::Ptr Detector::createPointCloudFromDepthImage(const sensor_msgs::Image& depth_msg, const vision_msgs::BoundingBox2D& bbox, const sensor_msgs::CameraInfoConstPtr& cam_info) 
 {
-    pointcloud_type* cloud (new pointcloud_type());
+    pointcloud_type::Ptr cloud(new pointcloud_type());
 
     cloud->header.stamp     = ros::Time(depth_msg.header.stamp).toSec();
     cloud->header.frame_id  = depth_msg.header.frame_id;
