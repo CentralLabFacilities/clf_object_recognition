@@ -27,6 +27,9 @@
 #include <pcl/common/io.h>
 
 #include <mutex>
+#include <memory>
+
+#include "clf_object_recognition_3d/model_provider.h"
 
 typedef pcl::PointXYZ point_type;
 typedef pcl::PointCloud<point_type> pointcloud_type;
@@ -65,4 +68,6 @@ private:
     message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::CameraInfo> sync_;
 
     std::mutex mutex_;
+
+    std::unique_ptr<ModelProvider> model_provider{nullptr};
 };

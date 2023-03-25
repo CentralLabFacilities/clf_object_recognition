@@ -14,6 +14,8 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_ros
   cv_bridge
   geometry_msgs
+
+  ecwm_msgs
 )
 include_directories(${catkin_INCLUDE_DIRS})
 find_package(PCL REQUIRED)
@@ -28,6 +30,7 @@ include_directories(include)
 add_executable(3d_detector 
   src/node.cpp 
   src/detector.cpp 
+  src/model_provider.cpp
 )
 
 target_link_libraries(3d_detector ${catkin_LIBRARIES})

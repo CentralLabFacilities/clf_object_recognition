@@ -34,6 +34,8 @@ Detector::Detector(ros::NodeHandle nh)
     auto f = [this](auto&& PH1, auto&& PH2) { ReconfigureCallback(PH1, PH2); };
     reconfigure_server.setCallback(f);
     ros::spinOnce();
+
+    model_provider = std::make_unique<ModelProvider>(nh);
 }
 
 void Detector::Callback(const sensor_msgs::ImageConstPtr& image, const sensor_msgs::ImageConstPtr& depth_image, const sensor_msgs::CameraInfoConstPtr& camera_info) {
@@ -98,11 +100,19 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
         d3d.bbox.size.z = 0.1;
 
         for(auto hypo : detection.results) {
-           vision_msgs::ObjectHypothesisWithPose hyp;
-           hyp = hypo;
-           hyp.pose.pose.orientation.w = 1;
+            vision_msgs::ObjectHypothesisWithPose hyp;
+            hyp = hypo;
+            hyp.pose.pose.orientation.w = 1;
 
-           d3d.results.push_back(hyp); 
+            auto model = model_provider->IDtoModel(hypo.id);
+            auto path = model_provider->GetModelPath(model); 
+            if(path == "") {
+                //default if not found (e.g. ecwm not running)
+                path = "file:///vol/tiago/noetic/nightly/share/ecwm_data/models/object/ycb/cracker_box/meshes/textured.dae";
+            }
+            //do something with path
+
+            d3d.results.push_back(hyp); 
         }
 
         res.detections.push_back(d3d);
