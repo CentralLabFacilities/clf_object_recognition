@@ -82,13 +82,13 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
         // generate point cloud from incoming depth image for detection bounding box
         pointcloud_type* cloud_from_depth_image = createPointCloudFromDepthImage(depth, detection.bbox, camera_info_);
         // pointcloud_type* cloud_from_mesh = createPointCloudFromMesh(mesh_name);
-        
-        Eigen::Vector4d cloud_from_depth_image_centroid = Eigen::Vector4d::Random();
-        auto centroid_size = pcl::compute3DCentroid(*cloud_from_depth_image, cloud_from_depth_image_centroid);
 
         sensor_msgs::PointCloud2 pcl_msg;
         pcl::toROSMsg(*cloud_from_depth_image, pcl_msg);
         pub_raw_pcl.publish(pcl_msg);
+        
+        Eigen::Vector4d cloud_from_depth_image_centroid = Eigen::Vector4d::Random();
+        auto centroid_size = pcl::compute3DCentroid(*cloud_from_depth_image, cloud_from_depth_image_centroid);
 
         d3d.header = detection.header;
         d3d.bbox.center.orientation.w = 1;
@@ -147,33 +147,36 @@ pointcloud_type* Detector::createPointCloudFromDepthImage(const sensor_msgs::Ima
 
     cloud->header.stamp     = ros::Time(depth_msg.header.stamp).toSec();
     cloud->header.frame_id  = depth_msg.header.frame_id;
+    ROS_INFO_STREAM_NAMED("Detector ", "frame_id: " << depth_msg.header.frame_id);
     //single point of view, 2d rasterized
     cloud->is_dense         = true; 
     
     //principal point and focal lengths
     float cx, cy, fx, fy;
     
-    cloud->height = depth_msg.height;
-    cloud->width = depth_msg.width;
+    // cloud->height = depth_msg.height;
+    // cloud->width = depth_msg.width;
     cx = cam_info->K[2]; //(cloud->width >> 1) - 0.5f;
-    cy = cam_info->K[5]; //(cloud->height >> 1) - 0.5f;
+    cy = cam_info->K[5]; //(cloud->height >> 1) - 0. f;
     fx = 1.0f / cam_info->K[0]; 
     fy = 1.0f / cam_info->K[4]; 
     
-    cloud->points.resize (cloud->height * cloud->width);
+    // cloud->points.resize (cloud->height * cloud->width);
+    cloud->points.resize (bbox.size_x * bbox.size_y);
     
     const float* depth_buffer = reinterpret_cast<const float*>(&depth_msg.data[0]);
-
+ 
     int depth_idx = 0;
     
     pointcloud_type::iterator pt_iter = cloud->begin();
-    for (int v = 0; v < (int)cloud->height; ++v)
+    for (int v = (int) (bbox.center.y - bbox.size_y / 2); v < (int) (bbox.center.y - bbox.size_y / 2 + bbox.size_y); ++v)
     {
-        for (int u = 0; u < (int)cloud->width; ++u, ++depth_idx, ++pt_iter)
-        {
+        for (int u = (int) (bbox.center.x - bbox.size_x / 2); u < (int) (bbox.center.x - bbox.size_x / 2 + bbox.size_x); ++u, ++pt_iter)
+        {   
             point_type& pt = *pt_iter;
+            depth_idx = depth_msg.width * v + u;
             float Z = depth_buffer[depth_idx];
-        
+      
             // Check for invalid measurements
             if (std::isnan(Z))
             {
@@ -185,8 +188,6 @@ pointcloud_type* Detector::createPointCloudFromDepthImage(const sensor_msgs::Ima
                 pt.y = (v - cy) * Z * fy;
                 pt.z = Z;
             }
-
-            ROS_INFO_STREAM_NAMED("Detector ", "Points: " << pt.x << ',' << pt.y << ',' << pt.z);
         }
     }
     
