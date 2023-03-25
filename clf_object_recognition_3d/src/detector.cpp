@@ -1,6 +1,8 @@
 #include "clf_object_recognition_3d/detector.h"
 #include "clf_object_recognition_msgs/Detect2DImage.h"
 
+#include "geometry_msgs/Pose.h"
+
 #include "pcl/point_cloud.h"
 #include "pcl/point_types.h"
 
@@ -17,9 +19,10 @@ Detector::Detector(ros::NodeHandle nh)
     srv_detect_2d = nh.serviceClient<clf_object_recognition_msgs::Detect2DImage>("/yolox/recognize_from_image");
     srv_detect_3d = nh.advertiseService("simple_detections", &Detector::ServiceDetect3D, this);
 
-    // del me later
+
     pub_detections_3d = nh.advertise<vision_msgs::Detection3DArray>("last_detection", 1);
     pub_raw_pcl = nh.advertise<sensor_msgs::PointCloud2>("raw_pcl", 1);
+    raw_centroid_pub = nh.advertise<geometry_msgs::Pose>("raw_centroid", 1000);
 
     //vision_msgs::Detection3DArray
 
@@ -89,6 +92,13 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
         
         Eigen::Vector4d cloud_from_depth_image_centroid = Eigen::Vector4d::Random();
         auto centroid_size = pcl::compute3DCentroid(*cloud_from_depth_image, cloud_from_depth_image_centroid);
+        
+        geometry_msgs::Pose centroid_pose_msg;
+        centroid_pose_msg.position.x = cloud_from_depth_image_centroid[0];
+        centroid_pose_msg.position.y = cloud_from_depth_image_centroid[1];
+        centroid_pose_msg.position.z = cloud_from_depth_image_centroid[2];
+        //auto centroid_pose_msg = 
+        raw_centroid_pub.publish(centroid_pose_msg);
 
         d3d.header = detection.header;
         d3d.bbox.center.orientation.w = 1;

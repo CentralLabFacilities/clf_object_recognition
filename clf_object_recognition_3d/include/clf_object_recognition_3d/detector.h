@@ -63,6 +63,7 @@ private:
     // publisher
     ros::Publisher pub_detections_3d;
     ros::Publisher pub_raw_pcl;
+    ros::Publisher raw_centroid_pub;
 
     // sync with exact policy
     message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::CameraInfo> sync_;
