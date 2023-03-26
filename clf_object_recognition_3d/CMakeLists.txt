@@ -14,8 +14,10 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_ros
   cv_bridge
   geometry_msgs
-
+  geometric_shapes
   ecwm_msgs
+  eigen_conversions
+  
 )
 include_directories(${catkin_INCLUDE_DIRS})
 find_package(PCL REQUIRED)
