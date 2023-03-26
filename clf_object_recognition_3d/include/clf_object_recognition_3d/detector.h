@@ -4,9 +4,10 @@
 #include <ros/node_handle.h>     // for NodeHandle
 #include <ros/service_server.h>  // for ServiceServer
 #include <ros/service_client.h>
-
 #include <dynamic_reconfigure/server.h>
+
 #include <clf_object_recognition_cfg/Detect3dConfig.h>
+#include "clf_object_recognition_3d/model_provider.h"
 
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/subscriber.h>
@@ -23,16 +24,18 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <clf_object_recognition_msgs/Detect3D.h>
 
-// point cloud types
+// pcl types
+#include <pcl/PolygonMesh.h>
 #include <pcl/common/io.h>
+
+#include <visualization_msgs/MarkerArray.h>
 
 #include <mutex>
 #include <memory>
 
-#include "clf_object_recognition_3d/model_provider.h"
-
 typedef pcl::PointXYZ point_type;
 typedef pcl::PointCloud<point_type> pointcloud_type;
+typedef pcl::PolygonMesh mesh_type;
 
 class Detector {
 public:
@@ -41,8 +44,12 @@ private:
     void ReconfigureCallback(const clf_object_recognition_cfg::Detect3dConfig& config, uint32_t level);
     void Callback(const sensor_msgs::ImageConstPtr& image, const sensor_msgs::ImageConstPtr& depth_image, const sensor_msgs::CameraInfoConstPtr& camera_info);
     bool ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& req,  clf_object_recognition_msgs::Detect3D::Response& res);
+
+    mesh_type::Ptr colladaToPolygonMesh(const std::string& ressource_path);
+    //pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr meshSamplingUniform(const vtkSmartPointer<vtkPolyData>& polydata, int samples, bool calcNormal);
+    pointcloud_type::Ptr meshSamplingUniform(const pcl::PolygonMesh& mesh, std::size_t n_samples);
     pointcloud_type::Ptr createPointCloudFromDepthImage(const sensor_msgs::Image& depth_msg, const vision_msgs::BoundingBox2D& bbox, const sensor_msgs::CameraInfoConstPtr& cam_info);
-    pointcloud_type::Ptr createPointCloudFromMesh(const std::string& mesh_name);
+    pointcloud_type::Ptr createPointCloudFromMesh(const mesh_type::Ptr& mesh);
 
     ros::NodeHandle nh_;
     clf_object_recognition_cfg::Detect3dConfig config;
@@ -62,8 +69,7 @@ private:
 
     // publisher
     ros::Publisher pub_detections_3d;
-    ros::Publisher pub_raw_pcl;
-    ros::Publisher raw_centroid_pub;
+    ros::Publisher pub_marker;
 
     // sync with exact policy
     message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::CameraInfo> sync_;
