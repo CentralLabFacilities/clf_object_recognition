@@ -7,8 +7,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 ## Catkin
 find_package(catkin REQUIRED
         COMPONENTS
-            rviz
             vision_msgs
+            rviz
             clf_object_recognition_msgs
             eigen_conversions
             
