@@ -3,7 +3,7 @@
     <arg name="depth_topic" default="/xtion/depth_registered/image_raw"/>
     <arg name="info_topic" default="/xtion/depth_registered/camera_info"/>
 
-    <node pkg="clf_object_recognition_3d" type="simple_3d" name="detect_3d">
+    <node pkg="clf_object_recognition_3d" type="3d_detector" name="detect_3d">
         <param name="image_topic" value="$(arg image_topic)"/>
         <param name="depth_topic" value="$(arg depth_topic)"/>
         <param name="info_topic" value="$(arg info_topic)"/>
