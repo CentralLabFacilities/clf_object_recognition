@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   geometric_shapes
   ecwm_msgs
   eigen_conversions
+  image_geometry
   
 )
 include_directories(${catkin_INCLUDE_DIRS})
@@ -33,6 +34,7 @@ add_executable(3d_detector
   src/node.cpp 
   src/detector.cpp 
   src/model_provider.cpp
+  src/cloud_from_image.cpp
 )
 
 target_link_libraries(3d_detector ${catkin_LIBRARIES})

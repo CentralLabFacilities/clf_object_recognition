@@ -37,44 +37,46 @@ typedef pcl::PointXYZ point_type;
 typedef pcl::PointCloud<point_type> pointcloud_type;
 typedef pcl::PolygonMesh mesh_type;
 
-class Detector {
+class Detector
+{
 public:
-    Detector(ros::NodeHandle nh);
+  Detector(ros::NodeHandle nh);
+
 private:
-    void ReconfigureCallback(const clf_object_recognition_cfg::Detect3dConfig& config, uint32_t level);
-    void Callback(const sensor_msgs::ImageConstPtr& image, const sensor_msgs::ImageConstPtr& depth_image, const sensor_msgs::CameraInfoConstPtr& camera_info);
-    bool ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& req,  clf_object_recognition_msgs::Detect3D::Response& res);
+  void ReconfigureCallback(const clf_object_recognition_cfg::Detect3dConfig& config, uint32_t level);
+  void Callback(const sensor_msgs::ImageConstPtr& image, const sensor_msgs::ImageConstPtr& depth_image,
+                const sensor_msgs::CameraInfoConstPtr& camera_info);
+  bool ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& req,
+                       clf_object_recognition_msgs::Detect3D::Response& res);
 
-    mesh_type::Ptr colladaToPolygonMesh(const std::string& ressource_path);
-    //pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr meshSamplingUniform(const vtkSmartPointer<vtkPolyData>& polydata, int samples, bool calcNormal);
-    pointcloud_type::Ptr meshSamplingUniform(const pcl::PolygonMesh& mesh, std::size_t n_samples);
-    pointcloud_type::Ptr createPointCloudFromDepthImage(const sensor_msgs::Image& depth_msg, const vision_msgs::BoundingBox2D& bbox, const sensor_msgs::CameraInfoConstPtr& cam_info);
-    pointcloud_type::Ptr createPointCloudFromMesh(const mesh_type::Ptr& mesh);
+  mesh_type::Ptr colladaToPolygonMesh(const std::string& ressource_path);
+  // pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr meshSamplingUniform(const vtkSmartPointer<vtkPolyData>& polydata, int
+  // samples, bool calcNormal);
 
-    ros::NodeHandle nh_;
-    clf_object_recognition_cfg::Detect3dConfig config;
-    dynamic_reconfigure::Server<clf_object_recognition_cfg::Detect3dConfig> reconfigure_server;
-    ros::ServiceServer srv_detect_3d;
-    ros::ServiceClient srv_detect_2d;
+  ros::NodeHandle nh_;
+  clf_object_recognition_cfg::Detect3dConfig config;
+  dynamic_reconfigure::Server<clf_object_recognition_cfg::Detect3dConfig> reconfigure_server;
+  ros::ServiceServer srv_detect_3d;
+  ros::ServiceClient srv_detect_2d;
 
-    // incoming messages
-    sensor_msgs::Image::ConstPtr image_;
-    sensor_msgs::Image::ConstPtr depth_image_;
-    sensor_msgs::CameraInfo::ConstPtr camera_info_;
+  // incoming messages
+  sensor_msgs::Image::ConstPtr image_;
+  sensor_msgs::Image::ConstPtr depth_image_;
+  sensor_msgs::CameraInfo::ConstPtr camera_info_;
 
-    // subscribers
-    message_filters::Subscriber<sensor_msgs::Image> image_sub_;
-    message_filters::Subscriber<sensor_msgs::Image> depth_image_sub_;
-    message_filters::Subscriber<sensor_msgs::CameraInfo> camera_info_sub_;
+  // subscribers
+  message_filters::Subscriber<sensor_msgs::Image> image_sub_;
+  message_filters::Subscriber<sensor_msgs::Image> depth_image_sub_;
+  message_filters::Subscriber<sensor_msgs::CameraInfo> camera_info_sub_;
 
-    // publisher
-    ros::Publisher pub_detections_3d;
-    ros::Publisher pub_marker;
+  // publisher
+  ros::Publisher pub_detections_3d;
+  ros::Publisher pub_marker;
 
-    // sync with exact policy
-    message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::CameraInfo> sync_;
+  // sync with exact policy
+  message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::CameraInfo> sync_;
 
-    std::mutex mutex_;
+  std::mutex mutex_;
 
-    std::unique_ptr<ModelProvider> model_provider{nullptr};
+  std::unique_ptr<ModelProvider> model_provider{ nullptr };
 };

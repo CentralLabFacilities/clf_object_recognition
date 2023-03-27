@@ -21,8 +21,9 @@ Service Type:
     object_detection/GetPointCloud
 
 Description:
-    Generates a point cloud from an RGB image, depth image, and camera intrinsic parameters, cropped to a specified 2D bounding box.
-    The output point cloud is filtered to remove statistical outliers and downsampled using a voxel grid filter.
+    Generates a point cloud from an RGB image, depth image, and camera intrinsic parameters, cropped to a specified 2D
+bounding box. The output point cloud is filtered to remove statistical outliers and downsampled using a voxel grid
+filter.
 
 Inputs:
     string camera_link: Name of camera's frame ID
@@ -46,13 +47,10 @@ Outputs:
 
 */
 
-
-bool pointcloud_from_depth_image_service_callback(
-        clf_object_recognition_msgs::Img2RawPointCloudMsg::Request& req,
-        clf_object_recognition_msgs::Img2RawPointCloudMsg::Response& res);
+bool pointcloud_from_depth_image_service_callback(clf_object_recognition_msgs::Img2RawPointCloudMsg::Request& req,
+                                                  clf_object_recognition_msgs::Img2RawPointCloudMsg::Response& res);
 
 int main(int argc, char** argv);
-
 
 /*
 Example usage:
@@ -76,7 +74,6 @@ except rospy.ServiceException as e:
     print("Service call failed: %s"%e)
 
 */
-
 
 /*
 // Service message

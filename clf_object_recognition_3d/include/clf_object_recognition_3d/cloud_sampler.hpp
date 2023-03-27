@@ -3,9 +3,9 @@
 #include <vtkCellArray.h>
 
 #ifdef VTK_CELL_ARRAY_V2
-  using vtkCellPtsPtr = vtkIdType const*;
+using vtkCellPtsPtr = vtkIdType const*;
 #else
-  using vtkCellPtsPtr = vtkIdType*;
+using vtkCellPtsPtr = vtkIdType*;
 #endif
 
 #include <pcl/io/pcd_io.h>
@@ -154,27 +154,10 @@ using namespace pcl::console;
 constexpr int default_number_samples = 100000;
 constexpr float default_leaf_size = 0.01f;
 
-void printHelp(int, char** argv)
-{
-  print_error("Syntax is: %s input.{ply,obj} output.pcd <options>\n", argv[0]);
-  print_info("  where options are:\n");
-  print_info("                     -n_samples X      = number of samples (default: ");
-  print_value("%d", default_number_samples);
-  print_info(")\n");
-  print_info("                     -leaf_size X  = the XYZ leaf size for the VoxelGrid -- for data reduction "
-             "(default: ");
-  print_value("%f", default_leaf_size);
-  print_info(" m)\n");
-  print_info("                     -write_normals = flag to write normals to the output pcd\n");
-  print_info("                     -write_colors  = flag to write colors to the output pcd\n");
-  print_info("                     -no_vis_result = flag to stop visualizing the generated pcd\n");
-}
-
 /* ---[ */
 pcl::PointCloud<pcl::PointXYZ>::Ptr sample_cloud(const std::shared_ptr<pcl::PolygonMesh> mesh_ptr)
 {
-
-    auto mesh = *mesh_ptr;
+  auto mesh = *mesh_ptr;
   // Parse command line arguments
   int SAMPLE_POINTS_ = default_number_samples;
   float leaf_size = default_leaf_size;

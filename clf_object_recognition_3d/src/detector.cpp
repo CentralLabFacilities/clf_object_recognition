@@ -21,9 +21,18 @@
 
 #include <ros/console.h>
 
+#include <cv_bridge/cv_bridge.h>
+#include <image_geometry/pinhole_camera_model.h>
+
 #include <eigen_conversions/eigen_msg.h>
 
 #include "clf_object_recognition_3d/cloud_sampler.hpp"
+#include "clf_object_recognition_3d/cloud_from_image.h"
+
+inline bool validateFloats(double val)
+{
+  return !(std::isnan(val) || std::isinf(val));
+}
 
 Detector::Detector(ros::NodeHandle nh) : sync_(image_sub_, depth_image_sub_, camera_info_sub_, 10)
 {
@@ -47,8 +56,6 @@ Detector::Detector(ros::NodeHandle nh) : sync_(image_sub_, depth_image_sub_, cam
 
   // sync incoming camera messages
   sync_.registerCallback(boost::bind(&Detector::Callback, this, _1, _2, _3));
-
- 
 
   model_provider = std::make_unique<ModelProvider>(nh);
 }
@@ -102,24 +109,27 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
   {
     vision_msgs::Detection3D d3d;
     // generate point cloud from incoming depth image for detection bounding box
-    pointcloud_type::Ptr cloud_from_depth_image = createPointCloudFromDepthImage(depth, detection.bbox, camera_info_);
+    pointcloud_type::Ptr cloud_from_depth_image = cloud::fromDepthArea(detection.bbox, depth, *camera_info_);
     // pointcloud_type* cloud_from_mesh = createPointCloudFromMesh(mesh_name);
 
     Eigen::Vector4d cloud_from_depth_image_centroid = Eigen::Vector4d::Random();
     auto centroid_size = pcl::compute3DCentroid(*cloud_from_depth_image, cloud_from_depth_image_centroid);
 
-    geometry_msgs::Pose centroid_pose_msg;
-    centroid_pose_msg.orientation.w = 1;
-    centroid_pose_msg.position.x = cloud_from_depth_image_centroid[0];
-    centroid_pose_msg.position.y = cloud_from_depth_image_centroid[1];
-    centroid_pose_msg.position.z = cloud_from_depth_image_centroid[2];
+    geometry_msgs::Pose center;
+    center.orientation.w = 1;
+    center.position.x = cloud_from_depth_image_centroid[0];
+    center.position.y = cloud_from_depth_image_centroid[1];
+    center.position.z = cloud_from_depth_image_centroid[2];
 
-    if(centroid_pose_msg.position.x != centroid_pose_msg.position.x) centroid_pose_msg.position.x = 0.1;
-    if(centroid_pose_msg.position.y != centroid_pose_msg.position.y) centroid_pose_msg.position.y = 0.1;
-    if(centroid_pose_msg.position.z != centroid_pose_msg.position.z) centroid_pose_msg.position.z = 0.1;
+    if (center.position.x != center.position.x)
+      center.position.x = 0.1;
+    if (center.position.y != center.position.y)
+      center.position.y = 0.1;
+    if (center.position.z != center.position.z)
+      center.position.z = 0.1;
 
     d3d.header = detection.header;
-    d3d.bbox.center = centroid_pose_msg;
+    d3d.bbox.center = center;
     d3d.bbox.size.x = 0.1;
     d3d.bbox.size.y = 0.1;
     d3d.bbox.size.z = 0.1;
@@ -250,67 +260,4 @@ mesh_type::Ptr Detector::colladaToPolygonMesh(const std::string& ressource_path)
   polygon_mesh.polygons = vertex_indices;
 
   return std::make_shared<pcl::PolygonMesh>(polygon_mesh);
-}
-
-pointcloud_type::Ptr Detector::createPointCloudFromMesh(const mesh_type::Ptr& mesh)
-{
-  pointcloud_type::Ptr cloud(new pointcloud_type());
-  // generate point cloud
-  return cloud;
-}
-
-pointcloud_type::Ptr Detector::createPointCloudFromDepthImage(const sensor_msgs::Image& depth_msg,
-                                                              const vision_msgs::BoundingBox2D& bbox,
-                                                              const sensor_msgs::CameraInfoConstPtr& cam_info)
-{
-  pointcloud_type::Ptr cloud(new pointcloud_type());
-
-  cloud->header.stamp = ros::Time(depth_msg.header.stamp).toSec();
-  cloud->header.frame_id = depth_msg.header.frame_id;
-  ROS_INFO_STREAM_NAMED("Detector ", "frame_id: " << depth_msg.header.frame_id);
-  // single point of view, 2d rasterized
-  cloud->is_dense = true;
-
-  // principal point and focal lengths
-  float cx, cy, fx, fy;
-
-  // cloud->height = depth_msg.height;
-  // cloud->width = depth_msg.width;
-  cx = cam_info->K[2];  //(cloud->width >> 1) - 0.5f;
-  cy = cam_info->K[5];  //(cloud->height >> 1) - 0. f;
-  fx = 1.0f / cam_info->K[0];
-  fy = 1.0f / cam_info->K[4];
-
-  // cloud->points.resize (cloud->height * cloud->width);
-  cloud->points.resize(bbox.size_x * bbox.size_y);
-
-  const float* depth_buffer = reinterpret_cast<const float*>(&depth_msg.data[0]);
-
-  int depth_idx = 0;
-
-  pointcloud_type::iterator pt_iter = cloud->begin();
-  for (int v = (int)(bbox.center.y - bbox.size_y / 2); v < (int)(bbox.center.y - bbox.size_y / 2 + bbox.size_y); ++v)
-  {
-    for (int u = (int)(bbox.center.x - bbox.size_x / 2); u < (int)(bbox.center.x - bbox.size_x / 2 + bbox.size_x);
-         ++u, ++pt_iter)
-    {
-      point_type& pt = *pt_iter;
-      depth_idx = depth_msg.width * v + u;
-      float Z = depth_buffer[depth_idx];
-
-      // Check for invalid measurements
-      if (std::isnan(Z))
-      {
-        pt.x = pt.y = pt.z = Z;
-      }
-      else  // Fill in XYZ
-      {
-        pt.x = (u - cx) * Z * fx;
-        pt.y = (v - cy) * Z * fy;
-        pt.z = Z;
-      }
-    }
-  }
-
-  return cloud;
 }

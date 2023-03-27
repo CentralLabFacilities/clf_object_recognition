@@ -1,8 +1,8 @@
 #pragma once
 
 #include "vision_msgs/Detection3D.h"
-#include <memory> // for unique_ptr
-#include <string> // for string
+#include <memory>  // for unique_ptr
+#include <string>  // for string
 
 #include "clf_object_recognition_rviz/bounding_box_visual.h"
 
@@ -14,7 +14,12 @@ class SceneManager;
 class SceneNode;
 }  // namespace Ogre
 
-namespace rviz { class MovableText; class PointCloudCommon; class DisplayContext;}
+namespace rviz
+{
+class MovableText;
+class PointCloudCommon;
+class DisplayContext;
+}  // namespace rviz
 
 namespace objrec
 {
@@ -38,7 +43,6 @@ public:
   void setShowPropability(const bool show);
 
 protected:
-
   std::string getName(int id, std::string fixed_name = "");
   std::string getName(const std::string& id, std::string fixed_name = "");
   void updateHypothesis(const vision_msgs::Detection3D msg);
@@ -46,9 +50,9 @@ protected:
   void updateLabel();
 
 private:
-  bool show_prob_{true};
-  std::string cur_hyp_{"unknown"};
-  double cur_prob_{0.0};
+  bool show_prob_{ true };
+  std::string cur_hyp_{ "unknown" };
+  double cur_prob_{ 0.0 };
   float text_size_;
 
   rviz::PointCloudCommon* point_cloud_common_;
@@ -61,9 +65,9 @@ private:
 
   rviz::MovableText* text_{ nullptr };
 
-  std::unique_ptr<BoundingBoxVisual> bbox_{nullptr};
+  std::unique_ptr<BoundingBoxVisual> bbox_{ nullptr };
 
-  std::unique_ptr<PointCloudVisual> pc_{nullptr};
+  std::unique_ptr<PointCloudVisual> pc_{ nullptr };
 };
 }  // namespace viz
 }  // namespace objrec

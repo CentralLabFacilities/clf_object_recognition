@@ -10,7 +10,7 @@ int main(int argc, char** argv)
   Detector detect(nh);
 
   ros::spin();
- 
+
   ros::shutdown();
 
   return 0;

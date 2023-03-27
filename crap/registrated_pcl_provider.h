@@ -11,12 +11,11 @@
 
 #include "clf_object_recognition_msgs/RegistratedPclMsg.h"
 
-//bool registerPointClouds(your_package_name::RegisterPointClouds::Request& req,
+// bool registerPointClouds(your_package_name::RegisterPointClouds::Request& req,
 //                         your_package_name::RegisterPointClouds::Response& res);
 
-
 bool registerPointClouds(clf_object_recognition_msgs::RegistratedPclMsg::Request& req,
-                         clf_object_recognition_msgs::RegistratedPclMsg::Response& res);                     
+                         clf_object_recognition_msgs::RegistratedPclMsg::Response& res);
 
 int main(int argc, char** argv);
 

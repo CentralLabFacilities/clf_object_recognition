@@ -14,13 +14,14 @@ namespace viz
 Detection3DArrayDisplay::Detection3DArrayDisplay()
 {
   showLabels_ = new rviz::BoolProperty("show Labels", true, "Draw the Labels.", this, SLOT(slotShowLabels()));
-  showProb_ = new rviz::BoolProperty("show Propability", false, "Prefix label with Parent Location", this, SLOT(slotShowProb()));
-  showBox_ = new rviz::BoolProperty("show Bounding Box", true, "Prefix label with Parent Location", this, SLOT(slotShowBox()));
-  showPoints_ = new rviz::BoolProperty("show Points", false, "Prefix label with Parent Location", this, SLOT(slotShowPoints()));
+  showProb_ = new rviz::BoolProperty("show Propability", false, "Prefix label with Parent Location", this,
+                                     SLOT(slotShowProb()));
+  showBox_ =
+      new rviz::BoolProperty("show Bounding Box", true, "Prefix label with Parent Location", this, SLOT(slotShowBox()));
+  showPoints_ =
+      new rviz::BoolProperty("show Points", false, "Prefix label with Parent Location", this, SLOT(slotShowPoints()));
   labelSize_ = new rviz::FloatProperty("Label size", 0.1, "Character Height of TextLabel", this, SLOT(slotLabelSize()));
-
 }
-
 
 void Detection3DArrayDisplay::slotLabelSize()
 {
@@ -79,7 +80,6 @@ void Detection3DArrayDisplay::reset()
 
 void Detection3DArrayDisplay::processMessage(const vision_msgs::Detection3DArray::ConstPtr& msg)
 {
-
   ROS_DEBUG("GOT MSG");
   Ogre::Quaternion orientation;
   Ogre::Vector3 position;
@@ -105,7 +105,7 @@ void Detection3DArrayDisplay::processMessage(const vision_msgs::Detection3DArray
       if (++count > visuals_.size())
       {
         vis = std::make_shared<Detection3DVisual>(context_->getSceneManager(), scene_node_);
-        
+
         vis->setShowPropability(showProb_->getBool());
         vis->setShowLabel(showLabels_->getBool());
         vis->setShowPoints(showPoints_->getBool());
@@ -119,7 +119,6 @@ void Detection3DArrayDisplay::processMessage(const vision_msgs::Detection3DArray
         vis = visuals_.at(count - 1);
       }
       vis->setMessage(detection);
-
     }
 
     for (int i = visuals_.size() - count; i > 0; i--)

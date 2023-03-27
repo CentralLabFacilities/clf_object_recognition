@@ -1,8 +1,8 @@
 #include <OGRE/OgreManualObject.h>
 #include <OGRE/OgreSceneManager.h>
 #include <OGRE/OgreSceneNode.h>
-#include <OGRE/OgreColourValue.h> // for ColourValue
-#include <vision_msgs/BoundingBox3D.h> // for BoundingBox3D
+#include <OGRE/OgreColourValue.h>       // for ColourValue
+#include <vision_msgs/BoundingBox3D.h>  // for BoundingBox3D
 #include <eigen_conversions/eigen_msg.h>
 
 #include <rviz/properties/parse_color.h>
@@ -42,7 +42,7 @@ void BoundingBoxVisual::setMessage(const vision_msgs::BoundingBox3D msg)
   auto max_point = Eigen::Vector3d(size.x / 2, size.y / 2, size.z / 2);
 
   Eigen::Isometry3d pose;
-  
+
   tf::poseMsgToEigen(center, pose);
 
   // Extract 8 cuboid vertices

@@ -7,7 +7,6 @@
 // #include <your_package/LoadPointCloud.h>
 #include "clf_object_recognition_msgs/LoadPointCloudMsg.h"
 
-
 bool loadPointCloud(clf_object_recognition_msgs::LoadPointCloudMsg::Request& req,
                     clf_object_recognition_msgs::LoadPointCloudMsg::Response& res);
 

@@ -9,9 +9,8 @@ namespace objrec
 {
 namespace viz
 {
-
-PointCloudVisual::PointCloudVisual(Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent_node) {
-
+PointCloudVisual::PointCloudVisual(Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent_node)
+{
   scene_manager_ = scene_manager;
   object_node_ = parent_node->createChildSceneNode();
 
@@ -19,13 +18,13 @@ PointCloudVisual::PointCloudVisual(Ogre::SceneManager* scene_manager, Ogre::Scen
   cloud_->setRenderMode(rviz::PointCloud::RenderMode::RM_POINTS);
 
   object_node_->attachObject(cloud_.get());
-
 }
-PointCloudVisual::~PointCloudVisual() {
-
+PointCloudVisual::~PointCloudVisual()
+{
 }
 
-void PointCloudVisual::setMessage(const sensor_msgs::PointCloud2& msg) {
+void PointCloudVisual::setMessage(const sensor_msgs::PointCloud2& msg)
+{
   cloud_->clear();
 
   std::vector<rviz::PointCloud::Point> transformed_points;
@@ -40,22 +39,24 @@ void PointCloudVisual::setMessage(const sensor_msgs::PointCloud2& msg) {
 
   sensor_msgs::PointCloud2Ptr ptr = boost::make_shared<sensor_msgs::PointCloud2>(msg);
   rviz::XYZPCTransformer xyz;
-  if(xyz.supports(ptr)) {
+  if (xyz.supports(ptr))
+  {
     xyz.transform(ptr, rviz::PointCloudTransformer::Support_XYZ, transform, transformed_points);
   }
 
   rviz::RGBF32PCTransformer rgb;
   rviz::RGBF32PCTransformer rgb2;
-  if(rgb.supports(ptr)) {
+  if (rgb.supports(ptr))
+  {
     rgb.transform(ptr, rviz::PointCloudTransformer::Support_Color, transform, transformed_points);
-  } else if (rgb2.supports(ptr)){
+  }
+  else if (rgb2.supports(ptr))
+  {
     rgb2.transform(ptr, rviz::PointCloudTransformer::Support_Color, transform, transformed_points);
-  } 
+  }
 
   cloud_->addPoints(&(transformed_points.front()), transformed_points.size());
 }
-
-
 
 }  // namespace viz
 }  // namespace objrec
