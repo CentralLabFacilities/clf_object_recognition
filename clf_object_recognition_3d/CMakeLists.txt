@@ -40,6 +40,11 @@ target_link_libraries(3d_detector ${catkin_LIBRARIES})
 install(TARGETS 3d_detector
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
+install(DIRECTORY launch config
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
+
+
 install(PROGRAMS
   scripts/simple_3d
   scripts/new_3d
