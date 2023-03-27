@@ -107,6 +107,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
   ROS_INFO_STREAM_NAMED("detector", "got detections " << param.response);
   for (auto& detection : param.response.detections)
   {
+    ROS_DEBUG_STREAM_NAMED("detector", "detection");
     vision_msgs::Detection3D d3d;
     // generate point cloud from incoming depth image for detection bounding box
     pointcloud_type::Ptr cloud_from_depth_image = cloud::fromDepthArea(detection.bbox, depth, *camera_info_);
@@ -139,6 +140,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
     d3d.source_cloud = pcl_msg;
     for (auto hypo : detection.results)
     {
+      ROS_DEBUG_STREAM_NAMED("detector", "  - hypo " << hypo.id);
       visualization_msgs::Marker marker;
       marker.type = visualization_msgs::Marker::MESH_RESOURCE;
       marker.id = i++;
@@ -162,7 +164,9 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
       marker.mesh_resource = path;
 
       // create polygon mesh from .dae ressource
+      ROS_DEBUG_STREAM_NAMED("detector", "      load mesh");
       mesh_type::Ptr reference_mesh = colladaToPolygonMesh(path);
+      ROS_DEBUG_STREAM_NAMED("detector", "      sample mesh");
       auto sampled = sample_cloud(reference_mesh);
 
       // uniform mesh sampling
@@ -172,6 +176,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
       icp.setInputSource(sampled);
       icp.setInputTarget(cloud_from_depth_image);
       pointcloud_type final_point_cloud;
+      ROS_DEBUG_STREAM_NAMED("detector", "      icp");
       icp.align(final_point_cloud);
       auto transform = icp.getFinalTransformation();
       Eigen::Affine3f affine(transform);
@@ -185,7 +190,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
       marker.pose = hyp.pose.pose;
       // TODO: remove later
 
-      ROS_INFO_STREAM_NAMED("detector", "has converged: " << icp.hasConverged());
+      ROS_INFO_STREAM_NAMED("detector", "      has converged: " << icp.hasConverged());
       // FIXME: icp score calculation not working
       // auto d = icp.getFitnessScore();
       // ROS_INFO_STREAM_NAMED("detector", "has converged: " << icp.hasConverged() << " score: " << d);
@@ -204,7 +209,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
 
   if (config.publish_detections)
   {
-    ROS_INFO_STREAM_NAMED("detector", "publishing detections ");
+    ROS_DEBUG_STREAM_NAMED("detector", "publishing detections ");
     vision_msgs::Detection3DArray a;
     for (auto b : res.detections)
     {
