@@ -109,6 +109,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
     auto centroid_size = pcl::compute3DCentroid(*cloud_from_depth_image, cloud_from_depth_image_centroid);
 
     geometry_msgs::Pose centroid_pose_msg;
+    centroid_pose_msg.orientation.w = 1
     centroid_pose_msg.position.x = cloud_from_depth_image_centroid[0];
     centroid_pose_msg.position.y = cloud_from_depth_image_centroid[1];
     centroid_pose_msg.position.z = cloud_from_depth_image_centroid[2];
@@ -118,10 +119,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
     if(centroid_pose_msg.position.z != centroid_pose_msg.position.z) centroid_pose_msg.position.z = 0.1;
 
     d3d.header = detection.header;
-    d3d.bbox.center.orientation.w = 1;
-    d3d.bbox.center.position.x = cloud_from_depth_image_centroid.x();
-    d3d.bbox.center.position.y = cloud_from_depth_image_centroid.y();
-    d3d.bbox.center.position.z = cloud_from_depth_image_centroid.z();
+    d3d.bbox.center = centroid_pose_msg;
     d3d.bbox.size.x = 0.1;
     d3d.bbox.size.y = 0.1;
     d3d.bbox.size.z = 0.1;
