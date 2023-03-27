@@ -27,6 +27,11 @@
 
 Detector::Detector(ros::NodeHandle nh) : sync_(image_sub_, depth_image_sub_, camera_info_sub_, 10)
 {
+  auto f = [this](auto&& PH1, auto&& PH2) { ReconfigureCallback(PH1, PH2); };
+  reconfigure_server.setCallback(f);
+  // get configuration first
+  ros::spinOnce();
+
   srv_detect_2d = nh.serviceClient<clf_object_recognition_msgs::Detect2DImage>("/yolox/recognize_from_image");
   srv_detect_3d = nh.advertiseService("simple_detections", &Detector::ServiceDetect3D, this);
 
@@ -36,16 +41,14 @@ Detector::Detector(ros::NodeHandle nh) : sync_(image_sub_, depth_image_sub_, cam
   // vision_msgs::Detection3DArray
 
   // subscribe to camera topics
-  image_sub_.subscribe(nh, "/xtion/rgb/image_raw", 1);
-  depth_image_sub_.subscribe(nh, "/xtion/depth_registered/image_raw", 1);
-  camera_info_sub_.subscribe(nh, "/xtion/depth_registered/camera_info", 1);
+  image_sub_.subscribe(nh, config.image_topic, 1);
+  depth_image_sub_.subscribe(nh, config.depth_topic, 1);
+  camera_info_sub_.subscribe(nh, config.info_topic, 1);
 
   // sync incoming camera messages
   sync_.registerCallback(boost::bind(&Detector::Callback, this, _1, _2, _3));
 
-  auto f = [this](auto&& PH1, auto&& PH2) { ReconfigureCallback(PH1, PH2); };
-  reconfigure_server.setCallback(f);
-  ros::spinOnce();
+ 
 
   model_provider = std::make_unique<ModelProvider>(nh);
 }
