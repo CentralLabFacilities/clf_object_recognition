@@ -113,6 +113,10 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
     centroid_pose_msg.position.y = cloud_from_depth_image_centroid[1];
     centroid_pose_msg.position.z = cloud_from_depth_image_centroid[2];
 
+    if(centroid_pose_msg.position.x != centroid_pose_msg.position.x) centroid_pose_msg.position.x = 0.1;
+    if(centroid_pose_msg.position.y != centroid_pose_msg.position.y) centroid_pose_msg.position.y = 0.1;
+    if(centroid_pose_msg.position.z != centroid_pose_msg.position.z) centroid_pose_msg.position.z = 0.1;
+
     d3d.header = detection.header;
     d3d.bbox.center.orientation.w = 1;
     d3d.bbox.center.position.x = cloud_from_depth_image_centroid.x();
