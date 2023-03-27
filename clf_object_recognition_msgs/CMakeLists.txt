@@ -5,9 +5,6 @@ set(MSG_DEPS vision_msgs std_msgs geometry_msgs)
 
 find_package(catkin REQUIRED COMPONENTS message_generation ${MSG_DEPS})
 
-find_package(tf2_ros REQUIRED)
-find_package(geometry_msgs REQUIRED)
-
 
 #ROS messages, services and actions
 add_message_files(DIRECTORY msg FILES
