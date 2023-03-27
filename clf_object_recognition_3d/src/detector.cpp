@@ -134,7 +134,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
       marker.scale.x = 1;
       marker.scale.y = 1;
       marker.scale.z = 1;
-      marker.color.a = 1;
+      marker.color.a = 0.5;
 
       vision_msgs::ObjectHypothesisWithPose hyp;
       hyp = hypo;
