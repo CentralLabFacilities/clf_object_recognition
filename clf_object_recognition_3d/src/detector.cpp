@@ -119,8 +119,8 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
     ROS_DEBUG_STREAM_NAMED("detector", "detection");
     vision_msgs::Detection3D d3d;
     // generate point cloud from incoming depth image for detection bounding box
-    pointcloud_type::Ptr cloud_from_depth_image = cloud::fromDepthArea(detection.bbox, depth, *camera_info_);
-    //pointcloud_type::Ptr cloud_from_depth_image = cloud::oldFromDepth( depth, detection.bbox, camera_info_);
+    //pointcloud_type::Ptr cloud_from_depth_image = cloud::fromDepthArea(detection.bbox, depth, *camera_info_);
+    pointcloud_type::Ptr cloud_from_depth_image = cloud::oldFromDepth( depth, detection.bbox, camera_info_);
     // pointcloud_type* cloud_from_mesh = createPointCloudFromMesh(mesh_name);
 
     Eigen::Vector4d cloud_from_depth_image_centroid = Eigen::Vector4d::Random();
@@ -139,7 +139,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
     if (center.position.z != center.position.z)
       center.position.z = 0.1;
 
-    ROS_DEBUG_STREAM_NAMED("detector", "      object at " << center.position.x << ", " << center.position.y << ", " << center.position.z);
+    ROS_DEBUG_STREAM_NAMED("detector", "      center at " << center.position.x << ", " << center.position.y << ", " << center.position.z);
 
     d3d.header = detection.header;
     d3d.bbox.center = center;
@@ -193,14 +193,11 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
       pointcloud_type final_point_cloud;
       ROS_DEBUG_STREAM_NAMED("detector", "      icp");
       icp.align(final_point_cloud);
-      ROS_DEBUG_STREAM_NAMED("detector", "      before getFinalTransformation");
       Eigen::Matrix4f icp_transform = icp.getFinalTransformation();
-      ROS_DEBUG_STREAM_NAMED("detector", "      after getFinalTransformation");
       Eigen::Matrix4f transformation_inverse = transformation_matrix.cast<float>().inverse();
       Eigen::Matrix4f final_transformation = transformation_inverse * icp_transform;
       Eigen::Affine3f affine(final_transformation);
       
-
       geometry_msgs::Transform tf_msg;
       tf::transformEigenToMsg(affine.cast<double>(), tf_msg);
 
@@ -210,7 +207,6 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
       hyp.pose.pose.position.y = tf_msg.translation.y;
       hyp.pose.pose.position.z = tf_msg.translation.z;
       marker.pose = hyp.pose.pose;
-      // TODO: remove later
 
       ROS_INFO_STREAM_NAMED("detector", "      has converged: " << icp.hasConverged());
       // FIXME: icp score calculation not working
