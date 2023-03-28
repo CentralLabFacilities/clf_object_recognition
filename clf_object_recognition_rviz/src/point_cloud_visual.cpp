@@ -54,7 +54,7 @@ void do_nothing_deleter(int *)
 
 void PointCloudVisual::setMessage(const sensor_msgs::PointCloud2& cloud)
 {
-
+  //sensor_msgs::PointCloud2Ptr ptr = boost::make_shared<sensor_msgs::PointCloud2>(filtered);
   // Filter any nan values out of the cloud.  Any nan values that make it through to PointCloudBase
   // will get their points put off in lala land, but it means they still do get processed/rendered
   // which can be a big performance hit
@@ -79,7 +79,7 @@ void PointCloudVisual::setMessage(const sensor_msgs::PointCloud2& cloud)
     return;
   }
 
-  filtered.data.resize(cloud.data.size());
+  filtered->data.resize(cloud.data.size());
   uint32_t output_count;
   if (point_count == 0)
   {
@@ -128,12 +128,12 @@ void PointCloudVisual::setMessage(const sensor_msgs::PointCloud2& cloud)
     output_count = (output_ptr - &filtered->data.front()) / point_step;
   }
 
-  filtered->header = cloud->header;
-  filtered->fields = cloud->fields;
+  filtered->header = cloud.header;
+  filtered->fields = cloud.fields;
   filtered->data.resize(output_count * point_step);
   filtered->height = 1;
   filtered->width = output_count;
-  filtered->is_bigendian = cloud->is_bigendian;
+  filtered->is_bigendian = cloud.is_bigendian;
   filtered->point_step = point_step;
   filtered->row_step = output_count;
 
@@ -147,27 +147,27 @@ void PointCloudVisual::setMessage(const sensor_msgs::PointCloud2& cloud)
   default_pt.color = Ogre::ColourValue(1, 1, 1);
   default_pt.position = Ogre::Vector3::ZERO;
 
-  size_t size = msg.width * msg.height;
+  size_t size = filtered->width * filtered->height;
   transformed_points.resize(size, default_pt);
 
   Ogre::Matrix4 transform;
 
-  sensor_msgs::PointCloud2Ptr ptr = boost::make_shared<sensor_msgs::PointCloud2>(filtered);
+
   rviz::XYZPCTransformer xyz;
-  if (xyz.supports(ptr))
+  if (xyz.supports(filtered))
   {
-    xyz.transform(ptr, rviz::PointCloudTransformer::Support_XYZ, transform, transformed_points);
+    xyz.transform(filtered, rviz::PointCloudTransformer::Support_XYZ, transform, transformed_points);
   }
 
   rviz::RGBF32PCTransformer rgb;
   rviz::RGBF32PCTransformer rgb2;
-  if (rgb.supports(ptr))
+  if (rgb.supports(filtered))
   {
-    rgb.transform(ptr, rviz::PointCloudTransformer::Support_Color, transform, transformed_points);
+    rgb.transform(filtered, rviz::PointCloudTransformer::Support_Color, transform, transformed_points);
   }
-  else if (rgb2.supports(ptr))
+  else if (rgb2.supports(filtered))
   {
-    rgb2.transform(ptr, rviz::PointCloudTransformer::Support_Color, transform, transformed_points);
+    rgb2.transform(filtered, rviz::PointCloudTransformer::Support_Color, transform, transformed_points);
   }
 
 
