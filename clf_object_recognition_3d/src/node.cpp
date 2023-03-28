@@ -5,7 +5,7 @@ int main(int argc, char** argv)
 {
   ros::init(argc, argv, "detect3d");
 
-  ros::NodeHandle nh("detect3d");
+  ros::NodeHandle nh("detect_3d");
 
   Detector detect(nh);
 

@@ -133,7 +133,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
     if (center.position.z != center.position.z)
       center.position.z = 0.1;
 
-    ROS_DEBUG_STREAM_NAMED("detector", "      object at " << center.position.x << ", " << center.position.y << ", " << center.position.z);
+    ROS_DEBUG_STREAM_NAMED("detector", "      center at " << center.position.x << ", " << center.position.y << ", " << center.position.z);
 
     d3d.header = detection.header;
     d3d.bbox.center = center;
@@ -178,8 +178,8 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
       // uniform mesh sampling
       // https://github.com/PointCloudLibrary/pcl/blob/master/tools/mesh_sampling.cpp
 
-      Eigen::Matrix4d transformation_matrix = Eigen::Matrix4d::Identity ();
-      pcl::transformPointCloud (*sampled, *sampled, transformation_matrix);
+      //Eigen::Matrix4d transformation_matrix = Eigen::Matrix4d::Identity ();
+      //pcl::transformPointCloud (*sampled, *sampled, transformation_matrix);
 
       pcl::IterativeClosestPoint<point_type, point_type> icp;
       icp.setInputSource(sampled);
@@ -188,7 +188,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
       ROS_DEBUG_STREAM_NAMED("detector", "      icp");
       icp.align(final_point_cloud);
       auto transform = icp.getFinalTransformation();
-      transform = transformation_matrix.inverse() * transform;
+      //transform = transformation_matrix.inverse() * transform;
       Eigen::Affine3f affine(transform);
       
 

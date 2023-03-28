@@ -17,6 +17,21 @@ namespace objrec
 {
 namespace viz
 {
+inline int32_t findChannelIndex(const sensor_msgs::PointCloud2& cloud, const std::string& channel)
+{
+  for (size_t i = 0; i < cloud.fields.size(); ++i)
+  {
+    if (cloud.fields[i].name == channel)
+    {
+      return i;
+    }
+  }
+
+  return -1;
+}
+
+
+
 PointCloudVisual::PointCloudVisual(Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent_node)
 {
   scene_manager_ = scene_manager;
@@ -31,35 +46,40 @@ PointCloudVisual::~PointCloudVisual()
 {
 }
 
-void PointCloudVisual::setMessage(const sensor_msgs::PointCloud2& msg)
+void do_nothing_deleter(int *)
+{
+    return;
+}
+
+
+void PointCloudVisual::setMessage(const sensor_msgs::PointCloud2& cloud)
 {
 
-  /*sensor_msgs::PointCloud2Ptr cloud = boost::make_shared<sensor_msgs::PointCloud2>(msg);
   // Filter any nan values out of the cloud.  Any nan values that make it through to PointCloudBase
   // will get their points put off in lala land, but it means they still do get processed/rendered
   // which can be a big performance hit
   sensor_msgs::PointCloud2Ptr filtered(new sensor_msgs::PointCloud2);
-  int32_t xi = rviz::findChannelIndex(cloud, "x");
-  int32_t yi = rviz::findChannelIndex(cloud, "y");
-  int32_t zi = rviz::findChannelIndex(cloud, "z");
+  int32_t xi = findChannelIndex(cloud, "x");
+  int32_t yi = findChannelIndex(cloud, "y");
+  int32_t zi = findChannelIndex(cloud, "z");
 
   if (xi == -1 || yi == -1 || zi == -1)
   {
     return;
   }
 
-  const uint32_t xoff = cloud->fields[xi].offset;
-  const uint32_t yoff = cloud->fields[yi].offset;
-  const uint32_t zoff = cloud->fields[zi].offset;
-  const uint32_t point_step = cloud->point_step;
-  const size_t point_count = cloud->width * cloud->height;
+  const uint32_t xoff = cloud.fields[xi].offset;
+  const uint32_t yoff = cloud.fields[yi].offset;
+  const uint32_t zoff = cloud.fields[zi].offset;
+  const uint32_t point_step = cloud.point_step;
+  const size_t point_count = cloud.width * cloud.height;
 
-  if (point_count * point_step != cloud->data.size())
+  if (point_count * point_step != cloud.data.size())
   {
     return;
   }
 
-  filtered->data.resize(cloud->data.size());
+  filtered.data.resize(cloud.data.size());
   uint32_t output_count;
   if (point_count == 0)
   {
@@ -68,7 +88,7 @@ void PointCloudVisual::setMessage(const sensor_msgs::PointCloud2& msg)
   else
   {
     uint8_t* output_ptr = &filtered->data.front();
-    const uint8_t *ptr = &cloud->data.front(), *ptr_end = &cloud->data.back(), *ptr_init;
+    const uint8_t *ptr = &cloud.data.front(), *ptr_end = &cloud.data.back(), *ptr_init;
     size_t points_to_copy = 0;
     for (; ptr < ptr_end; ptr += point_step)
     {
@@ -117,8 +137,8 @@ void PointCloudVisual::setMessage(const sensor_msgs::PointCloud2& msg)
   filtered->point_step = point_step;
   filtered->row_step = output_count;
 
-  */
-  auto filtered = msg;
+  // */
+  //auto filtered = msg;
 
   cloud_->clear();
 
