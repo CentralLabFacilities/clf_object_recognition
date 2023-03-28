@@ -67,6 +67,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthArea(const vision_msgs::BoundingBox
                                                   const sensor_msgs::Image& depth, sensor_msgs::CameraInfo info,
                                                   double depth_scaling)
 {
+  ROS_DEBUG_STREAM_NAMED("cloud", "fromDepthArea " << );
   image_geometry::PinholeCameraModel camera;
   camera.fromCameraInfo(info);
 
@@ -80,6 +81,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthArea(const vision_msgs::BoundingBox
   {
     cv_ptr = cv_bridge::toCvCopy(depth, sensor_msgs::image_encodings::TYPE_16UC1);
   }
+  ROS_DEBUG_STREAM_NAMED("cloud", "copied image");
 
   float constant_x = depth_scaling / camera.fx();
   float constant_y = depth_scaling / camera.fy();
@@ -95,6 +97,11 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthArea(const vision_msgs::BoundingBox
 
   cloud->points.resize(w * h);
 
+  ROS_DEBUG_STREAM_NAMED("cloud", "image size: " << cv_ptr->image.cols << "x" << cv_ptr->image.rows;);
+  ROS_DEBUG_STREAM_NAMED("cloud", "box size: " << w << "x" << h);
+  ROS_DEBUG_STREAM_NAMED("cloud", "box center: " << bbox.center.x << "," << bbox.center.y);
+
+  ROS_DEBUG_STREAM_NAMED("cloud", "loop");
   for (int u = (int)(bbox.center.x - bbox.size_x / 2); u < (int)(bbox.center.x + bbox.size_x / 2); u++)
   {
     for (int v = (int)(bbox.center.y - bbox.size_y / 2); v < (int)(bbox.center.y + bbox.size_y / 2); v++)

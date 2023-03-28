@@ -106,7 +106,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
 
   int i = 0;
 
-  ROS_INFO_STREAM_NAMED("detector", "got detections " << param.response);
+  ROS_DEBUG_STREAM_NAMED("detector", "got detections " << param.response);
   for (auto& detection : param.response.detections)
   {
     ROS_DEBUG_STREAM_NAMED("detector", "detection");
