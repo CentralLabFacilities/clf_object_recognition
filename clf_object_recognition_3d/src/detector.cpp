@@ -113,11 +113,13 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
     vision_msgs::Detection3D d3d;
     // generate point cloud from incoming depth image for detection bounding box
     pointcloud_type::Ptr cloud_from_depth_image = cloud::fromDepthArea(detection.bbox, depth, *camera_info_);
+    //pointcloud_type::Ptr cloud_from_depth_image = cloud::oldFromDepth( depth, detection.bbox, camera_info_);
     // pointcloud_type* cloud_from_mesh = createPointCloudFromMesh(mesh_name);
 
     Eigen::Vector4d cloud_from_depth_image_centroid = Eigen::Vector4d::Random();
     auto centroid_size = pcl::compute3DCentroid(*cloud_from_depth_image, cloud_from_depth_image_centroid);
 
+   
     geometry_msgs::Pose center;
     center.orientation.w = 1;
     center.position.x = cloud_from_depth_image_centroid[0];
@@ -130,6 +132,8 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
       center.position.y = 0.1;
     if (center.position.z != center.position.z)
       center.position.z = 0.1;
+
+    ROS_DEBUG_STREAM_NAMED("detector", "      object at " << center.position.x << ", " << center.position.y << ", " << center.position.z);
 
     d3d.header = detection.header;
     d3d.bbox.center = center;
@@ -174,6 +178,9 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
       // uniform mesh sampling
       // https://github.com/PointCloudLibrary/pcl/blob/master/tools/mesh_sampling.cpp
 
+      Eigen::Matrix4d transformation_matrix = Eigen::Matrix4d::Identity ();
+      pcl::transformPointCloud (*sampled, *sampled, transformation_matrix);
+
       pcl::IterativeClosestPoint<point_type, point_type> icp;
       icp.setInputSource(sampled);
       icp.setInputTarget(cloud_from_depth_image);
@@ -181,10 +188,14 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
       ROS_DEBUG_STREAM_NAMED("detector", "      icp");
       icp.align(final_point_cloud);
       auto transform = icp.getFinalTransformation();
+      transform = transformation_matrix.inverse() * transform;
       Eigen::Affine3f affine(transform);
+      
+
       geometry_msgs::Transform tf_msg;
       tf::transformEigenToMsg(affine.cast<double>(), tf_msg);
 
+      ROS_DEBUG_STREAM_NAMED("detector", "      center at " << tf_msg.translation.x << ", " << tf_msg.translation.y << ", " << tf_msg.translation.z);
       hyp.pose.pose.orientation = tf_msg.rotation;
       hyp.pose.pose.position.x = tf_msg.translation.x;
       hyp.pose.pose.position.y = tf_msg.translation.y;

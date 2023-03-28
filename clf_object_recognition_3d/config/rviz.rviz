@@ -4,8 +4,11 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /Global Options1
         - /TF1/Frames1
         - /TF1/Tree1
+        - /Detections3D1
+        - /MarkerArray1
       Splitter Ratio: 0.5
     Tree Height: 901
   - Class: rviz/Selection
@@ -118,7 +121,7 @@ Visualization Manager:
   Global Options:
     Background Color: 48; 48; 48
     Default Light: true
-    Fixed Frame: map
+    Fixed Frame: camera_link
     Frame Rate: 15
   Name: root
   Tools:
