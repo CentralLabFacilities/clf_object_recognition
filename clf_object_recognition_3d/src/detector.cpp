@@ -86,6 +86,13 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
 
   {
     std::lock_guard<std::mutex> lock(mutex_);
+    if (image_ == nullptr) {
+      ROS_ERROR_STREAM_NAMED("detector", "ServiceDetect3D() called: No rgb image provided " << req);
+      return false;
+    } else if (depth_image_ == nullptr) {
+      ROS_ERROR_STREAM_NAMED("detector", "ServiceDetect3D() called: No depth image provided" << req);
+      return false;
+    }
     img = sensor_msgs::Image(*image_.get());
     depth = sensor_msgs::Image(*depth_image_.get());
   }
@@ -119,7 +126,6 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
     Eigen::Vector4d cloud_from_depth_image_centroid = Eigen::Vector4d::Random();
     auto centroid_size = pcl::compute3DCentroid(*cloud_from_depth_image, cloud_from_depth_image_centroid);
 
-   
     geometry_msgs::Pose center;
     center.orientation.w = 1;
     center.position.x = cloud_from_depth_image_centroid[0];
@@ -175,11 +181,11 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
       ROS_DEBUG_STREAM_NAMED("detector", "      sample mesh");
       auto sampled = sample_cloud(reference_mesh);
 
-      // uniform mesh sampling
-      // https://github.com/PointCloudLibrary/pcl/blob/master/tools/mesh_sampling.cpp
-
-      Eigen::Matrix4d transformation_matrix = Eigen::Matrix4d::Identity ();
-      pcl::transformPointCloud (*sampled, *sampled, transformation_matrix);
+      Eigen::Matrix4d transformation_matrix = Eigen::Matrix4d::Identity();
+      transformation_matrix(0, 3) = cloud_from_depth_image_centroid[0];
+      transformation_matrix(1, 3) = cloud_from_depth_image_centroid[1];
+      transformation_matrix(2, 3) = cloud_from_depth_image_centroid[2];
+      pcl::transformPointCloud(*sampled, *sampled, transformation_matrix);
 
       pcl::IterativeClosestPoint<point_type, point_type> icp;
       icp.setInputSource(sampled);
@@ -187,9 +193,12 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
       pointcloud_type final_point_cloud;
       ROS_DEBUG_STREAM_NAMED("detector", "      icp");
       icp.align(final_point_cloud);
-      auto transform = icp.getFinalTransformation();
-      transform = transformation_matrix.inverse() * transform;
-      Eigen::Affine3f affine(transform);
+      ROS_DEBUG_STREAM_NAMED("detector", "      before getFinalTransformation");
+      Eigen::Matrix4f icp_transform = icp.getFinalTransformation();
+      ROS_DEBUG_STREAM_NAMED("detector", "      after getFinalTransformation");
+      Eigen::Matrix4f transformation_inverse = transformation_matrix.cast<float>().inverse();
+      Eigen::Matrix4f final_transformation = transformation_inverse * icp_transform;
+      Eigen::Affine3f affine(final_transformation);
       
 
       geometry_msgs::Transform tf_msg;
