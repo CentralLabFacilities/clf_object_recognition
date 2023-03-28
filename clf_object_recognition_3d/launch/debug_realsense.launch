@@ -1,0 +1,37 @@
+<launch>
+    <env name="ROSCONSOLE_FORMAT" value="${severity} [${logger}]: ${message}"/>
+    <env name="ROSCONSOLE_CONFIG_FILE" value="$(find clf_object_recognition_3d)/config/rosconsole.config"/>
+
+    <arg name="object_labels" default="$(find clf_object_recognition_yolox)/config/coco_labels.yaml"/>
+    <rosparam command="load" ns="object_labels" file="$(arg object_labels)"/>
+
+    <arg name="config" default="$(find clf_object_recognition_yolox)/config/config.yaml"/>
+    <arg name="checkpoint" default="$(find clf_object_recognition_yolox)/../yolox-models/yolox_l.pth" />
+    <arg name="exp" default="$(find clf_object_recognition_yolox)/config/exp/yolox_l.py"/>
+    <arg name="image_topic" default="/camera/color/image_raw"/>
+
+    <include file="$(find tiago_clf_launch)/launch/realsense.launch"/>
+
+    <node pkg="clf_object_recognition_3d" type="3d_detector" output="screen" name="detect_3d">
+        <param name="image_topic" value="$(arg image_topic)"/>
+        <param name="depth_topic" value="/camera/aligned_depth_to_color/image_raw"/>
+        <param name="info_topic" value="/camera/aligned_depth_to_color/camera_info"/>
+        <param name="detect_2d_topic" value="/yolox/recognize"/>
+	</node>
+
+    <node pkg="clf_object_recognition_yolox" type="yolox_recognition_node" name="yolox" output="screen">
+        <remap from="~input" to="$(arg image_topic)" />
+        <param name="checkpoint" value="$(arg checkpoint)"/>
+        <param name="publish_detections" value="True"/>
+        <param name="exp" value="$(arg exp)"/>
+        <rosparam command="load" file="$(arg config)" />
+    </node>
+
+    <node pkg="tf2_ros" type="static_transform_publisher" name="fixed_camera" args="0 0 0 0 0 0 1 map camera_rgb_optical_frame" />
+
+    <arg name="command_args" value="-d $(find clf_object_recognition_3d)/config/rviz.rviz" />
+    <node name="$(anon rviz)" pkg="rviz" type="rviz" respawn="false"
+            args="$(arg command_args)" output="log">
+    </node>
+
+</launch> 
