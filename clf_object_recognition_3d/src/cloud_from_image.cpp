@@ -67,7 +67,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthArea(const vision_msgs::BoundingBox
                                                   const sensor_msgs::Image& depth, sensor_msgs::CameraInfo info,
                                                   double depth_scaling)
 {
-  ROS_DEBUG_STREAM_NAMED("cloud", "fromDepthArea " << );
+  ROS_DEBUG_STREAM_NAMED("cloud", "fromDepthArea ");
   image_geometry::PinholeCameraModel camera;
   camera.fromCameraInfo(info);
 
