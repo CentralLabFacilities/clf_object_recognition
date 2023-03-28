@@ -6,7 +6,7 @@
 
 namespace cloud
 {
-pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthImage(const sensor_msgs::Image& depth, sensor_msgs::CameraInfo info,
+pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthImage(const vision_msgs::BoundingBox2D& bbox, const sensor_msgs::Image& depth, sensor_msgs::CameraInfo info,
                                                    double depth_scaling)
 {
   image_geometry::PinholeCameraModel camera;
@@ -37,11 +37,11 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthImage(const sensor_msgs::Image& dep
 
   cloud->points.resize(w * h);
 
-  for (int u = 0; u < w; u++)
+  for (int v = (int)(bbox.center.y - bbox.size_y / 2); v < (int)(bbox.center.y - bbox.size_y / 2 + bbox.size_y); ++v)
   {
-    for (int v = 0; v < h; v++)
+    for (int u = (int)(bbox.center.x - bbox.size_x / 2); u < (int)(bbox.center.x - bbox.size_x / 2 + bbox.size_x); ++u)
     {
-      float depth = cv_ptr->image.at<uint16_t>(v, u);
+      float depth = cv_ptr->image.at<uint16_t>(u, v);
       auto& pt = cloud->points[v * w + u];
       if (depth != 0)
       {
@@ -101,9 +101,9 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthArea(const vision_msgs::BoundingBox
   int min_point_x = (int) (bbox.center.x - bbox.size_x / 2.0);
   int min_point_y = (int) (bbox.center.y - bbox.size_y / 2.0);
 
-  for (int u = (int)(bbox.center.x - bbox.size_x / 2); u < (int)(bbox.center.x + bbox.size_x / 2); u++)
+  for (int v = (int)(bbox.center.y - bbox.size_y / 2); v < (int)(bbox.center.y + bbox.size_y / 2); v++)
   {
-    for (int v = (int)(bbox.center.y - bbox.size_y / 2); v < (int)(bbox.center.y + bbox.size_y / 2); v++)
+    for (int u = (int)(bbox.center.x - bbox.size_x / 2); v < (int)(bbox.center.x + bbox.size_x / 2); u++)
     {
       float depth = cv_ptr->image.at<uint16_t>(u, v);
       auto& pt = cloud->points[(u-min_point_x) + (v-min_point_y) * w];
@@ -142,11 +142,8 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr oldFromDepth(const sensor_msgs::Image& depth
 
   // principal point and focal lengths
   float cx, cy, fx, fy;
-
-  // cloud->height = depth_msg.height;
-  // cloud->width = depth_msg.width;
-  cx = cam_info->K[2];  //(cloud->width >> 1) - 0.5f;
-  cy = cam_info->K[5];  //(cloud->height >> 1) - 0. f;
+  cx = cam_info->K[2];
+  cy = cam_info->K[5];
   fx = 1.0f / cam_info->K[0];
   fy = 1.0f / cam_info->K[4];
 
@@ -160,8 +157,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr oldFromDepth(const sensor_msgs::Image& depth
   pcl::PointCloud<pcl::PointXYZ>::iterator pt_iter = cloud->begin();
   for (int v = (int)(bbox.center.y - bbox.size_y / 2); v < (int)(bbox.center.y - bbox.size_y / 2 + bbox.size_y); ++v)
   {
-    for (int u = (int)(bbox.center.x - bbox.size_x / 2); u < (int)(bbox.center.x - bbox.size_x / 2 + bbox.size_x);
-         ++u, ++pt_iter)
+    for (int u = (int)(bbox.center.x - bbox.size_x / 2); u < (int)(bbox.center.x - bbox.size_x / 2 + bbox.size_x); ++u, ++pt_iter)
     {
       auto& pt = *pt_iter;
       depth_idx = depth_msg.width * v + u;
