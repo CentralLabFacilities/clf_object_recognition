@@ -1,4 +1,7 @@
 <launch>
+    <env name="ROSCONSOLE_FORMAT" value="${severity} [${logger}]: ${message}"/>
+    <env name="ROSCONSOLE_CONFIG_FILE" value="$(find clf_object_recognition_3d)/config/rosconsole.config"/>
+
     <arg name="image_topic" default="/xtion/rgb/image_raw"/>
     <arg name="depth_topic" default="/xtion/depth_registered/image_raw"/>
     <arg name="info_topic" default="/xtion/depth_registered/camera_info"/>

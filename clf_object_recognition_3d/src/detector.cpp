@@ -82,13 +82,15 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
   sensor_msgs::Image depth;
   sensor_msgs::CameraInfo info;
 
+  ROS_INFO_STREAM_NAMED("detector", "ServiceDetect3D() called " << req);
+
   {
     std::lock_guard<std::mutex> lock(mutex_);
     img = sensor_msgs::Image(*image_.get());
     depth = sensor_msgs::Image(*depth_image_.get());
   }
 
-  ROS_INFO_STREAM_NAMED("detector", "ServiceDetect3D() called " << req);
+  ROS_INFO_STREAM_NAMED("detector", "ServiceDetect3D() got images ");
 
   clf_object_recognition_msgs::Detect2DImage param;
   param.request.image = img;
