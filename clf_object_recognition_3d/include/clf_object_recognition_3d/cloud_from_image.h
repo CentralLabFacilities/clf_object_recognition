@@ -10,7 +10,7 @@
 
 namespace cloud
 {
-pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthImage(const sensor_msgs::Image& depth, sensor_msgs::CameraInfo info,
+pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthImage(const vision_msgs::BoundingBox2D& bbox, const sensor_msgs::Image& depth, sensor_msgs::CameraInfo info,
                                                    double depth_scaling = 0.001F);
 pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthArea(const vision_msgs::BoundingBox2D& bbox,
                                                   const sensor_msgs::Image& depth, sensor_msgs::CameraInfo info,
