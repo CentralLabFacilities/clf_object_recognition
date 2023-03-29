@@ -2,37 +2,36 @@
     <env name="ROSCONSOLE_FORMAT" value="${severity} [${logger}]: ${message}"/>
     <env name="ROSCONSOLE_CONFIG_FILE" value="$(find clf_object_recognition_3d)/config/rosconsole.config"/>
 
-    <arg name="object_labels" default="$(find clf_object_recognition_yolox)/config/coco_labels.yaml"/>
-    <rosparam command="load" ns="object_labels" file="$(arg object_labels)"/>
-
-    <arg name="config" default="$(find clf_object_recognition_yolox)/config/config.yaml"/>
-    <arg name="checkpoint" default="$(find clf_object_recognition_yolox)/../yolox-models/yolox_l.pth" />
-    <arg name="exp" default="$(find clf_object_recognition_yolox)/config/exp/yolox_l.py"/>
     <arg name="image_topic" default="/camera/color/image_raw"/>
 
     <include file="$(find tiago_clf_launch)/launch/realsense.launch"/>
 
-    <node pkg="clf_object_recognition_3d" type="3d_detector" output="screen" name="detect_3d">
-        <param name="image_topic" value="$(arg image_topic)"/>
-        <param name="depth_topic" value="/camera/aligned_depth_to_color/image_raw"/>
-        <param name="info_topic" value="/camera/aligned_depth_to_color/camera_info"/>
-        <param name="detect_2d_topic" value="/yolox/recognize"/>
-	</node>
+    <arg name="object_labels" value="$(find yolox_models)/config/ycbv_labels.yaml"/>
+    <arg name="object_models" value="$(find yolox_models)/config/ycbv_ecwm_models.yaml"/>
+    <arg name="config" value="$(find clf_object_recognition_yolox)/config/config.yaml"/>
+    <arg name="checkpoint" value="$(find yolox_models)/models/ycbv-gdrnpp_bop/model_final.pth" />
+    <arg name="exp" value="$(find yolox_models)/config/exp/ycbv-gdrnpp_bop.py"/>
 
-    <node pkg="clf_object_recognition_yolox" type="yolox_recognition_node" name="yolox" output="screen">
-        <remap from="~input" to="$(arg image_topic)" />
-        <param name="checkpoint" value="$(arg checkpoint)"/>
-        <param name="publish_detections" value="True"/>
-        <param name="publish_marker" value="True"/>
-        <param name="exp" value="$(arg exp)"/>
-        <rosparam command="load" file="$(arg config)" />
-    </node>
+    <param name="/yolox/publish_detections" value="True"/>
+    <param name="/yolox/publish_marker" value="True"/>
+    <include file="$(find clf_object_recognition_yolox)/launch/yolox_l.launch">
+        <arg name="object_labels" value="$(arg object_labels)"/>
+        <arg name="object_models" value="$(arg object_models)"/>
+        <arg name="config" value="$(arg config)"/>
+        <arg name="checkpoint" value="$(arg checkpoint)"/>
+        <arg name="exp" value="$(arg exp)"/>
+    </include>
 
-    <node pkg="tf2_ros" type="static_transform_publisher" name="fixed_camera" args="0 0 0 0 0 0 1 map camera_link" />
+    <node pkg="tf2_ros" type="static_transform_publisher" name="fixed_camera" args="0 0 0 0 0 0 1 map head_2_link" />
 
     <arg name="command_args" value="-d $(find clf_object_recognition_3d)/config/rviz.rviz" />
     <node name="$(anon rviz)" pkg="rviz" type="rviz" respawn="false"
             args="$(arg command_args)" output="log">
     </node>
+
+    <include file="$(find ecwm_data)/launch/test.launch">
+        <arg name="world" value="clf-robocup.yaml"/>
+        <arg name="plugins" value="robocup-default.yaml"/>
+    </include>
 
 </launch> 

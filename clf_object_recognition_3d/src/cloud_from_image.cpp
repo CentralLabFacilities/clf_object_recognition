@@ -18,8 +18,11 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthImage(const vision_msgs::BoundingBo
   {
     cv_ptr = cv_bridge::toCvCopy(depth, sensor_msgs::image_encodings::TYPE_8UC1);
   }
-  else
-  {
+  else if (depth.encoding == sensor_msgs::image_encodings::TYPE_32FC1)
+  { 
+    cv_ptr = cv_bridge::toCvCopy(depth, sensor_msgs::image_encodings::TYPE_32FC1);
+  }
+  else {
     cv_ptr = cv_bridge::toCvCopy(depth, sensor_msgs::image_encodings::TYPE_16UC1);
   }
 
@@ -34,6 +37,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthImage(const vision_msgs::BoundingBo
 
   int w = cv_ptr->image.cols;
   int h = cv_ptr->image.rows;
+  int num_point = 0;
 
   cloud->points.resize(w * h);
 
@@ -41,24 +45,18 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthImage(const vision_msgs::BoundingBo
   {
     for (int u = (int)(bbox.center.x - bbox.size_x / 2); u < (int)(bbox.center.x - bbox.size_x / 2 + bbox.size_x); ++u)
     {
-      float depth = cv_ptr->image.at<uint16_t>(u, v);
-      auto& pt = cloud->points[v * w + u];
+      float depth = cv_ptr->image.at<uint16_t>(v, u);      
       if (depth != 0)
       {
+        auto& pt = cloud->points[num_point++];
         pt.x = (u - camera.cx()) * depth * constant_x;
         pt.y = (v - camera.cy()) * depth * constant_y;
         pt.z = depth * depth_scaling;
       }
-      else
-      {
-        cloud->is_dense = false;
-        pt.x = pt.y = pt.z = std::numeric_limits<float>::quiet_NaN();
-      }
     }
   }
 
-  cloud->width = w;
-  cloud->height = h;
+  cloud->points.resize(num_point);
 
   return cloud;
 }
@@ -75,11 +73,13 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthArea(const vision_msgs::BoundingBox
   cv_bridge::CvImagePtr cv_ptr;
   if (depth.encoding == sensor_msgs::image_encodings::MONO8)
   {
-    ROS_DEBUG_STREAM_NAMED("cloud", "image has 8 bit");
     cv_ptr = cv_bridge::toCvCopy(depth, sensor_msgs::image_encodings::TYPE_8UC1);
   }
-  else
-  {
+  else if (depth.encoding == sensor_msgs::image_encodings::TYPE_32FC1)
+  { 
+    cv_ptr = cv_bridge::toCvCopy(depth, sensor_msgs::image_encodings::TYPE_32FC1);
+  }
+  else {
     cv_ptr = cv_bridge::toCvCopy(depth, sensor_msgs::image_encodings::TYPE_16UC1);
   }
   ROS_DEBUG_STREAM_NAMED("cloud", "copied image");
@@ -98,30 +98,30 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthArea(const vision_msgs::BoundingBox
 
   cloud->points.resize(w * h);
 
+  ROS_DEBUG_STREAM_NAMED("cloud", "       cloud size before resize: " << w * h);
+
   int min_point_x = (int) (bbox.center.x - bbox.size_x / 2.0);
   int min_point_y = (int) (bbox.center.y - bbox.size_y / 2.0);
+  int num_point = 0;
 
   for (int v = (int)(bbox.center.y - bbox.size_y / 2); v < (int)(bbox.center.y + bbox.size_y / 2); v++)
   {
-    for (int u = (int)(bbox.center.x - bbox.size_x / 2); v < (int)(bbox.center.x + bbox.size_x / 2); u++)
+    for (int u = (int)(bbox.center.x - bbox.size_x / 2); u < (int)(bbox.center.x + bbox.size_x / 2); u++)
     {
-      float depth = cv_ptr->image.at<uint16_t>(u, v);
-      auto& pt = cloud->points[(u-min_point_x) + (v-min_point_y) * w];
+      float depth = cv_ptr->image.at<uint16_t>(v, u);
+      
       if (depth != 0)
       {
+        auto& pt = cloud->points[num_point++];
         pt.x = (u - camera.cx()) * depth * constant_x;
         pt.y = (v - camera.cy()) * depth * constant_y;
         pt.z = depth * depth_scaling;
       }
-      else
-      {
-        cloud->is_dense = false;
-        pt.x = pt.y = pt.z = std::numeric_limits<float>::quiet_NaN();
-      }
     }
   }
-  cloud->height = h;
-  cloud->width = w;
+  cloud->points.resize(num_point);
+
+  ROS_DEBUG_STREAM_NAMED("cloud", "       cloud size before resize: " << w * h);
 
   return cloud;
 }
