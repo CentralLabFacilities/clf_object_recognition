@@ -5,12 +5,14 @@
 
 #include "pcl/point_cloud.h"
 #include "pcl/point_types.h"
+#include "pcl/io/obj_io.h"
+#include "pcl/io/ply_io.h"
 
 #include "pcl/common/centroid.h"
 #include "pcl/common/eigen.h"
 //#include "pcl_ros/io/pcl_conversions.h"
 #include <pcl_conversions/pcl_conversions.h>
-#include <pcl/registration/icp.h>
+#include <pcl/registration/gicp.h>
 
 //#include <pcl/surface/vtk_smoothing/vtk_utils.h>
 #include <pcl/io/vtk_lib_io.h>
@@ -28,6 +30,8 @@
 
 #include "clf_object_recognition_3d/cloud_sampler.hpp"
 #include "clf_object_recognition_3d/cloud_from_image.h"
+
+#include <math.h>
 
 inline bool validateFloats(double val)
 {
@@ -172,6 +176,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
 
       auto model = model_provider->IDtoModel(hypo.id);
       auto path = model_provider->GetModelPath(model);
+
       if (path == "")
       {
         // default if not found (e.g. ecwm not running)
@@ -180,28 +185,41 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
       marker.mesh_resource = path;
 
       // create polygon mesh from .dae ressource
-      ROS_DEBUG_STREAM_NAMED("detector", "      load mesh" << path);
+      ROS_DEBUG_STREAM_NAMED("detector", "      load " << path);
+
       mesh_type::Ptr reference_mesh = colladaToPolygonMesh(path);
-      //ROS_DEBUG_STREAM_NAMED("detector", "      sample mesh");
       auto sampled = sample_cloud(reference_mesh);
 
       Eigen::Matrix4d transformation_matrix = Eigen::Matrix4d::Identity();
+      double theta = 1.571;
+      transformation_matrix(1, 1) = cos(theta);
+      transformation_matrix(2, 1) = sin(theta);
+      transformation_matrix(1, 2) = -sin(theta);
+      transformation_matrix(2, 2) = cos(theta);
       transformation_matrix(0, 3) = cloud_from_depth_image_centroid[0];
       transformation_matrix(1, 3) = cloud_from_depth_image_centroid[1];
       transformation_matrix(2, 3) = cloud_from_depth_image_centroid[2];
       pcl::transformPointCloud(*sampled, *sampled, transformation_matrix);
-
 
       pcl::IterativeClosestPoint<point_type, point_type> icp;
       icp.setInputSource(sampled);
       icp.setInputTarget(cloud_from_depth_image);
       pointcloud_type final_point_cloud;
       ROS_DEBUG_STREAM_NAMED("detector", "      icp");
-      icp.align(final_point_cloud);
+      icp.align(final_point_cloud);//, transformation_matrix.cast<float>());
       Eigen::Matrix4f icp_transform = icp.getFinalTransformation();
+      ROS_DEBUG_STREAM_NAMED("detector", "       " << transformation_matrix(0, 0) << ", " << transformation_matrix(0, 1)<< ", " << transformation_matrix(0, 2) << ", " << transformation_matrix(0, 3));
+      ROS_DEBUG_STREAM_NAMED("detector", "       " << transformation_matrix(1, 0) << ", " << transformation_matrix(1, 1)<< ", " << transformation_matrix(1, 2) << ", " << transformation_matrix(1, 3));
+      ROS_DEBUG_STREAM_NAMED("detector", "       " << transformation_matrix(2, 0) << ", " << transformation_matrix(2, 1)<< ", " << transformation_matrix(2, 2) << ", " << transformation_matrix(2, 3));
+      ROS_DEBUG_STREAM_NAMED("detector", "       " << transformation_matrix(3, 0) << ", " << transformation_matrix(3, 1)<< ", " << transformation_matrix(3, 2) << ", " << transformation_matrix(3, 3));
+      ROS_DEBUG_STREAM_NAMED("detector", "       ");
+      ROS_DEBUG_STREAM_NAMED("detector", "       " << icp_transform(0, 0) << ", " << icp_transform(0, 1)<< ", " << icp_transform(0, 2) << ", " << icp_transform(0, 3));
+      ROS_DEBUG_STREAM_NAMED("detector", "       " << icp_transform(1, 0) << ", " << icp_transform(1, 1)<< ", " << icp_transform(1, 2) << ", " << icp_transform(1, 3));
+      ROS_DEBUG_STREAM_NAMED("detector", "       " << icp_transform(2, 0) << ", " << icp_transform(2, 1)<< ", " << icp_transform(2, 2) << ", " << icp_transform(2, 3));
+      ROS_DEBUG_STREAM_NAMED("detector", "       " << icp_transform(3, 0) << ", " << icp_transform(3, 1)<< ", " << icp_transform(3, 2) << ", " << icp_transform(3, 3));
       Eigen::Matrix4f transformation_matrix_f = transformation_matrix.cast<float>();
-      Eigen::Matrix4f final_transformation = transformation_matrix_f * icp_transform;
-      ROS_DEBUG_STREAM_NAMED("detector", "      icp at " << transformation_matrix(0, 3) << ", " << transformation_matrix(1, 3)<< ", " << transformation_matrix(2, 3));
+      Eigen::Matrix4f final_transformation = icp_transform * transformation_matrix_f;
+      //ROS_DEBUG_STREAM_NAMED("detector", "      icp at " << transformation_matrix(0, 3) << ", " << transformation_matrix(1, 3)<< ", " << transformation_matrix(2, 3));
       Eigen::Affine3f affine(final_transformation);
       
       geometry_msgs::Transform tf_msg;
@@ -213,6 +231,10 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
       hyp.pose.pose.position.y = tf_msg.translation.y;
       hyp.pose.pose.position.z = tf_msg.translation.z;
       marker.pose = hyp.pose.pose;
+
+      sensor_msgs::PointCloud2 pcl_msg2;
+      pcl::toROSMsg(*sampled, pcl_msg2);
+      d3d.source_cloud = pcl_msg2;
 
       ROS_INFO_STREAM_NAMED("detector", "      has converged: " << icp.hasConverged());
       // FIXME: icp score calculation not working
@@ -255,7 +277,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
 
 mesh_type::Ptr Detector::colladaToPolygonMesh(const std::string& ressource_path)
 {
-  // TODO: Check if header is needed
+  /*
   shapes::Mesh* reference_mesh = shapes::createMeshFromResource(ressource_path);
   mesh_type polygon_mesh{};
 
@@ -287,6 +309,39 @@ mesh_type::Ptr Detector::colladaToPolygonMesh(const std::string& ressource_path)
   // polygon_mesh.header = header;
   pcl_conversions::toPCL(pcl_msg, polygon_mesh.cloud);
   polygon_mesh.polygons = vertex_indices;
+  
+  return std::make_shared<mesh_type>(polygon_mesh);
+  */
 
-  return std::make_shared<pcl::PolygonMesh>(polygon_mesh);
+  mesh_type mesh;
+  std::string obj_file_path=ressource_path.substr(0,ressource_path.find_last_of('.'))+".ply";
+  // TODO: change path or replace in path
+  std::string prefix("file://");
+  obj_file_path.replace(0, prefix.length(), "");
+  ROS_DEBUG_STREAM_NAMED("detector", "      path to obj file: " << obj_file_path);
+  // auto size = pcl::io::loadOBJFile(obj_file_path, mesh);
+  auto size = pcl::io::loadPLYFile(obj_file_path, mesh);
+  ROS_DEBUG_STREAM_NAMED("detector", "      obj file loaded ");
+  return std::make_shared<mesh_type>(mesh);
+}
+
+
+pointcloud_type::Ptr Detector::colladaToPointCloud(const std::string& ressource_path)
+{
+  pointcloud_type::Ptr cloud(new pointcloud_type());
+  shapes::Mesh* reference_mesh = shapes::createMeshFromResource(ressource_path);
+  cloud->points.resize(reference_mesh->vertex_count);
+
+  ROS_DEBUG_STREAM_NAMED("detector", "      reference mesh from collada has " << reference_mesh->vertex_count << " vertices");
+
+  pointcloud_type::iterator pt_iter = cloud->begin();
+  for (int offset = 0; offset < reference_mesh->vertex_count; offset++, ++pt_iter)
+  {
+    point_type& pt = *pt_iter;
+    pt.x = reference_mesh->vertices[offset];
+    pt.y = reference_mesh->vertices[offset + 1];
+    pt.z = reference_mesh->vertices[offset + 2];
+  }
+
+  return cloud;
 }

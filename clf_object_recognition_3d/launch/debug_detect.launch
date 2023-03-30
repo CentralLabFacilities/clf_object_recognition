@@ -10,7 +10,4 @@
         <param name="info_topic" value="/camera/aligned_depth_to_color/camera_info"/>
         <param name="detect_2d_topic" value="/yolox/recognize"/>
 	</node>
-
-   
-
 </launch> 

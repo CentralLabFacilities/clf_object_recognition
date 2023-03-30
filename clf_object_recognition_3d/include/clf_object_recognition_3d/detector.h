@@ -26,6 +26,7 @@
 
 // pcl types
 #include <pcl/PolygonMesh.h>
+#include <pcl/TextureMesh.h>
 #include <pcl/common/io.h>
 
 #include <visualization_msgs/MarkerArray.h>
@@ -50,8 +51,7 @@ private:
                        clf_object_recognition_msgs::Detect3D::Response& res);
 
   mesh_type::Ptr colladaToPolygonMesh(const std::string& ressource_path);
-  // pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr meshSamplingUniform(const vtkSmartPointer<vtkPolyData>& polydata, int
-  // samples, bool calcNormal);
+  pointcloud_type::Ptr colladaToPointCloud(const std::string& ressource_path);
 
   ros::NodeHandle nh_;
   clf_object_recognition_cfg::Detect3dConfig config;
