@@ -188,6 +188,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
       ROS_DEBUG_STREAM_NAMED("detector", "      load " << path);
 
       mesh_type::Ptr reference_mesh = colladaToPolygonMesh(path);
+      ROS_DEBUG_STREAM_NAMED("detector", "      sampling cloud ");
       auto sampled = sample_cloud(reference_mesh);
 
       Eigen::Matrix4d transformation_matrix = Eigen::Matrix4d::Identity();
