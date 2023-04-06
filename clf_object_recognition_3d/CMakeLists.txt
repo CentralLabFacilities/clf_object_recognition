@@ -28,6 +28,7 @@ find_package(catkin REQUIRED COMPONENTS
   eigen_conversions
   image_geometry
   tf2_ros
+  tf2_eigen
   
 )
 include_directories(${catkin_INCLUDE_DIRS})
