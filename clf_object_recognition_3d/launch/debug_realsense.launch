@@ -22,7 +22,8 @@
         <arg name="exp" value="$(arg exp)"/>
     </include>
 
-    <node pkg="tf2_ros" type="static_transform_publisher" name="fixed_camera" args="0 0 0 0 0 0 1 map head_2_link" />
+    <node pkg="tf2_ros" type="static_transform_publisher" name="fixed_map" args="0 0 0 0 0 0 1 map base_link" />
+    <node pkg="tf2_ros" type="static_transform_publisher" name="fixed_camera" args="0 0 0 0 0 0 1 base_link head_2_link" />
 
     <arg name="command_args" value="-d $(find clf_object_recognition_3d)/config/rviz.rviz" />
     <node name="$(anon rviz)" pkg="rviz" type="rviz" respawn="true"

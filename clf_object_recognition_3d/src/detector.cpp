@@ -28,12 +28,14 @@
 
 #include <eigen_conversions/eigen_msg.h>
 
-#include "clf_object_recognition_3d/cloud_sampler.hpp"
+#include "clf_object_recognition_3d/load_cloud.hpp"
 #include "clf_object_recognition_3d/cloud_from_image.h"
 
 #include <geometry_msgs/TransformStamped.h>
 
 #include <math.h>
+
+#include <filesystem>
 
 inline bool validateFloats(double val)
 {
@@ -198,20 +200,8 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
       auto model = model_provider->IDtoModel(hypo.id);
       auto model_path_dae = model_provider->GetModelPath(model);
 
-      if (model_path_dae == "")
-      {
-        // default if not found (e.g. ecwm not running)
-        model_path_dae =
-            "file:///vol/tiago/noetic/nightly/share/ecwm_data/models/object/ycb/cracker_box/meshes/textured.dae";
-      }
-
-      // create polygon mesh from .dae ressource
-      ROS_DEBUG_STREAM_NAMED("detector", "      load " << model_path_dae);
-
-      mesh_type::Ptr reference_mesh = colladaToPolygonMesh(model_path_dae);
-      ROS_DEBUG_STREAM_NAMED("detector", "      sampling cloud ");
-      auto sampled = sample_cloud(reference_mesh);
-      ROS_DEBUG_STREAM_NAMED("detector", "      cloud sampled");
+      pcl::PointCloud<pcl::PointXYZ>::Ptr sampled;
+      sampled = cloud::loadPointcloud(model_path_dae);
 
       Eigen::Matrix4f tf_initial_guess = Eigen::Matrix4f::Identity();
       tf_initial_guess(0, 3) = cloud_from_depth_image_centroid[0];
@@ -240,11 +230,9 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
       hyp.pose.pose.position.y = tf_msg.translation.y;
       hyp.pose.pose.position.z = tf_msg.translation.z;
 
-
       pcl::transformPointCloud(*sampled, *sampled, tf_initial_guess);
       sensor_msgs::PointCloud2 pcl_msg2;
       pcl::toROSMsg(*sampled, pcl_msg2);
-
       
       pcl_msg2.header = depth.header;
       pub_cloud.publish(pcl_msg2);
@@ -289,44 +277,3 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
   return true;
 }
 
-// pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr Detector::meshSamplingUniform(const vtkSmartPointer<vtkPolyData>&
-// polydata, int samples, bool calcNormal) {
-//   pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGBNormal>());
-
-//    return cloud;
-//}
-
-mesh_type::Ptr Detector::colladaToPolygonMesh(const std::string& ressource_path)
-{
-  mesh_type mesh;
-  std::string obj_file_path = ressource_path.substr(0, ressource_path.find_last_of('.')) + ".ply";
-  // TODO: change path or replace in path
-  std::string prefix("file://");
-  obj_file_path.replace(0, prefix.length(), "");
-  ROS_DEBUG_STREAM_NAMED("detector", "      path to obj file: " << obj_file_path);
-  // auto size = pcl::io::loadOBJFile(obj_file_path, mesh);
-  auto size = pcl::io::loadPLYFile(obj_file_path, mesh);
-  ROS_DEBUG_STREAM_NAMED("detector", "      obj file loaded ");
-  return std::make_shared<mesh_type>(mesh);
-}
-
-pointcloud_type::Ptr Detector::colladaToPointCloud(const std::string& ressource_path)
-{
-  pointcloud_type::Ptr cloud(new pointcloud_type());
-  shapes::Mesh* reference_mesh = shapes::createMeshFromResource(ressource_path);
-  cloud->points.resize(reference_mesh->vertex_count);
-
-  ROS_DEBUG_STREAM_NAMED("detector",
-                         "      reference mesh from collada has " << reference_mesh->vertex_count << " vertices");
-
-  pointcloud_type::iterator pt_iter = cloud->begin();
-  for (int offset = 0; offset < reference_mesh->vertex_count; offset++, ++pt_iter)
-  {
-    point_type& pt = *pt_iter;
-    pt.x = reference_mesh->vertices[offset];
-    pt.y = reference_mesh->vertices[offset + 1];
-    pt.z = reference_mesh->vertices[offset + 2];
-  }
-
-  return cloud;
-}

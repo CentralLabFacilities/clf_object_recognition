@@ -1,7 +1,16 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.16)
 project(clf_object_recognition_3d)
 
-message(STATUS ${PCL_LIBRARIES})
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+add_compile_options(-fsanitize=undefined)
+add_link_options(-fsanitize=undefined)
+
+if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0.0)
+        message(FATAL_ERROR "GCC version must be at least 9 you version ${CMAKE_CXX_COMPILER_VERSION} has filesystem under experimental and requires manual linking")
+endif()
+
 
 find_package(catkin REQUIRED COMPONENTS
   rospy

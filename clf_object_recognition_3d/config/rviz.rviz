@@ -70,13 +70,13 @@ Visualization Manager:
       Update Interval: 0
       Value: false
     - Class: clf_object_recognition_rviz/Detections3D
-      Enabled: true
+      Enabled: false
       Label size: 0.10000000149011612
       Name: Detections3D
       Queue Size: 10
       Topic: /detect_3d/last_detection
       Unreliable: false
-      Value: true
+      Value: false
       show Bounding Box: true
       show Labels: true
       show Points: true
@@ -93,7 +93,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: RGB8
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Min Color: 0; 0; 0
@@ -108,13 +108,13 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /detect_3d/objects
       Name: Object Marker
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -127,29 +127,29 @@ Visualization Manager:
       Channel Name: intensity
       Class: rviz/PointCloud2
       Color: 255; 255; 255
-      Color Transformer: ""
+      Color Transformer: Intensity
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Min Color: 0; 0; 0
-      Name: DEBUG CLOUD
-      Position Transformer: ""
+      Name: Last sampled at guess
+      Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
       Size (m): 0.009999999776482582
-      Style: Flat Squares
+      Style: Points
       Topic: /detect_3d/cloud
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
     Default Light: true
-    Fixed Frame: camera_link
+    Fixed Frame: map
     Frame Rate: 15
   Name: root
   Tools:
@@ -177,7 +177,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 0.030654514208436012
+      Distance: 0.33456674218177795
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -185,17 +185,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -0.689617931842804
-        Y: 1.1868222951889038
-        Z: 1.45735764503479
+        X: -0.2187967151403427
+        Y: 1.3425461053848267
+        Z: 1.4992563724517822
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6347968578338623
+      Pitch: 0.5547966957092285
       Target Frame: <Fixed Frame>
-      Yaw: 2.3064372539520264
+      Yaw: 1.976434350013733
     Saved: ~
 Window Geometry:
   Displays:

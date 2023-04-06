@@ -52,8 +52,8 @@ private:
   bool ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& req,
                        clf_object_recognition_msgs::Detect3D::Response& res);
 
-  mesh_type::Ptr colladaToPolygonMesh(const std::string& ressource_path);
-  pointcloud_type::Ptr colladaToPointCloud(const std::string& ressource_path);
+  //pcl::PolygonMesh::Ptr colladaToPolygonMesh(const std::string& ressource_path);
+  pointcloud_type::Ptr loadPointcloud(const std::string& ressource_path);
 
   ros::NodeHandle nh_;
   clf_object_recognition_cfg::Detect3dConfig config;
