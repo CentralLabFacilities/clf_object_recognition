@@ -7,9 +7,6 @@ Panels:
         - /Global Options1
         - /TF1/Frames1
         - /TF1/Tree1
-        - /Detections3D1
-        - /PointCloud21
-        - /MarkerArray1
       Splitter Ratio: 0.5
     Tree Height: 607
   - Class: rviz/Selection
@@ -29,7 +26,7 @@ Panels:
   - Class: rviz/Time
     Name: Time
     SyncMode: 0
-    SyncSource: PointCloud2
+    SyncSource: Realsense
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -57,6 +54,8 @@ Visualization Manager:
       Value: true
     - Class: rviz/TF
       Enabled: false
+      Filter (blacklist): ""
+      Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
         All Enabled: false
@@ -81,7 +80,7 @@ Visualization Manager:
       show Bounding Box: true
       show Labels: true
       show Points: true
-      show Propability: false
+      show Propability: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -94,11 +93,11 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: RGB8
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Min Color: 0; 0; 0
-      Name: PointCloud2
+      Name: Realsense
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
@@ -109,15 +108,43 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /detect_3d/objects
-      Name: MarkerArray
+      Name: Object Marker
       Namespaces:
         {}
       Queue Size: 100
       Value: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: ""
+      Decay Time: 0
+      Enabled: false
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Min Color: 0; 0; 0
+      Name: DEBUG CLOUD
+      Position Transformer: ""
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.009999999776482582
+      Style: Flat Squares
+      Topic: /detect_3d/cloud
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -150,7 +177,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 4.061673164367676
+      Distance: 0.030654514208436012
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -158,17 +185,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -0.8928052186965942
-        Y: 0.9518176913261414
-        Z: 1.8066860437393188
+        X: -0.689617931842804
+        Y: 1.1868222951889038
+        Z: 1.45735764503479
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.8947969079017639
+      Pitch: 0.6347968578338623
       Target Frame: <Fixed Frame>
-      Yaw: 2.6964311599731445
+      Yaw: 2.3064372539520264
     Saved: ~
 Window Geometry:
   Displays:
@@ -186,5 +213,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1386
-  X: 303
-  Y: 124
+  X: 139
+  Y: 44

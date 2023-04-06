@@ -18,6 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
   ecwm_msgs
   eigen_conversions
   image_geometry
+  tf2_ros
   
 )
 include_directories(${catkin_INCLUDE_DIRS})
@@ -28,7 +29,7 @@ catkin_python_setup()
 
 catkin_package()
 
-include_directories(include)
+include_directories(BEFORE include)
 
 add_executable(3d_detector 
   src/node.cpp 

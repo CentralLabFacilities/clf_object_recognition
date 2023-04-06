@@ -6,7 +6,7 @@
 
 namespace cloud
 {
-pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthImage(const vision_msgs::BoundingBox2D& bbox, const sensor_msgs::Image& depth, sensor_msgs::CameraInfo info,
+pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthImage(const sensor_msgs::Image& depth, sensor_msgs::CameraInfo info,
                                                    double depth_scaling)
 {
   image_geometry::PinholeCameraModel camera;
@@ -41,9 +41,9 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthImage(const vision_msgs::BoundingBo
 
   cloud->points.resize(w * h);
 
-  for (int v = (int)(bbox.center.y - bbox.size_y / 2); v < (int)(bbox.center.y - bbox.size_y / 2 + bbox.size_y); ++v)
+  for (int v = 0; v < h; ++v)
   {
-    for (int u = (int)(bbox.center.x - bbox.size_x / 2); u < (int)(bbox.center.x - bbox.size_x / 2 + bbox.size_x); ++u)
+    for (int u = 0; u < w; ++u)
     {
       float depth = cv_ptr->image.at<uint16_t>(v, u);      
       if (depth != 0)

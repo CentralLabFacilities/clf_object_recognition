@@ -6,6 +6,8 @@
 #include <ros/service_client.h>
 #include <dynamic_reconfigure/server.h>
 
+#include <tf2_ros/transform_listener.h>
+
 #include <clf_object_recognition_cfg/Detect3dConfig.h>
 #include "clf_object_recognition_3d/model_provider.h"
 
@@ -71,6 +73,7 @@ private:
 
   // publisher
   ros::Publisher pub_detections_3d;
+  ros::Publisher pub_cloud;
   ros::Publisher pub_marker;
 
   // sync with exact policy
@@ -79,4 +82,7 @@ private:
   std::mutex mutex_;
 
   std::unique_ptr<ModelProvider> model_provider{ nullptr };
+
+  tf2_ros::Buffer tf_buffer;
+  tf2_ros::TransformListener tf_listener;
 };
