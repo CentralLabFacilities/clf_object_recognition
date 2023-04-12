@@ -47,7 +47,7 @@ bool loadXYZ(std::filesystem::path path, pcl::PointCloud<pcl::PointXYZ>& cloud)
     boost::trim(line);
     boost::split(st, line, boost::is_any_of("\t\r "), boost::token_compress_on);
 
-    if (st.size() != 3)
+    if (st.size() < 3)
       continue;
 
     cloud.push_back(pcl::PointXYZ(static_cast<float>(atof(st[0].c_str())), static_cast<float>(atof(st[1].c_str())),
@@ -66,7 +66,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr loadPointcloud(const std::string& ressource_
   namespace fs = std::filesystem;
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>());
 
-  ROS_DEBUG_STREAM_NAMED("cloud", "loadPointcloud: " << ressource_path);
+  ROS_DEBUG_STREAM_NAMED("cloud", "loadPointcloud for model path: " << ressource_path);
 
   std::string real_path = ressource_path;
   std::string prefix("file://");
@@ -83,13 +83,13 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr loadPointcloud(const std::string& ressource_
   bool loaded = false;
   if (fs::exists(path.replace_extension("xyz")))
   {
-    ROS_DEBUG_STREAM_NAMED("cloud", "loading: " << path);
+    ROS_DEBUG_STREAM_NAMED("cloud", "loading xyz: " << path);
     if(loadXYZ(path, *cloud)) return cloud;
   }
 
   if (fs::exists(path.replace_extension("ply")))
   {
-    ROS_DEBUG_STREAM_NAMED("cloud", "loading: " << path);
+    ROS_DEBUG_STREAM_NAMED("cloud", "loading ply: " << path);
     auto ply = loadPLY(path);
     cloud = sample_cloud(ply);
     return cloud;

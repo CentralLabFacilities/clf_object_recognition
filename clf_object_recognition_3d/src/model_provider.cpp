@@ -16,9 +16,9 @@ std::string ModelProvider::GetModelPath(std::string model_name)
   {
     if (model.type != model_name)
       continue;
-    if (model.colliders.size() > 0)
+    if (model.geometries.size() > 0)
     {
-      auto maybe_mesh = model.colliders.front();
+      auto maybe_mesh = model.geometries.front();
       if (maybe_mesh.type == visualization_msgs::Marker::MESH_RESOURCE)
       {
         return maybe_mesh.mesh_resource;
@@ -28,10 +28,10 @@ std::string ModelProvider::GetModelPath(std::string model_name)
         // have to create shape from marker, no path
       }
     }
-    if (model.geometries.size() > 0)
+    if (model.colliders.size() > 0)
     {
-      auto maybe_mesh = model.geometries.front();
-      ROS_INFO_STREAM_NAMED("ModelProvider", "model: '" << model_name << "' has no colliders, using geometry");
+      auto maybe_mesh = model.colliders.front();
+      ROS_INFO_STREAM_NAMED("ModelProvider", "model: '" << model_name << "' has no geometry, using collision model");
       if (maybe_mesh.type == visualization_msgs::Marker::MESH_RESOURCE)
       {
         return maybe_mesh.mesh_resource;
