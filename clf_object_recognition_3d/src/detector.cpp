@@ -211,6 +211,23 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
       auto sampled = cloud::loadPointcloud(model_path_dae);
 
       pcl::GeneralizedIterativeClosestPoint<point_type, point_type> icp;
+
+      icp.setMaximumIterations(config.registration_maximum_iterations);
+      icp.setRANSACIterations(config.registration_ransac_iterations);
+      icp.setRANSACOutlierRejectionThreshold(config.registration_ransac_outlier_rejection_threshold);
+      icp.setMaxCorrespondenceDistance(config.registration_max_correspondence_dist);
+      icp.setTransformationEpsilon(config.registration_transformation_epsilon);
+      icp.setTransformationRotationEpsilon(config.registration_transformation_rotation_epsilon);
+      // setEuclideanFitnessEpsilon
+
+      icp.setUseReciprocalCorrespondences(config.icp_use_reciprocal_correspondence);
+
+      // setRotationEpsilon
+      icp.setCorrespondenceRandomness(config.gicp_correspondence_randomness);
+      icp.setMaximumOptimizerIterations(config.gicp_maximum_optimizer_iterations);
+      // setTranslationGradientTolerance
+      // setRotationGradientTolerance 
+
       icp.setInputSource(sampled);
       icp.setInputTarget(cloud_from_depth_image);
       pointcloud_type final_point_cloud;
