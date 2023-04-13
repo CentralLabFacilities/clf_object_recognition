@@ -10,6 +10,7 @@
 #include <pcl/common/centroid.h>
 #include <pcl/common/eigen.h>
 #include <pcl/registration/gicp.h>
+#include <pcl/filters/crop_box.h>
 #include <pcl_conversions/pcl_conversions.h>
 
 #include <ros/console.h>
@@ -141,6 +142,17 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
     Eigen::Vector4d centroid = Eigen::Vector4d::Random();
     auto centroid_size = pcl::compute3DCentroid(*cloud_from_depth_image, centroid);
 
+
+    pointcloud_type::Ptr centroid_filtered
+    pcl::CropBox<point_type> box_filter;
+    box_filter.setTranslation(Eigen::Vector3f(centroid[0], centroid[1], centroid[2]));
+    box_filter.setMin(Eigen::Vector4f(-0.2, -0.2, -0.2, 1.0));
+    box_filter.setMax(Eigen::Vector4f(0.2, 0.2, 0.2, 1.0));
+    box_filter.setInputCloud(cloud_from_depth_image);
+    box_filter.filter(*centroid_filtered);
+
+    centroid_size = pcl::compute3DCentroid(*centroid_filtered, centroid);
+
     geometry_msgs::Pose center;
     // initial rotation with z aligned to world and pose at centroid
     center.orientation = tf_base_to_cam.transform.rotation;
@@ -185,14 +197,14 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
       tf2::fromMsg(center, center_3d);
 
       // TODO shift down 10cm in base_link frame
-      //Eigen::Affine3d t(Eigen::Translation3d(Eigen::Vector3d(0,0,-0.1)));
-      //t = tf2::transformToEigen(tf_base_to_cam).rotation() * t;
-      //const Eigen::IOFormat fmt(2, DontAlignCols, "\t", " ", "", "", "", "");
-      //ROS_DEBUG_STREAM_NAMED("detector", "  - t " << t.matrix().format(fmt));
-      //auto t1 = center_3d.translation();
-      //auto t2 = t.translation();
-      //auto t3 = t1 + t2;
-      //center_3d.translation() = t3;
+      Eigen::Affine3d t(Eigen::Translation3d(Eigen::Vector3d(0,0,-0.1)));
+      t = tf2::transformToEigen(tf_base_to_cam).rotation() * t;
+      const Eigen::IOFormat fmt(2, Eigen::DontAlignCols, "\t", " ", "", "", "", "");
+      ROS_DEBUG_STREAM_NAMED("detector", "  - t " << t.matrix().format(fmt));
+      auto t1 = center_3d.translation();
+      auto t2 = t.translation();
+      auto t3 = t1 + t2;
+      center_3d.translation() = t3;
 
       Eigen::Matrix4d center_4d = center_3d.matrix();
       initial_guess = center_4d.cast<float>();
@@ -209,33 +221,47 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
       auto model_path_dae = model_provider->GetModelPath(model);
 
       auto sampled = cloud::loadPointcloud(model_path_dae);
+      std::shared_ptr<pcl::Registration<point_type, point_type>> reg;
 
-      pcl::GeneralizedIterativeClosestPoint<point_type, point_type> icp;
+      if(config.matcher == clf_object_recognition_cfg::Detect3d_gicp) {
+        ROS_INFO_STREAM_NAMED("detector", "    running GICP...");
+        auto gicp = std::make_shared<pcl::GeneralizedIterativeClosestPoint<point_type, point_type>>();
 
-      icp.setMaximumIterations(config.registration_maximum_iterations);
-      icp.setRANSACIterations(config.registration_ransac_iterations);
-      icp.setRANSACOutlierRejectionThreshold(config.registration_ransac_outlier_rejection_threshold);
-      icp.setMaxCorrespondenceDistance(config.registration_max_correspondence_dist);
-      icp.setTransformationEpsilon(config.registration_transformation_epsilon);
-      icp.setTransformationRotationEpsilon(config.registration_transformation_rotation_epsilon);
-      // setEuclideanFitnessEpsilon
+        gicp->setUseReciprocalCorrespondences(config.icp_use_reciprocal_correspondence);
+        // setEuclideanFitnessEpsilon
 
-      icp.setUseReciprocalCorrespondences(config.icp_use_reciprocal_correspondence);
+        // setRotationEpsilon
+        gicp->setCorrespondenceRandomness(config.gicp_correspondence_randomness);
+        gicp->setMaximumOptimizerIterations(config.gicp_maximum_optimizer_iterations);
+        // setTranslationGradientTolerance
+        // setRotationGradientTolerance 
 
-      // setRotationEpsilon
-      icp.setCorrespondenceRandomness(config.gicp_correspondence_randomness);
-      icp.setMaximumOptimizerIterations(config.gicp_maximum_optimizer_iterations);
-      // setTranslationGradientTolerance
-      // setRotationGradientTolerance 
+        reg = gicp;
+      } else {
+        ROS_INFO_STREAM_NAMED("detector", "    running ICP...");
+        auto icp = std::make_shared<pcl::IterativeClosestPoint<point_type, point_type>>();
 
-      icp.setInputSource(sampled);
-      icp.setInputTarget(cloud_from_depth_image);
+        icp->setUseReciprocalCorrespondences(config.icp_use_reciprocal_correspondence);
+        // setEuclideanFitnessEpsilon
+
+        reg = icp;
+      }
+
+      reg->setMaximumIterations(config.registration_maximum_iterations);
+      reg->setRANSACIterations(config.registration_ransac_iterations);
+      reg->setRANSACOutlierRejectionThreshold(config.registration_ransac_outlier_rejection_threshold);
+      reg->setMaxCorrespondenceDistance(config.registration_max_correspondence_dist);
+      reg->setTransformationEpsilon(config.registration_transformation_epsilon);
+      reg->setTransformationRotationEpsilon(config.registration_transformation_rotation_epsilon);
+     
+      reg->setInputSource(sampled);
+      reg->setInputTarget(cloud_from_depth_image);
       pointcloud_type final_point_cloud;
-      ROS_DEBUG_STREAM_NAMED("detector", "    running icp...");
-      icp.align(final_point_cloud, initial_guess);  
-      ROS_INFO_STREAM_NAMED("detector", "    has converged: " << icp.hasConverged());
+     
+      reg->align(final_point_cloud, initial_guess);  
+      ROS_INFO_STREAM_NAMED("detector", "    has converged: " << reg->hasConverged());
 
-      Eigen::Matrix4f icp_transform = icp.getFinalTransformation();
+      Eigen::Matrix4f icp_transform = reg->getFinalTransformation();
       Eigen::Affine3f affine(icp_transform);
 
       geometry_msgs::Transform tf_msg;
