@@ -143,7 +143,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
     auto centroid_size = pcl::compute3DCentroid(*cloud_from_depth_image, centroid);
 
 
-    pointcloud_type::Ptr centroid_filtered;
+    pointcloud_type::Ptr centroid_filtered(new pointcloud_type());
     pcl::CropBox<point_type> box_filter;
     box_filter.setTranslation(Eigen::Vector3f(centroid[0], centroid[1], centroid[2]));
     box_filter.setMin(Eigen::Vector4f(-0.2, -0.2, -0.2, 1.0));
