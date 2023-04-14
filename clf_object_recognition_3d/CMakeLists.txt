@@ -60,7 +60,5 @@ install(DIRECTORY launch config
 
 install(PROGRAMS
   scripts/simple_3d
-  scripts/new_3d
-  scripts/detection_via_pcl
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
