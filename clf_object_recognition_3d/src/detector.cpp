@@ -123,7 +123,21 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
 
   // transform base_link -> camera
   geometry_msgs::TransformStamped tf_base_to_cam;
-  tf_base_to_cam = tf_buffer.lookupTransform(depth_image_->header.frame_id, "base_link", depth_image_->header.stamp);
+  try {
+    tf_base_to_cam = tf_buffer.lookupTransform(depth_image_->header.frame_id, "base_link", depth_image_->header.stamp);
+  } catch (tf2::TransformException ex){
+    ROS_WARN_STREAM_NAMED("detector", ex.what());
+    // wait 1 sec to make sure buffer is updated
+    // if somehow the yolox service call finished faster than joint update running with 100hz ?!
+    ros::Duration(1.0).sleep();
+    try {
+      tf_base_to_cam = tf_buffer.lookupTransform(depth_image_->header.frame_id, "base_link", depth_image_->header.stamp);
+    } catch(tf2::TransformException ex) {
+      // fallback to latest available transform, somethings fucked anyhow
+      tf_base_to_cam = tf_buffer.lookupTransform(depth_image_->header.frame_id, "base_link", ros::Time(0));
+    }
+    
+  }
 
   for (auto& detection : param.response.detections)
   {
