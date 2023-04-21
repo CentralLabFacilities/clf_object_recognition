@@ -71,6 +71,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthArea(const vision_msgs::BoundingBox
 
   // todo encodings from image
   cv_bridge::CvImagePtr cv_ptr;
+  bool integers = true;
   if (depth.encoding == sensor_msgs::image_encodings::MONO8)
   {
     cv_ptr = cv_bridge::toCvCopy(depth, sensor_msgs::image_encodings::TYPE_8UC1);
@@ -78,12 +79,15 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthArea(const vision_msgs::BoundingBox
   else if (depth.encoding == sensor_msgs::image_encodings::TYPE_32FC1)
   { 
     cv_ptr = cv_bridge::toCvCopy(depth, sensor_msgs::image_encodings::TYPE_32FC1);
+    integers = false;
+    depth_scaling = 1;
   }
   else {
     cv_ptr = cv_bridge::toCvCopy(depth, sensor_msgs::image_encodings::TYPE_16UC1);
   }
   ROS_DEBUG_STREAM_NAMED("cloud", "copied image");
 
+  
   float constant_x = depth_scaling / camera.fx();
   float constant_y = depth_scaling / camera.fy();
 
@@ -108,15 +112,28 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthArea(const vision_msgs::BoundingBox
   {
     for (int u = (int)(bbox.center.x - bbox.size_x / 2); u < (int)(bbox.center.x + bbox.size_x / 2); u++)
     {
-      float depth = cv_ptr->image.at<uint16_t>(v, u);
+      if(integers) {
+        float depth = cv_ptr->image.at<uint16_t>(v, u);
       
-      if (depth != 0)
-      {
-        auto& pt = cloud->points[num_point++];
-        pt.x = (u - camera.cx()) * depth * constant_x;
-        pt.y = (v - camera.cy()) * depth * constant_y;
-        pt.z = depth * depth_scaling;
+        if (depth != 0)
+        {
+          auto& pt = cloud->points[num_point++];
+          pt.x = (u - camera.cx()) * depth * constant_x;
+          pt.y = (v - camera.cy()) * depth * constant_y;
+          pt.z = depth * depth_scaling;
+        }
+      } else {
+        float depth = cv_ptr->image.at<float>(v, u);
+      
+        if (depth != 0)
+        {
+          auto& pt = cloud->points[num_point++];
+          pt.x = (u - camera.cx()) * depth * constant_x;
+          pt.y = (v - camera.cy()) * depth * constant_y;
+          pt.z = depth * depth_scaling;
+        }
       }
+      
     }
   }
   cloud->points.resize(num_point);
