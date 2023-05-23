@@ -1,3 +1,5 @@
-
+# minimal confidence
+float32 min_conf
+bool skip_icp
 ---
 vision_msgs/Detection3D[] detections

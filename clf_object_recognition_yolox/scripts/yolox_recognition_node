@@ -80,7 +80,7 @@ class YOLOXNode():
 			rospy.logerr(logger_name="YOLOXNode", msg=error_msg)
 			raise Exception(error_msg)
 
-		(cls, scores, bboxes) = self.recognizer.inference(img)
+		(cls, scores, bboxes) = self.recognizer.inference(img, req.min_conf)
 
 		h = std_msgs.msg.Header()
 		h.stamp = rospy.Time.now()
@@ -100,7 +100,10 @@ class YOLOXNode():
 		return {"detections": result}
 
 	def _recognize_srv_img_callback(self, req):
-
+		rospy.loginfo(logger_name="YOLOXNode", msg=f"detect (img) called: min_conf:{req.min_conf}")
+		if req.min_conf == 0.0:
+			rospy.logwarn(logger_name="YOLOXNode", msg=f"min_conf:{req.min_conf} too low, set to 0.001")
+			req.min_conf = 0.001
 		try:
 			img = self._bridge.imgmsg_to_cv2(req.image, "bgr8")
 		except CvBridgeError as e:
@@ -108,23 +111,23 @@ class YOLOXNode():
 			rospy.logerr(logger_name="YOLOXNode", msg=error_msg)
 			raise Exception(error_msg)
 
-		(cls, scores, bboxes) = self.recognizer.inference(img)
+		(cls, scores, bboxes) = self.recognizer.inference(img, req.min_conf)
 
 		h = std_msgs.msg.Header()
 		h.stamp = rospy.Time.now()
 
-		result = util.tensorsToVisionMessage(cls, scores, bboxes, req.image.header, thresh = self.exp.test_conf)
+		result = util.tensorsToVisionMessage(cls, scores, bboxes, req.image.header, thresh = req.min_conf)
 
 		if self.config.save_image or self.config.publish_detections:
 			from yolox.utils import vis
-			result_image = vis(img, bboxes, scores, cls, self.exp.test_conf, self.classes)
+			result_image = vis(img, bboxes, scores, cls, req.min_conf, self.classes)
 			if self.config.save_image:
 				cv2.imwrite("/tmp/yolox_output.jpg", result_image)
 			if self.config.publish_detections:
 				msg = self._bridge.cv2_to_imgmsg(result_image)
 				self.result_pub.publish(msg)
 
-		rospy.loginfo(logger_name="YOLOXNode", msg=f"detected {len(result)} objects")
+		rospy.logdebug(logger_name="YOLOXNode", msg=f"detected {len(result)} objects")
 		return {"detections": result}
 
 if __name__ == '__main__':
