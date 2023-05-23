@@ -25,11 +25,12 @@ class Recognizer(object):
 		self.fp16 = fp16
 		self.decoder = None
 
-		self.confthre = exp.test_conf
-
 		pass
 
-	def inference(self, img):
+	def inference(self, img, confthreshold=0.0):
+		#if confthreshold == 0.0:
+		#	confthreshold = self.exp.test_conf
+
 		height, width = img.shape[:2]
 		ratio = min(self.exp.test_size[0] / img.shape[0], self.exp.test_size[1] / img.shape[1])
 		img, _ = self.preproc(img, None, self.exp.test_size)
@@ -44,7 +45,7 @@ class Recognizer(object):
 				outputs = self.decoder(outputs, dtype=outputs.type())
 
 			outputs = postprocess(
-					outputs, self.exp.num_classes, self.confthre,
+					outputs, self.exp.num_classes, confthreshold,
 					self.exp.nmsthre, class_agnostic=True
 				)
 		

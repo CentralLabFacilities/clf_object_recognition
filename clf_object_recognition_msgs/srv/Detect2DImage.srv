@@ -1,4 +1,7 @@
+sensor_msgs/Image image
+
 # minimal confidence
 float32 min_conf
 ---
+
 vision_msgs/Detection2D[] detections

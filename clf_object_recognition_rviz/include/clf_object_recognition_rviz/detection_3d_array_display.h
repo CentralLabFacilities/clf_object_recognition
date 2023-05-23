@@ -12,7 +12,7 @@ namespace rviz
 {
 class BoolProperty;
 class FloatProperty;
-}
+}  // namespace rviz
 
 namespace objrec
 {
@@ -51,7 +51,6 @@ private:
   rviz::BoolProperty* showBox_;
   rviz::BoolProperty* showPoints_;
   rviz::FloatProperty* labelSize_;
-
 };
 }  // namespace viz
 }  // namespace objrec

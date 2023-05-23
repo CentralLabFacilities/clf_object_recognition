@@ -15,8 +15,6 @@
 
 #include <rviz/ogre_helpers/movable_text.h>
 
-
-
 namespace objrec
 {
 namespace viz
@@ -36,9 +34,7 @@ Detection3DVisual::Detection3DVisual(Ogre::SceneManager* scene_manager, Ogre::Sc
   text_ = new rviz::MovableText("unknown object - 0.0");
   text_->setTextAlignment(rviz::MovableText::H_LEFT, rviz::MovableText::V_CENTER);
   text_node_->attachObject(text_);
-
 }
-
 
 Detection3DVisual::~Detection3DVisual()
 {
@@ -49,7 +45,8 @@ Detection3DVisual::~Detection3DVisual()
   delete point_cloud_common_;
 }
 
-void Detection3DVisual::setShowBox(const bool show) {
+void Detection3DVisual::setShowBox(const bool show)
+{
   bb_node_->setVisible(show);
 }
 
@@ -67,7 +64,8 @@ void Detection3DVisual::setCharacterHeight(const float size)
   }
 }
 
-void Detection3DVisual::setShowPoints(const bool show) {
+void Detection3DVisual::setShowPoints(const bool show)
+{
   points_node_->setVisible(show);
 }
 
@@ -76,7 +74,6 @@ void Detection3DVisual::setShowPropability(const bool show)
   show_prob_ = show;
   updateLabel();
 }
-
 
 // ----------------------------------------------------------------------------
 void Detection3DVisual::setMessage(const vision_msgs::Detection3D msg)
@@ -91,7 +88,8 @@ void Detection3DVisual::setMessage(const vision_msgs::Detection3D msg)
   text_node_->setPosition(position);
 }
 
-void Detection3DVisual::updateLabel() {
+void Detection3DVisual::updateLabel()
+{
   std::ostringstream out;
   out.precision(2);
   out << std::fixed << cur_prob_;
@@ -100,36 +98,40 @@ void Detection3DVisual::updateLabel() {
   ROS_DEBUG_STREAM("caption:" << txt);
 }
 
-template <template<class,class,class...> class C, typename K, typename V, typename... Args>
-V GetWithDef(const C<K,V,Args...>& m, K const& key, const V & defval)
+template <template <class, class, class...> class C, typename K, typename V, typename... Args>
+V GetWithDef(const C<K, V, Args...>& m, K const& key, const V& defval)
 {
-    typename C<K,V,Args...>::const_iterator it = m.find( key );
-    if (it == m.end())
-        return defval;
-    return it->second;
+  typename C<K, V, Args...>::const_iterator it = m.find(key);
+  if (it == m.end())
+    return defval;
+  return it->second;
 }
 
 std::string Detection3DVisual::getName(int id, std::string fixed_name)
 {
-  if(fixed_name != "") {
+  if (fixed_name != "")
+  {
     return fixed_name;
   }
-  std::map<std::string,std::string> labels;
+  std::map<std::string, std::string> labels;
   ros::param::get(std::string("/object_labels"), labels);
-  return GetWithDef(labels,std::to_string(id),std::string("unknown"));
+  return GetWithDef(labels, std::to_string(id), std::string("unknown"));
 }
 
 std::string Detection3DVisual::getName(const std::string& id, std::string fixed_name)
 {
-  return id; // TODO maybe other behaviour?
+  return id;  // TODO maybe other behaviour?
 }
 
 void Detection3DVisual::updateHypothesis(const vision_msgs::Detection3D msg)
 {
-  if(!msg.results.empty()) {
+  if (!msg.results.empty())
+  {
     cur_prob_ = msg.results.front().score;
     cur_hyp_ = getName(msg.results.front().id);
-  } else {
+  }
+  else
+  {
     cur_prob_ = 0.0;
     cur_hyp_ = "Unknown";
   }
