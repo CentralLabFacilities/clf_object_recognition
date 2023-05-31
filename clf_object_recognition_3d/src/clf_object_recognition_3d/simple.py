@@ -10,10 +10,10 @@ from clf_object_recognition_msgs.srv import Detect3D, Detect2D, Detect3DResponse
 
 class SimpleDetect():
 
-    def __init__(self, detect2d_topic, publish_detections = True):
+    def __init__(self, detect_2d_topic, publish_detections = True):
 
         self.publish_detections = publish_detections
-        self.srv_detect = rospy.ServiceProxy(detect2d_topic, Detect2D)
+        self.srv_detect = rospy.ServiceProxy(detect_2d_topic, Detect2D)
 
         if publish_detections:
             self.pub = rospy.Publisher('/simple_detections', Detection3DArray, queue_size=10)

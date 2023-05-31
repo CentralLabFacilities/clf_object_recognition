@@ -1,0 +1,16 @@
+<launch>
+    <env name="ROSCONSOLE_FORMAT" value="${severity} [${logger}]: ${message}"/>
+    <env name="ROSCONSOLE_CONFIG_FILE" value="$(find clf_object_recognition_3d)/config/rosconsole.config"/>
+
+    <arg name="image_topic" default="/xtion/rgb/image_raw"/>
+    <arg name="depth_topic" default="/xtion/depth_registered/image_raw"/>
+    <arg name="info_topic" default="/xtion/depth_registered/camera_info"/>
+
+    <node pkg="clf_object_recognition_3d" type="3d_detector" output="screen" name="detect_3d">
+        <param name="image_topic" value="$(arg image_topic)"/>
+        <param name="depth_topic" value="$(arg depth_topic)"/>
+        <param name="info_topic" value="$(arg info_topic)"/>
+        <param name="detect_2d_topic" value="/yolox/recognize"/>
+	</node>
+
+</launch> 

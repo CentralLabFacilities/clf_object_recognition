@@ -1,6 +1,8 @@
 <launch>
     <arg name="object_labels" default="$(find clf_object_recognition_yolox)/config/coco_labels.yaml"/>
     <rosparam command="load" ns="object_labels" file="$(arg object_labels)"/>
+    <arg name="object_models" default="$(find clf_object_recognition_yolox)/config/coco_ecwm.yaml"/>
+    <rosparam command="load" ns="object_models" file="$(arg object_models)"/>
 
     <arg name="config" default="$(find clf_object_recognition_yolox)/config/config.yaml"/>
     <arg name="checkpoint" default="$(find clf_object_recognition_yolox)/../yolox-models/yolox_l.pth" />
