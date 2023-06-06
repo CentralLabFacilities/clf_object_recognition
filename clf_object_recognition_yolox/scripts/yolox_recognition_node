@@ -29,10 +29,11 @@ class YOLOXNode():
 		rospy.loginfo(logger_name="YOLOXNode", msg=f" - timeout={timeout}")
 
 		if rospy.has_param('/object_labels'):
-			labels = rospy.get_param('/object_labels')
+			labels : dict = rospy.get_param('/object_labels')
+			d = {int(k):(v) for k,v in labels.items()}
 			self.classes = ()
-			for id in labels:
-				self.classes = self.classes + (labels[id],)
+			for id in sorted(d):
+				self.classes = self.classes + (d[id],)
 		else:
 			from yolox.data.datasets import COCO_CLASSES
 			self.classes = COCO_CLASSES
