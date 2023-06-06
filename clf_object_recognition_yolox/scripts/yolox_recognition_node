@@ -38,6 +38,8 @@ class YOLOXNode():
 			self.classes = COCO_CLASSES
 			rospy.logwarn(logger_name="YOLOXNode", msg="no /object_labels param found")
 
+		rospy.loginfo(logger_name="YOLOXNode", msg=f"using labels: {self.classes}")
+
 		self.exp = get_exp(exp_path,"")
 		if "conf" in config:
 			self.exp.test_conf = config["conf"]
