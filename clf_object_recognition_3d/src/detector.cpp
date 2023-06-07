@@ -225,7 +225,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
         tf2::fromMsg(center, center_3d);
 
         // TODO shift down 10cm in base_link frame
-        Eigen::Affine3d t(Eigen::Translation3d(Eigen::Vector3d(0,0,-0.1)));
+        Eigen::Affine3d t(Eigen::Translation3d(Eigen::Vector3d(0,0,0)));
         t = tf2::transformToEigen(tf_base_to_cam).rotation() * t;
         const Eigen::IOFormat fmt(2, Eigen::DontAlignCols, "\t", " ", "", "", "", "");
         ROS_DEBUG_STREAM_NAMED("detector", "  - t " << t.matrix().format(fmt));
