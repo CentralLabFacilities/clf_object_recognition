@@ -6,11 +6,11 @@
 
     <include file="$(find tiago_clf_launch)/launch/realsense.launch"/>
 
-    <arg name="object_labels" value="$(find yolox_models)/config/ycbv_labels.yaml"/>
-    <arg name="object_models" value="$(find yolox_models)/config/ycbv_ecwm_models.yaml"/>
+    <arg name="object_labels" value="$(find yolox_models)/config/apartment_labels.yaml"/>
+    <arg name="object_models" value="$(find yolox_models)/config/apartment_models.yaml"/>
     <arg name="config" value="$(find clf_object_recognition_yolox)/config/config.yaml"/>
-    <arg name="checkpoint" value="$(find yolox_models)/models/ycbv-gdrnpp_bop/model_final.pth" />
-    <arg name="exp" value="$(find yolox_models)/config/exp/ycbv-gdrnpp_bop.py"/>
+    <arg name="checkpoint" value="$(find yolox_models)/models/apartment/best_ckpt.pth" />
+    <arg name="exp" value="$(find yolox_models)/config/exp/apartment_exp.py"/>
 
     <param name="/yolox/publish_detections" value="True"/>
     <param name="/yolox/publish_marker" value="True"/>
@@ -22,8 +22,8 @@
         <arg name="exp" value="$(arg exp)"/>
     </include>
 
-    <node pkg="tf2_ros" type="static_transform_publisher" name="fixed_map" args="0 0 1.4 0 0 0 1 map base_link" />
-    <node pkg="tf2_ros" type="static_transform_publisher" name="fixed_camera" args="0 0 0 0 0 0 1 base_link realsense_link" />
+    <node pkg="tf2_ros" type="static_transform_publisher" name="fixed_map" args="0 0 0.8 0 0 0 1 map base_link" />
+
 
     <arg name="command_args" value="-d $(find clf_object_recognition_3d)/config/rviz.rviz" />
     <node name="$(anon rviz)" pkg="rviz" type="rviz" respawn="true"
@@ -31,7 +31,7 @@
     </node>
 
     <include file="$(find ecwm_data)/launch/ecwm_data.launch">
-        <arg name="world" value="clf-robocup.yaml"/>
+        <arg name="world" value="clf-robocup-big.yaml"/>
         <arg name="plugins" value="robocup-default.yaml"/>
     </include>
 

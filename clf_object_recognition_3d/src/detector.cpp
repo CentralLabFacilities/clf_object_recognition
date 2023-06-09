@@ -218,25 +218,6 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
       res.detections.push_back(d3d);
 
     } else {
-      Eigen::Matrix4f initial_guess;
-      // initial guess
-      {
-        Eigen::Affine3d center_3d;
-        tf2::fromMsg(center, center_3d);
-
-        // TODO shift down 10cm in base_link frame
-        Eigen::Affine3d t(Eigen::Translation3d(Eigen::Vector3d(0,0,0)));
-        t = tf2::transformToEigen(tf_base_to_cam).rotation() * t;
-        const Eigen::IOFormat fmt(2, Eigen::DontAlignCols, "\t", " ", "", "", "", "");
-        ROS_DEBUG_STREAM_NAMED("detector", "  - t " << t.matrix().format(fmt));
-        auto t1 = center_3d.translation();
-        auto t2 = t.translation();
-        auto t3 = t1 + t2;
-        center_3d.translation() = t3;
-
-        Eigen::Matrix4d center_4d = center_3d.matrix();
-        initial_guess = center_4d.cast<float>();
-      }
     
 
       for (auto hypo : detection.results)
@@ -250,6 +231,28 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
 
         auto sampled = cloud::loadPointcloud(model_path_dae);
         std::shared_ptr<pcl::Registration<point_type, point_type>> reg;
+
+        float z_min = 0.0;
+        float z_max = 0.0;
+
+        for (auto & point : sampled->points){
+
+          float z = point.z;
+
+          if(z>z_max){
+            
+            z_max = z;
+
+          } else if(z<z_min){
+            
+            z_min = z;
+
+          }
+        } 
+
+        float z_avg = -(z_max - z_min)/2.0;
+
+      
 
         if(config.matcher == clf_object_recognition_cfg::Detect3d_gicp) {
           ROS_INFO_STREAM_NAMED("detector", "    running GICP...");
@@ -274,6 +277,27 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
 
           reg = icp;
         }
+
+        Eigen::Matrix4f initial_guess;
+        // initial guess
+        {
+          Eigen::Affine3d center_3d;
+          tf2::fromMsg(center, center_3d);
+
+          // TODO shift down 10cm in base_link frame
+          Eigen::Affine3d t(Eigen::Translation3d(Eigen::Vector3d(0,0,z_avg)));
+          t = tf2::transformToEigen(tf_base_to_cam).rotation() * t;
+          const Eigen::IOFormat fmt(2, Eigen::DontAlignCols, "\t", " ", "", "", "", "");
+          ROS_DEBUG_STREAM_NAMED("detector", "  - t " << t.matrix().format(fmt));
+          auto t1 = center_3d.translation();
+          auto t2 = t.translation();
+          auto t3 = t1 + t2;
+          center_3d.translation() = t3;
+
+          Eigen::Matrix4d center_4d = center_3d.matrix();
+          initial_guess = center_4d.cast<float>();
+        }
+
 
         reg->setMaximumIterations(config.registration_maximum_iterations);
         reg->setRANSACIterations(config.registration_ransac_iterations);

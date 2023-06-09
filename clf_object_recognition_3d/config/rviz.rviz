@@ -7,7 +7,8 @@ Panels:
         - /Global Options1
         - /TF1/Frames1
         - /TF1/Tree1
-        - /Realsense1
+        - /Static Transform Publisher1
+        - /Static Transform Publisher1/publish transform1
       Splitter Ratio: 0.5
     Tree Height: 300
   - Class: rviz/Selection
@@ -71,13 +72,13 @@ Visualization Manager:
       Update Interval: 0
       Value: false
     - Class: clf_object_recognition_rviz/Detections3D
-      Enabled: true
+      Enabled: false
       Label size: 0.10000000149011612
       Name: Detections3D
       Queue Size: 10
       Topic: /detect_3d/last_detection
       Unreliable: false
-      Value: true
+      Value: false
       show Bounding Box: true
       show Labels: true
       show Points: true
@@ -130,7 +131,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: Intensity
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Min Color: 0; 0; 0
@@ -145,7 +146,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Class: rviz/Image
       Enabled: true
       Image Topic: /yolox/last_detection
@@ -158,6 +159,27 @@ Visualization Manager:
       Transport Hint: raw
       Unreliable: false
       Value: true
+    - Class: agni_tf_tools/Static Transform Publisher
+      Enabled: true
+      Name: Static Transform Publisher
+      Value: true
+      adapt transformation: false
+      marker type:
+        Value: 6 DoF handles
+        marker scale: 0.20000000298023224
+      parent frame: base_link
+      publish transform:
+        Value: true
+        child frame: realsense_link
+      rotation:
+        axes: rpy
+        e1: 2.275989572808612e-06
+        e2: 33.79949188232422
+        e3: 5.927086590418185e-07
+      translation:
+        X: 0
+        Y: 0
+        Z: 0
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -190,7 +212,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 0.8656623363494873
+      Distance: 3.4981119632720947
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -206,9 +228,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.0853984355926514
+      Pitch: -0.12960126996040344
       Target Frame: <Fixed Frame>
-      Yaw: 2.833183765411377
+      Yaw: 1.6131830215454102
     Saved: ~
 Window Geometry:
   Displays:
@@ -229,4 +251,4 @@ Window Geometry:
     collapsed: true
   Width: 1386
   X: 242
-  Y: 56
+  Y: 27
