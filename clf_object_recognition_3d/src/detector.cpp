@@ -124,20 +124,26 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
 
   // transform base_link -> camera
   geometry_msgs::TransformStamped tf_base_to_cam;
-  try {
+  try
+  {
     tf_base_to_cam = tf_buffer.lookupTransform(depth_image_->header.frame_id, "base_link", depth_image_->header.stamp);
-  } catch (tf2::TransformException ex){
+  }
+  catch (tf2::TransformException ex)
+  {
     ROS_WARN_STREAM_NAMED("detector", ex.what());
     // wait 1 sec to make sure buffer is updated
     // if somehow the yolox service call finished faster than joint update running with 100hz ?!
     ros::Duration(1.0).sleep();
-    try {
-      tf_base_to_cam = tf_buffer.lookupTransform(depth_image_->header.frame_id, "base_link", depth_image_->header.stamp);
-    } catch(tf2::TransformException ex) {
+    try
+    {
+      tf_base_to_cam =
+          tf_buffer.lookupTransform(depth_image_->header.frame_id, "base_link", depth_image_->header.stamp);
+    }
+    catch (tf2::TransformException ex)
+    {
       // fallback to latest available transform, somethings fucked anyhow
       tf_base_to_cam = tf_buffer.lookupTransform(depth_image_->header.frame_id, "base_link", ros::Time(0));
     }
-    
   }
 
   for (auto& detection : param.response.detections)
@@ -150,7 +156,8 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
     // cloud_from_depth_image = cloud::cleanupCloud(cloud_from_depth_image)
 
     // set source cloud only if using icp
-    if(!req.skip_icp) {
+    if (!req.skip_icp)
+    {
       sensor_msgs::PointCloud2 pcl_msg;
       pcl::toROSMsg(*cloud_from_depth_image, pcl_msg);
       d3d.source_cloud = pcl_msg;
@@ -205,7 +212,8 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
     d3d.bbox.size.y = 0.1;
     d3d.bbox.size.z = 0.1;
 
-    if(req.skip_icp) {
+    if (req.skip_icp)
+    {
       for (auto hypo : detection.results)
       {
         ROS_DEBUG_STREAM_NAMED("detector", "  - hypo " << hypo.id);
@@ -216,10 +224,9 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
         d3d.results.push_back(hyp);
       }
       res.detections.push_back(d3d);
-
-    } else {
-    
-
+    }
+    else
+    {
       for (auto hypo : detection.results)
       {
         ROS_DEBUG_STREAM_NAMED("detector", "  - hypo " << hypo.id);
@@ -232,60 +239,22 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
         auto sampled = cloud::loadPointcloud(model_path_dae);
         std::shared_ptr<pcl::Registration<point_type, point_type>> reg;
 
-        float z_min = 0.0;
-        float z_max = 0.0;
-
-        for (auto & point : sampled->points){
-
-          float z = point.z;
-
-          if(z>z_max){
-            
-            z_max = z;
-
-          } else if(z<z_min){
-            
-            z_min = z;
-
-          }
-        } 
-
-        float z_avg = -(z_max - z_min)/2.0;
-
-      
-
-        if(config.matcher == clf_object_recognition_cfg::Detect3d_gicp) {
-          ROS_INFO_STREAM_NAMED("detector", "    running GICP...");
-          auto gicp = std::make_shared<pcl::GeneralizedIterativeClosestPoint<point_type, point_type>>();
-
-          gicp->setUseReciprocalCorrespondences(config.icp_use_reciprocal_correspondence);
-          // setEuclideanFitnessEpsilon
-
-          // setRotationEpsilon
-          gicp->setCorrespondenceRandomness(config.gicp_correspondence_randomness);
-          gicp->setMaximumOptimizerIterations(config.gicp_maximum_optimizer_iterations);
-          // setTranslationGradientTolerance
-          // setRotationGradientTolerance 
-
-          reg = gicp;
-        } else {
-          ROS_INFO_STREAM_NAMED("detector", "    running ICP...");
-          auto icp = std::make_shared<pcl::IterativeClosestPoint<point_type, point_type>>();
-
-          icp->setUseReciprocalCorrespondences(config.icp_use_reciprocal_correspondence);
-          // setEuclideanFitnessEpsilon
-
-          reg = icp;
-        }
-
         Eigen::Matrix4f initial_guess;
         // initial guess
         {
           Eigen::Affine3d center_3d;
           tf2::fromMsg(center, center_3d);
 
-          // TODO shift down 10cm in base_link frame
-          Eigen::Affine3d t(Eigen::Translation3d(Eigen::Vector3d(0,0,z_avg)));
+          // Shift down in base link
+          float z_max = 0.0;
+          for (auto& point : sampled->points)
+          {
+            float z = point.z;
+            if (z > z_max)
+              z_max = z;
+          }
+          float z_avg = (z_max) / 2.0;
+          Eigen::Affine3d t(Eigen::Translation3d(Eigen::Vector3d(0, 0, -z_avg)));
           t = tf2::transformToEigen(tf_base_to_cam).rotation() * t;
           const Eigen::IOFormat fmt(2, Eigen::DontAlignCols, "\t", " ", "", "", "", "");
           ROS_DEBUG_STREAM_NAMED("detector", "  - t " << t.matrix().format(fmt));
@@ -298,6 +267,32 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
           initial_guess = center_4d.cast<float>();
         }
 
+        if (config.matcher == clf_object_recognition_cfg::Detect3d_gicp)
+        {
+          ROS_INFO_STREAM_NAMED("detector", "    running GICP...");
+          auto gicp = std::make_shared<pcl::GeneralizedIterativeClosestPoint<point_type, point_type>>();
+
+          gicp->setUseReciprocalCorrespondences(config.icp_use_reciprocal_correspondence);
+          // setEuclideanFitnessEpsilon
+
+          // setRotationEpsilon
+          gicp->setCorrespondenceRandomness(config.gicp_correspondence_randomness);
+          gicp->setMaximumOptimizerIterations(config.gicp_maximum_optimizer_iterations);
+          // setTranslationGradientTolerance
+          // setRotationGradientTolerance
+
+          reg = gicp;
+        }
+        else
+        {
+          ROS_INFO_STREAM_NAMED("detector", "    running ICP...");
+          auto icp = std::make_shared<pcl::IterativeClosestPoint<point_type, point_type>>();
+
+          icp->setUseReciprocalCorrespondences(config.icp_use_reciprocal_correspondence);
+          // setEuclideanFitnessEpsilon
+
+          reg = icp;
+        }
 
         reg->setMaximumIterations(config.registration_maximum_iterations);
         reg->setRANSACIterations(config.registration_ransac_iterations);
@@ -305,12 +300,12 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
         reg->setMaxCorrespondenceDistance(config.registration_max_correspondence_dist);
         reg->setTransformationEpsilon(config.registration_transformation_epsilon);
         reg->setTransformationRotationEpsilon(config.registration_transformation_rotation_epsilon);
-      
+
         reg->setInputSource(sampled);
         reg->setInputTarget(cloud_from_depth_image);
         pointcloud_type final_point_cloud;
-      
-        reg->align(final_point_cloud, initial_guess);  
+
+        reg->align(final_point_cloud, initial_guess);
         ROS_INFO_STREAM_NAMED("detector", "    has converged: " << reg->hasConverged());
 
         Eigen::Matrix4f icp_transform = reg->getFinalTransformation();
@@ -320,7 +315,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
         tf::transformEigenToMsg(affine.cast<double>(), tf_msg);
 
         ROS_DEBUG_STREAM_NAMED("detector", "    object at " << tf_msg.translation.x << ", " << tf_msg.translation.y
-                                                              << ", " << tf_msg.translation.z);
+                                                            << ", " << tf_msg.translation.z);
         hyp.pose.pose.orientation = tf_msg.rotation;
         hyp.pose.pose.position.x = tf_msg.translation.x;
         hyp.pose.pose.position.y = tf_msg.translation.y;
