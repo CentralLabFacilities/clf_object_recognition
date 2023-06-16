@@ -78,6 +78,9 @@ private:
 
   // sync with exact policy
   message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::CameraInfo> sync_;
+  ros::Time last_image_;
+
+  ros::ServiceClient reset_client_;
 
   std::mutex mutex_;
 

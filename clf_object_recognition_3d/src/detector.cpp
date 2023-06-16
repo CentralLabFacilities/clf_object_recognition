@@ -25,6 +25,7 @@
 
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/TransformStamped.h>
+#include <std_srvs/Empty.h>
 
 #include "clf_object_recognition_msgs/Detect2DImage.h"
 
@@ -51,6 +52,8 @@ Detector::Detector(ros::NodeHandle nh)
   pub_marker = nh.advertise<visualization_msgs::MarkerArray>("objects", 1);
   pub_cloud = nh.advertise<sensor_msgs::PointCloud2>("cloud", 1);
 
+  reset_client_ = nh.serviceClient<std_srvs::Empty>("/camera/realsense2_camera/reset");
+
   // vision_msgs::Detection3DArray
 
   // subscribe to camera topics
@@ -71,6 +74,7 @@ void Detector::Callback(const sensor_msgs::ImageConstPtr& image, const sensor_ms
   image_ = image;
   depth_image_ = depth_image;
   camera_info_ = camera_info;
+  last_image_ = ros::Time::now();
 }
 
 void Detector::ReconfigureCallback(const clf_object_recognition_cfg::Detect3dConfig& input, uint32_t /*level*/)
@@ -89,6 +93,36 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
   int marker_id = 0;
 
   ROS_INFO_STREAM_NAMED("detector", "ServiceDetect3D() called " << req);
+
+  bool reset = false;
+
+  ros::Time reset_started = ros::Time::now();
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (reset_started - last_image_ > ros::Duration(1)) reset = true;
+  }
+
+  if(reset) {
+    std_srvs::Empty srv;
+    if(!reset_client_.waitForExistence(ros::Duration(2))) {
+      ROS_WARN_STREAM_NAMED("detector", "resetting camera service timeout");
+      return false;
+    }
+    ROS_WARN_STREAM_NAMED("detector", "resetting camera");
+    reset_client_.call(srv);
+
+    bool fine = false;
+    
+    while (!fine) {
+      auto now = ros::Time::now();
+      std::lock_guard<std::mutex> lock(mutex_);
+      if (now - last_image_ < ros::Duration(1)) fine = true;
+      if (now - reset_started > ros::Duration(10)) {
+        ROS_WARN_STREAM_NAMED("detector", "resetting camera took too long");
+        return false;
+      }
+    }
+  }
 
   // Fetch image data
   {
