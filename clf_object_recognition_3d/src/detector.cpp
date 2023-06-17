@@ -199,7 +199,13 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
 
     Eigen::Vector4d centroid = Eigen::Vector4d::Random();
     auto centroid_size = pcl::compute3DCentroid(*cloud_from_depth_image, centroid);
-
+    if (centroid_size == 0)
+    {
+      ROS_ERROR_STREAM_NAMED("detector", "      centroid before filter is invalid");
+    } else {
+      ROS_DEBUG_STREAM_NAMED("detector", "centroid befiore filter " << centroid[0] << "   " << centroid[1] << "   " << centroid[2]);
+    }
+    
     pointcloud_type::Ptr centroid_filtered(new pointcloud_type());
     pcl::CropBox<point_type> box_filter;
     box_filter.setTranslation(Eigen::Vector3f(centroid[0], centroid[1], centroid[2]));
@@ -216,6 +222,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
 
     // verify centroid
     {
+      ROS_DEBUG_STREAM_NAMED("detector", "centroid is " << centroid[0] << "   " << centroid[1] << "   " << centroid[2]);
       if (centroid_size == 0)
       {
         ROS_ERROR_STREAM_NAMED("detector", "      centroid is invalid");
