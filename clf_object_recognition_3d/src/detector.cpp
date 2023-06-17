@@ -56,7 +56,7 @@ Detector::Detector(ros::NodeHandle nh)
   pub_marker = nh.advertise<visualization_msgs::MarkerArray>("objects", 1);
   pub_cloud = nh.advertise<sensor_msgs::PointCloud2>("cloud", 1);
 
-  reset_client_ = nh.serviceClient<std_srvs::Empty>("/camera/realsense2_camera/reset");
+  reset_client_ = nh.serviceClient<std_srvs::Empty>(config.reset_topic);
 
   // vision_msgs::Detection3DArray
 
@@ -98,32 +98,35 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
 
   ROS_INFO_STREAM_NAMED("detector", "ServiceDetect3D() called " << req);
 
-  bool reset = false;
+  if(config.reset) {
+    // check for possible reset
+    bool reset = false;
 
-  ros::Time reset_started = ros::Time::now();
-  {
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (reset_started - last_image_ > ros::Duration(1)) reset = true;
-  }
-
-  if(reset) {
-    std_srvs::Empty srv;
-    if(!reset_client_.waitForExistence(ros::Duration(2))) {
-      ROS_WARN_STREAM_NAMED("detector", "resetting camera service timeout");
-      return false;
-    }
-    ROS_WARN_STREAM_NAMED("detector", "resetting camera");
-    reset_client_.call(srv);
-
-    bool fine = false;
-    
-    while (!fine) {
-      auto now = ros::Time::now();
+    ros::Time reset_started = ros::Time::now();
+    {
       std::lock_guard<std::mutex> lock(mutex_);
-      if (now - last_image_ < ros::Duration(1)) fine = true;
-      if (now - reset_started > ros::Duration(10)) {
-        ROS_WARN_STREAM_NAMED("detector", "resetting camera took too long");
+      if (reset_started - last_image_ > ros::Duration(config.reset_trigger_time)) reset = true;
+    }
+
+    if(reset) {
+      std_srvs::Empty srv;
+      if(!reset_client_.waitForExistence(ros::Duration(2))) {
+        ROS_WARN_STREAM_NAMED("detector", "resetting camera service timeout");
         return false;
+      }
+      ROS_WARN_STREAM_NAMED("detector", "resetting camera");
+      reset_client_.call(srv);
+
+      bool fine = false;
+      
+      while (!fine) {
+        auto now = ros::Time::now();
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (now - last_image_ < ros::Duration(config.reset_trigger_time)) fine = true;
+        if (now - reset_started > ros::Duration(config.reset_timeout)) {
+          ROS_WARN_STREAM_NAMED("detector", "resetting camera took too long");
+          return false;
+        }
       }
     }
   }
