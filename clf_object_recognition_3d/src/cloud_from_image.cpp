@@ -125,7 +125,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthArea(const vision_msgs::BoundingBox
       } else {
         float depth = cv_ptr->image.at<float>(v, u);
       
-        if (depth != 0 && depth != std::nanf)
+        if (depth != 0 || std::isnan(depth))
         {
           auto& pt = cloud->points[num_point++];
           pt.x = (u - camera.cx()) * depth * constant_x;
