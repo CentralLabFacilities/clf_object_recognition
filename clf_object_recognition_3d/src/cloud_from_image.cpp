@@ -115,7 +115,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthArea(const vision_msgs::BoundingBox
       if(integers) {
         float depth = cv_ptr->image.at<uint16_t>(v, u);
       
-        if (depth != 0)
+        if (depth != 0 && depth != std::numeric_limits<uint16_t>::max())
         {
           auto& pt = cloud->points[num_point++];
           pt.x = (u - camera.cx()) * depth * constant_x;
@@ -125,7 +125,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthArea(const vision_msgs::BoundingBox
       } else {
         float depth = cv_ptr->image.at<float>(v, u);
       
-        if (depth != 0)
+        if (depth != 0 && depth != std::nanf)
         {
           auto& pt = cloud->points[num_point++];
           pt.x = (u - camera.cx()) * depth * constant_x;
@@ -138,7 +138,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthArea(const vision_msgs::BoundingBox
   }
   cloud->points.resize(num_point);
 
-  ROS_DEBUG_STREAM_NAMED("cloud", "       cloud size before resize: " << w * h);
+  ROS_DEBUG_STREAM_NAMED("cloud", "       cloud after resize: " << num_point);
 
   return cloud;
 }
