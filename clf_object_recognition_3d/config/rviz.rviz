@@ -72,13 +72,13 @@ Visualization Manager:
       Update Interval: 0
       Value: false
     - Class: clf_object_recognition_rviz/Detections3D
-      Enabled: false
+      Enabled: true
       Label size: 0.10000000149011612
       Name: Detections3D
       Queue Size: 10
       Topic: /detect_3d/last_detection
       Unreliable: false
-      Value: false
+      Value: true
       show Bounding Box: true
       show Labels: true
       show Points: true
@@ -228,9 +228,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: -0.12960126996040344
+      Pitch: 0.7153987884521484
       Target Frame: <Fixed Frame>
-      Yaw: 1.6131830215454102
+      Yaw: 3.123183250427246
     Saved: ~
 Window Geometry:
   Displays:
@@ -250,5 +250,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1386
-  X: 242
+  X: 72
   Y: 27

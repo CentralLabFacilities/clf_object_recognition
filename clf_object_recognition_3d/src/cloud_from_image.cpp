@@ -102,7 +102,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthArea(const vision_msgs::BoundingBox
 
   cloud->points.resize(w * h);
 
-  ROS_DEBUG_STREAM_NAMED("cloud", "       cloud size before resize: " << w * h);
+  ROS_DEBUG_STREAM_NAMED("cloud", "cloud max size from bounding box: " << w * h);
 
   int min_point_x = (int) (bbox.center.x - bbox.size_x / 2.0);
   int min_point_y = (int) (bbox.center.y - bbox.size_y / 2.0);
@@ -138,7 +138,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthArea(const vision_msgs::BoundingBox
   }
   cloud->points.resize(num_point);
 
-  ROS_DEBUG_STREAM_NAMED("cloud", "       cloud after resize: " << num_point);
+  ROS_DEBUG_STREAM_NAMED("cloud", "cloud after resize: " << num_point);
 
   return cloud;
 }
