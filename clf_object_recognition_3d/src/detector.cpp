@@ -306,7 +306,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
           cloud_cluster->width = cloud_cluster->size();
           cloud_cluster->height = 1;
           cloud_cluster->is_dense = true;
-          ROS_DEBUG_STREAM_NAMED("detector", " cluster with  " << cloud_cluster.size() << " points");
+          ROS_DEBUG_STREAM_NAMED("detector", " cluster with  " << cloud_cluster->size() << " points");
          
           pcl::PointXYZ min;
           pcl::PointXYZ max;
