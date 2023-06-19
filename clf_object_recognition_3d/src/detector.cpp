@@ -277,8 +277,9 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
         center.position.x = std::numeric_limits<double>::quiet_NaN();
         center.position.y = std::numeric_limits<double>::quiet_NaN();
         center.position.z = std::numeric_limits<double>::quiet_NaN();
-      } else if(config.cluster_points && centroid_size2 == 0)
+      } else if(config.cluster_points && centroid_size2 == 0 && config.cluster_max_points >= cloud_from_depth_image->size())
       {
+        
         // We may have a split pointcloud, cluster
         ROS_INFO_STREAM_NAMED("detector", " centroid between points clustering...");
         
