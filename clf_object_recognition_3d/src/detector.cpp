@@ -277,10 +277,10 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
         center.position.x = std::numeric_limits<double>::quiet_NaN();
         center.position.y = std::numeric_limits<double>::quiet_NaN();
         center.position.z = std::numeric_limits<double>::quiet_NaN();
-      } else if(centroid_size2 == 0)
+      } else if(config.cluster_points && centroid_size2 == 0)
       {
         // We may have a split pointcloud, cluster
-        ROS_INFO_STREAM_NAMED("detector", " clustering...");
+        ROS_INFO_STREAM_NAMED("detector", " centroid between points clustering...");
         
         // Creating the KdTree object for the search method of the extraction
         pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
@@ -290,29 +290,33 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
         pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
         ec.setClusterTolerance (config.cluster_radius);
         ec.setMinClusterSize (config.cluster_min_points);
-        ec.setMaxClusterSize (25000);
+        ec.setMaxClusterSize (150000);
         ec.setSearchMethod (tree);
         ec.setInputCloud (cloud_from_depth_image);
         ec.extract (cluster_indices);
 
         auto smallest_z = std::numeric_limits<double>::quiet_NaN();
+        ROS_DEBUG_STREAM_NAMED("detector", " found  " << cluster_indices.size() << " cluster");
         for (const auto& cluster : cluster_indices)
         {
           pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZ>);
           for (const auto& idx : cluster.indices) {
             cloud_cluster->push_back((*cloud_from_depth_image)[idx]);
           } 
-          cloud_cluster->width = cloud_cluster->size ();
+          cloud_cluster->width = cloud_cluster->size();
           cloud_cluster->height = 1;
           cloud_cluster->is_dense = true;
-
+          ROS_DEBUG_STREAM_NAMED("detector", " cluster with  " << cloud_cluster.size() << " points");
+         
           pcl::PointXYZ min;
           pcl::PointXYZ max;
           pcl::getMinMax3D<pcl::PointXYZ>(*cloud_cluster, min, max);
+          ROS_DEBUG_STREAM_NAMED("detector", " cluster min.z =   " << min.z );
 
           if(min.z < smallest_z) {
             centroid_size = pcl::compute3DCentroid(*cloud_from_depth_image, centroid);
             if (centroid_size != 0) {
+              ROS_DEBUG_STREAM_NAMED("detector", " using centroid " << centroid[0] << "   " << centroid[1] << "   " << centroid[2]);
               center.position.x = centroid[0];
               center.position.y = centroid[1];
               center.position.z = centroid[2];
