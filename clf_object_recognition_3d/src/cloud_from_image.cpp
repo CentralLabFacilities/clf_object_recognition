@@ -14,6 +14,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthImage(const sensor_msgs::Image& dep
 
   // todo encodings from image
   cv_bridge::CvImagePtr cv_ptr;
+  bool integers = true;
   if (depth.encoding == sensor_msgs::image_encodings::MONO8)
   {
     cv_ptr = cv_bridge::toCvCopy(depth, sensor_msgs::image_encodings::TYPE_8UC1);
@@ -21,6 +22,8 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthImage(const sensor_msgs::Image& dep
   else if (depth.encoding == sensor_msgs::image_encodings::TYPE_32FC1)
   { 
     cv_ptr = cv_bridge::toCvCopy(depth, sensor_msgs::image_encodings::TYPE_32FC1);
+    integers = false;
+    depth_scaling = 1;
   }
   else {
     cv_ptr = cv_bridge::toCvCopy(depth, sensor_msgs::image_encodings::TYPE_16UC1);
@@ -45,13 +48,27 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthImage(const sensor_msgs::Image& dep
   {
     for (int u = 0; u < w; ++u)
     {
-      float depth = cv_ptr->image.at<uint16_t>(v, u);      
-      if (depth != 0)
+      if (integers)
       {
-        auto& pt = cloud->points[num_point++];
-        pt.x = (u - camera.cx()) * depth * constant_x;
-        pt.y = (v - camera.cy()) * depth * constant_y;
-        pt.z = depth * depth_scaling;
+        float depth = cv_ptr->image.at<uint16_t>(v, u);      
+        if (depth != 0 && depth != std::numeric_limits<uint16_t>::max())
+        {
+          auto& pt = cloud->points[num_point++];
+          pt.x = (u - camera.cx()) * depth * constant_x;
+          pt.y = (v - camera.cy()) * depth * constant_y;
+          pt.z = depth * depth_scaling;
+        }
+      }
+      else
+      {
+        float depth = cv_ptr->image.at<float>(v, u);
+        if (depth != 0 || std::isnan(depth))
+        {
+          auto& pt = cloud->points[num_point++];
+          pt.x = (u - camera.cx()) * depth * constant_x;
+          pt.y = (v - camera.cy()) * depth * constant_y;
+          pt.z = depth * depth_scaling;
+        }
       }
     }
   }
