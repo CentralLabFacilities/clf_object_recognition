@@ -88,9 +88,9 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr loadPointcloud(const std::string& ressource_
   if (fs::exists(path.replace_extension("ply")))
   {
     ROS_DEBUG_STREAM_NAMED("cloud", "loading ply: " << path);
-    auto ply = loadPLY(path);
-    cloud = sample_cloud(ply);
-    return cloud;
+    //auto ply = loadPLY(path);
+    //cloud = sample_cloud(ply);
+    //return cloud;
   }
 
   // TODO sample from collada 
