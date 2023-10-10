@@ -8,8 +8,6 @@
 
 #include "geometric_shapes/mesh_operations.h"
 
-#include "clf_object_recognition_3d/cloud_sampler.hpp"
-
 namespace cloud
 {
 
