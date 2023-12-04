@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.5)
 project(clf_object_recognition_cfg)
 
 find_package(catkin REQUIRED

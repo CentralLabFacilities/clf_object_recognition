@@ -10,7 +10,12 @@
 *.kdev4
 
 build
-*.pyc.Rproj.user
+install
+log
+.colcon_root
 
 .DS_Store
 .vscode
+
+
+

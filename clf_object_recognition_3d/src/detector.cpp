@@ -42,7 +42,8 @@ inline bool validateFloats(double val)
 }
 
 Detector::Detector(ros::NodeHandle nh)
-  : sync_(image_sub_, depth_image_sub_, camera_info_sub_, 10), tf_listener(tf_buffer)
+  :  it_(nh_),
+  sync_( MySyncPolicy( 10 ), image_sub_, depth_image_sub_, camera_info_sub_), tf_listener(tf_buffer)
 {
   auto f = [this](auto&& PH1, auto&& PH2) { ReconfigureCallback(PH1, PH2); };
   reconfigure_server.setCallback(f);
@@ -61,8 +62,8 @@ Detector::Detector(ros::NodeHandle nh)
   // vision_msgs::Detection3DArray
 
   // subscribe to camera topics
-  image_sub_.subscribe(nh, config.image_topic, 1);
-  depth_image_sub_.subscribe(nh, config.depth_topic, 1);
+  image_sub_.subscribe(it_, config.image_topic, 1);
+  depth_image_sub_.subscribe(it_, config.depth_topic, 1);
   camera_info_sub_.subscribe(nh, config.info_topic, 1);
 
   // sync incoming camera messages
@@ -121,6 +122,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
       
       while (!fine) {
         auto now = ros::Time::now();
+        ros::getGlobalCallbackQueue()->callOne(ros::WallDuration());
         std::lock_guard<std::mutex> lock(mutex_);
         if (now - last_image_ < ros::Duration(config.reset_trigger_time)) fine = true;
         if (now - reset_started > ros::Duration(config.reset_timeout)) {

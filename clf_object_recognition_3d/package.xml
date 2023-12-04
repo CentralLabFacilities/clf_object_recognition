@@ -17,5 +17,6 @@
   <depend>geometry_msgs</depend>
   <depend>pcl</depend>
   <depend>pcl_ros</depend>
+  <depend>image_transport</depend>
 
 </package>

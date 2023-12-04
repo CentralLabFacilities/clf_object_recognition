@@ -4,13 +4,13 @@
 
     <arg name="image_topic" default="/camera/color/image_raw"/>
 
-    <include file="$(find tiago_clf_launch)/launch/realsense.launch"/>
+    <!--include file="$(find tiago_clf_launch)/launch/realsense.launch"/> -->
 
-    <arg name="object_labels" value="$(find yolox_models)/config/apartment_labels.yaml"/>
-    <arg name="object_models" value="$(find yolox_models)/config/apartment_models.yaml"/>
+    <arg name="object_labels" value="$(find yolox_models)/config/bielefeld_labels.yaml"/>
+    <arg name="object_models" value="$(find yolox_models)/config/bielefeld_models.yaml"/>
     <arg name="config" value="$(find clf_object_recognition_yolox)/config/config.yaml"/>
-    <arg name="checkpoint" value="$(find yolox_models)/models/apartment/best_ckpt.pth" />
-    <arg name="exp" value="$(find yolox_models)/config/exp/apartment_exp.py"/>
+    <arg name="checkpoint" value="$(find yolox_models)/models/bielefeld/best_ckpt.pth" />
+    <arg name="exp" value="$(find yolox_models)/config/exp/bielefeld_exp.py"/>
 
     <param name="/yolox/publish_detections" value="True"/>
     <param name="/yolox/publish_marker" value="True"/>

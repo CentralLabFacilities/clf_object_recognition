@@ -13,6 +13,10 @@
 
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/subscriber.h>
+#include <message_filters/sync_policies/approximate_time.h>
+
+#include <image_transport/image_transport.h>
+#include <image_transport/subscriber_filter.h>
 
 // message types in
 #include <sensor_msgs/Image.h>
@@ -56,6 +60,8 @@ private:
   pointcloud_type::Ptr loadPointcloud(const std::string& ressource_path);
 
   ros::NodeHandle nh_;
+  image_transport::ImageTransport it_;
+
   clf_object_recognition_cfg::Detect3dConfig config;
   dynamic_reconfigure::Server<clf_object_recognition_cfg::Detect3dConfig> reconfigure_server;
   ros::ServiceServer srv_detect_3d;
@@ -67,8 +73,8 @@ private:
   sensor_msgs::CameraInfo::ConstPtr camera_info_;
 
   // subscribers
-  message_filters::Subscriber<sensor_msgs::Image> image_sub_;
-  message_filters::Subscriber<sensor_msgs::Image> depth_image_sub_;
+  image_transport::SubscriberFilter image_sub_;
+  image_transport::SubscriberFilter depth_image_sub_;
   message_filters::Subscriber<sensor_msgs::CameraInfo> camera_info_sub_;
 
   // publisher
@@ -77,7 +83,9 @@ private:
   ros::Publisher pub_marker;
 
   // sync with exact policy
-  message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::CameraInfo> sync_;
+  typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::CameraInfo> MySyncPolicy;
+
+  message_filters::Synchronizer<MySyncPolicy> sync_ ;
   ros::Time last_image_;
 
   ros::ServiceClient reset_client_;
