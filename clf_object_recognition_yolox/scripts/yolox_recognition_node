@@ -28,16 +28,18 @@ class YOLOXNode():
 		rospy.loginfo(logger_name="YOLOXNode", msg=f" - exp_path={exp_path}")
 		rospy.loginfo(logger_name="YOLOXNode", msg=f" - timeout={timeout}")
 
-		if rospy.has_param('/object_labels'):
-			labels : dict = rospy.get_param('/object_labels')
+		if rospy.has_param('/object_models'):
+			labels : dict = rospy.get_param('/object_models')
 			d = {int(k):(v) for k,v in labels.items()}
 			self.classes = ()
 			for id in sorted(d):
-				self.classes = self.classes + (d[id],)
+				label_name = d[id].split('/')[-1]
+				self.classes = self.classes + (label_name,)
+				rospy.set_param('/object_labels/' + str(id), label_name)
 		else:
 			from yolox.data.datasets import COCO_CLASSES
 			self.classes = COCO_CLASSES
-			rospy.logwarn(logger_name="YOLOXNode", msg="no /object_labels param found")
+			rospy.logwarn(logger_name="YOLOXNode", msg="no /object_models param found")
 
 		self.exp = get_exp(exp_path,"")
 		if "conf" in config:
