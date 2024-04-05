@@ -29,6 +29,7 @@ class YOLOXNode():
 		rospy.loginfo(logger_name="YOLOXNode", msg=f" - timeout={timeout}")
 
 		if rospy.has_param('/object_models'):
+			rospy.loginfo(logger_name="YOLOXNode", msg=f" building labels from models")
 			labels : dict = rospy.get_param('/object_models')
 			d = {int(k):(v) for k,v in labels.items()}
 			self.classes = ()
@@ -126,12 +127,15 @@ class YOLOXNode():
 
 		if self.config.save_image or self.config.publish_detections:
 			from yolox.utils import vis
-			result_image = vis(img, bboxes, scores, cls, req.min_conf, self.classes)
-			if self.config.save_image:
-				cv2.imwrite("/tmp/yolox_output.jpg", result_image)
-			if self.config.publish_detections:
-				msg = self._bridge.cv2_to_imgmsg(result_image)
-				self.result_pub.publish(msg)
+			try
+				result_image = vis(img, bboxes, scores, cls, req.min_conf, self.classes)
+				if self.config.save_image:
+					cv2.imwrite("/tmp/yolox_output.jpg", result_image)
+				if self.config.publish_detections:
+					msg = self._bridge.cv2_to_imgmsg(result_image)
+					self.result_pub.publish(msg)
+			except Exception as e:
+    			rospy.logerror(e)
 
 		rospy.logdebug(logger_name="YOLOXNode", msg=f"detected {len(result)} objects")
 		return {"detections": result}
