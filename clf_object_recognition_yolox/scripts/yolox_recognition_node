@@ -138,7 +138,7 @@ class YOLOXNode():
 					msg = self._bridge.cv2_to_imgmsg(result_image)
 					self.result_pub.publish(msg)
 			except Exception as e:
-    			rospy.logerr(logger_name="YOLOXNode", msg=e)
+				rospy.logerr(logger_name="YOLOXNode", msg=e)
 
 		rospy.logdebug(logger_name="YOLOXNode", msg=f"detected {len(result)} objects")
 		return {"detections": result}
