@@ -344,7 +344,14 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
     {
       for (auto hypo : detection.results)
       {
-        ROS_DEBUG_STREAM_NAMED("detector", "  - hypo " << hypo.id);
+        if(config.matcher_filter_models) {
+          std::string name = model_provider->IDtoModel(hypo.id);
+          if (name.rfind(config.matcher_filter_prefix, 0) != 0) { 
+            ROS_DEBUG_STREAM_NAMED("detector", " - filtered prefix: '" << config.matcher_filter_prefix << "' hypo " << hypo.id );
+            continue;
+          }
+        }
+        ROS_DEBUG_STREAM_NAMED("detector", "  - fitting hypo " << hypo.id );
 
         vision_msgs::ObjectHypothesisWithPose hyp = hypo;
 
