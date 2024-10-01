@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 project(clf_object_recognition_rviz)
 
-set(CMAKE_CXX_STANDARD 17)
-
 ## Catkin
 find_package(catkin REQUIRED
         COMPONENTS
@@ -25,8 +23,13 @@ link_directories(${catkin_LIBRARY_DIRS})
 ## QT
 find_package(Qt5 REQUIRED Core Widgets)
 set(QT_LIBRARIES Qt5::Widgets)
+set(QTVERSION ${Qt5Widgets_VERSION})
 add_definitions(-DQT_NO_KEYWORDS)
-#set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOMOC ON)
+
+## Etc
+include_directories(include)
+include_directories(SYSTEM ${catkin_INCLUDE_DIRS} )
 
 ###########
 ## Build ##
@@ -46,19 +49,25 @@ set(src_files
 
   )
 
-include_directories(include ${CMAKE_CURRENT_BINARY_DIR} ${EIGEN3_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
-qt_wrap_cpp(${PROJECT_NAME} 
-  moc_files 
+set(header_files
   include/clf_object_recognition_rviz/bounding_box_array_display.h 
   include/clf_object_recognition_rviz/hull_array_display.h 
   include/clf_object_recognition_rviz/detection_3d_array_display.h 
-  )
+)
 
-add_library(${PROJECT_NAME} ${src_files} ${moc_files})
+#include_directories(include ${CMAKE_CURRENT_BINARY_DIR} ${EIGEN3_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
 
+add_library(${PROJECT_NAME} ${src_files} ${header_files})
 target_link_libraries(${PROJECT_NAME}
     ${QT_LIBRARIES} ${catkin_LIBRARIES}
  )
+target_compile_options(${PROJECT_NAME} PUBLIC "-Wno-register") # Avoid OGRE deprecaton warnings under C++17
+
+
+## Linker test main
+#add_executable(linker_test src/linker_test.cpp)
+#target_link_libraries(linker_test ${PROJECT_NAME}) 
+
 
 #############
 ## Install ##

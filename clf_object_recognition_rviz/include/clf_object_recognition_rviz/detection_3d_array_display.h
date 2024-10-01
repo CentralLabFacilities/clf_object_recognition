@@ -25,11 +25,11 @@ class Detection3DArrayDisplay : public rviz::MessageFilterDisplay<vision_msgs::D
   Q_OBJECT
 public:
   Detection3DArrayDisplay();
-  ~Detection3DArrayDisplay() override = default;
+  virtual ~Detection3DArrayDisplay();
 
 protected:
-  void onInitialize() override;
-  void reset() override;
+  virtual void onInitialize() override;
+  virtual void reset() override;
 
 private Q_SLOTS:
   void slotShowLabels();
@@ -39,7 +39,7 @@ private Q_SLOTS:
   void slotLabelSize();
 
 private:
-  void processMessage(const vision_msgs::Detection3DArray::ConstPtr& msg) override;
+  virtual void processMessage(const vision_msgs::Detection3DArray::ConstPtr& msg) override;
 
   vision_msgs::Detection3DArray::ConstPtr initMsg_;
 

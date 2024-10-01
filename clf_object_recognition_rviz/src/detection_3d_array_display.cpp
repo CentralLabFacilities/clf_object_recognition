@@ -1,6 +1,8 @@
 #include "clf_object_recognition_rviz/detection_3d_array_display.h"
 #include "clf_object_recognition_rviz/detection_3d_visual.h"
 
+#include <QObject>
+
 #include <memory>
 #include <OGRE/OgreSceneNode.h>
 
@@ -11,7 +13,7 @@ namespace objrec
 {
 namespace viz
 {
-Detection3DArrayDisplay::Detection3DArrayDisplay()
+Detection3DArrayDisplay::Detection3DArrayDisplay() : MFDClass()
 {
   showLabels_ = new rviz::BoolProperty("show Labels", true, "Draw the Labels.", this, SLOT(slotShowLabels()));
   showProb_ = new rviz::BoolProperty("show Propability", false, "Prefix label with Parent Location", this,
@@ -21,6 +23,11 @@ Detection3DArrayDisplay::Detection3DArrayDisplay()
   showPoints_ =
       new rviz::BoolProperty("show Points", false, "Prefix label with Parent Location", this, SLOT(slotShowPoints()));
   labelSize_ = new rviz::FloatProperty("Label size", 0.1, "Character Height of TextLabel", this, SLOT(slotLabelSize()));
+}
+
+Detection3DArrayDisplay::~Detection3DArrayDisplay() 
+{
+
 }
 
 void Detection3DArrayDisplay::slotLabelSize()
