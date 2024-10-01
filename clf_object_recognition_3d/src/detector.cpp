@@ -331,7 +331,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
 
       for (auto hypo : detection.results)
       {
-        ROS_DEBUG_STREAM_NAMED("detector", "  - hypo " << hypo.id);
+        ROS_DEBUG_STREAM_NAMED("detector", "  - hypo " << hypo.id << ":" << model_provider->IDtoModel(hyp.id));
 
         vision_msgs::ObjectHypothesisWithPose hyp = hypo;
         hyp.pose.pose = center;
@@ -351,11 +351,13 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
             continue;
           }
         }
-        ROS_DEBUG_STREAM_NAMED("detector", "  - fitting hypo " << hypo.id );
 
         vision_msgs::ObjectHypothesisWithPose hyp = hypo;
 
         auto model = model_provider->IDtoModel(hyp.id);
+
+        ROS_DEBUG_STREAM_NAMED("detector", "  - fitting hypo " << hypo.id ":" << model);
+
         auto model_path_dae = model_provider->GetModelPath(model);
 
         auto sampled = cloud::loadPointcloud(model_path_dae);
