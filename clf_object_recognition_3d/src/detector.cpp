@@ -331,7 +331,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
 
       for (auto hypo : detection.results)
       {
-        ROS_DEBUG_STREAM_NAMED("detector", "  - hypo " << hypo.id << ":" << model_provider->IDtoModel(hyp.id));
+        ROS_DEBUG_STREAM_NAMED("detector", "  - hypo " << hypo.id << ":" << model_provider->IDtoModel(hypo.id));
 
         vision_msgs::ObjectHypothesisWithPose hyp = hypo;
         hyp.pose.pose = center;

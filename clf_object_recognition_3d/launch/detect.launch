@@ -12,6 +12,7 @@
         <param name="info_topic" value="$(arg info_topic)"/>
         <param name="detect_2d_topic" value="/yolox/recognize"/>
         <param name="reset_timeout" value="30"/>
+        <param name="reset" value="true"/> <!-- reset camera -->
 	</node>
 
 </launch> 
