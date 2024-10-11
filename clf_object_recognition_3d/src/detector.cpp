@@ -356,7 +356,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
 
         auto model = model_provider->IDtoModel(hyp.id);
 
-        ROS_DEBUG_STREAM_NAMED("detector", "  - fitting hypo " << hypo.id ":" << model);
+        ROS_DEBUG_STREAM_NAMED("detector", "  - fitting hypo " << hypo.id << ":" << model);
 
         auto model_path_dae = model_provider->GetModelPath(model);
 
