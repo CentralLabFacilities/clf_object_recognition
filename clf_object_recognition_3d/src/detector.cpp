@@ -369,23 +369,25 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
           Eigen::Affine3d center_3d;
           tf2::fromMsg(center, center_3d);
 
-          // Shift down in base link
-          float z_max = 0.0;
-          for (auto& point : sampled->points)
-          {
-            float z = point.z;
-            if (z > z_max)
-              z_max = z;
+          if (config.shift_down) {
+            // Shift down in base link
+            float z_max = 0.0;
+            for (auto& point : sampled->points)
+            {
+              float z = point.z;
+              if (z > z_max)
+                z_max = z;
+            }
+            float z_avg = (z_max) / 2.0;
+            Eigen::Affine3d t(Eigen::Translation3d(Eigen::Vector3d(0, 0, -z_avg)));
+            t = tf2::transformToEigen(tf_base_to_cam).rotation() * t;
+            const Eigen::IOFormat fmt(2, Eigen::DontAlignCols, "\t", " ", "", "", "", "");
+            ROS_DEBUG_STREAM_NAMED("detector", "  - t " << t.matrix().format(fmt));
+            auto t1 = center_3d.translation();
+            auto t2 = t.translation();
+            auto t3 = t1 + t2;
+            center_3d.translation() = t3;
           }
-          float z_avg = (z_max) / 2.0;
-          Eigen::Affine3d t(Eigen::Translation3d(Eigen::Vector3d(0, 0, -z_avg)));
-          t = tf2::transformToEigen(tf_base_to_cam).rotation() * t;
-          const Eigen::IOFormat fmt(2, Eigen::DontAlignCols, "\t", " ", "", "", "", "");
-          ROS_DEBUG_STREAM_NAMED("detector", "  - t " << t.matrix().format(fmt));
-          auto t1 = center_3d.translation();
-          auto t2 = t.translation();
-          auto t3 = t1 + t2;
-          center_3d.translation() = t3;
 
           Eigen::Matrix4d center_4d = center_3d.matrix();
           initial_guess = center_4d.cast<float>();
