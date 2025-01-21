@@ -8,10 +8,11 @@ class ModelProvider
 {
 public:
   ModelProvider(ros::NodeHandle nh);
+  bool EnsureWorldModels();
   std::string GetModelPath(std::string model_name);
   std::string IDtoObject(int id);
   std::string IDtoModel(int id);
-
+  bool has_models{false};
   ecwm_msgs::ModelVisArray latest_models;
   ros::Subscriber model_sub;
   void ModelCallback(const ecwm_msgs::ModelVisArrayPtr& msg);

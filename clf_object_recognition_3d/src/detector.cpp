@@ -70,6 +70,16 @@ Detector::Detector(ros::NodeHandle nh)
   sync_.registerCallback(boost::bind(&Detector::Callback, this, _1, _2, _3));
 
   model_provider = std::make_unique<ModelProvider>(nh);
+  if(config.ensure_models) {
+    while (!model_provider->has_models) {
+      ROS_WARN_THROTTLE_NAMED(5,"detector", "waiting for models...");
+      ros::spinOnce();
+    }
+    if(!model_provider->EnsureWorldModels()) {
+      ROS_ERROR_NAMED("detector", "required models are missing");
+      ros::shutdown();
+    }
+  }
 }
 
 void Detector::Callback(const sensor_msgs::ImageConstPtr& image, const sensor_msgs::ImageConstPtr& depth_image,

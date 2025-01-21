@@ -6,7 +6,6 @@
 
     <!--include file="$(find tiago_clf_launch)/launch/realsense.launch"/> -->
 
-    <arg name="object_labels" value="$(find yolox_models)/config/bielefeld_labels.yaml"/>
     <arg name="object_models" value="$(find yolox_models)/config/bielefeld_models.yaml"/>
     <arg name="config" value="$(find clf_object_recognition_yolox)/config/config.yaml"/>
     <arg name="checkpoint" value="$(find yolox_models)/models/bielefeld/best_ckpt.pth" />
@@ -15,7 +14,6 @@
     <param name="/yolox/publish_detections" value="True"/>
     <param name="/yolox/publish_marker" value="True"/>
     <include file="$(find clf_object_recognition_yolox)/launch/yolox_l.launch">
-        <arg name="object_labels" value="$(arg object_labels)"/>
         <arg name="object_models" value="$(arg object_models)"/>
         <arg name="config" value="$(arg config)"/>
         <arg name="checkpoint" value="$(arg checkpoint)"/>
@@ -32,7 +30,6 @@
 
     <include file="$(find ecwm_data)/launch/ecwm_data.launch">
         <arg name="world" value="clf-robocup-big.yaml"/>
-        <arg name="plugins" value="robocup-default.yaml"/>
     </include>
 
 </launch> 

@@ -8,6 +8,31 @@ ModelProvider::ModelProvider(ros::NodeHandle nh)
 void ModelProvider::ModelCallback(const ecwm_msgs::ModelVisArrayPtr& msg)
 {
   latest_models = *msg;
+  has_models = true;
+}
+
+bool ModelProvider::EnsureWorldModels()
+{
+  std::vector<std::string> required_models;
+  XmlRpc::XmlRpcValue list;
+  ROS_DEBUG("EnsureWorldModels.");
+  auto ret = true;
+  if (!ros::param::get("/object_models", list)) {
+    ROS_WARN("Can't find '/object_models' param.");
+    return false;
+  }
+  for (auto it = list.begin(); it != list.end(); it++) {
+    ROS_DEBUG_STREAM("have model " << it->first << " is " << it->second);
+    required_models.push_back(it->second);
+  }
+
+  for (auto model : required_models) {
+    if(GetModelPath(model) == "") {
+      ret = false;
+    }
+  }
+
+  return ret;
 }
 
 std::string ModelProvider::GetModelPath(std::string model_name)
