@@ -350,7 +350,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
       }
       res.detections.push_back(d3d);
     }
-    else
+    else // req.skip.icp
     {
       for (auto hypo : detection.results)
       {
@@ -365,6 +365,11 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
         vision_msgs::ObjectHypothesisWithPose hyp = hypo;
 
         auto model = model_provider->IDtoModel(hyp.id);
+
+        if (model != "" ) {
+          ROS_WARN_STREAM_NAMED("detector", "  - unknown model for hypo: " << hypo.id << ":" << model);
+          continue;
+        }
 
         ROS_DEBUG_STREAM_NAMED("detector", "  - fitting hypo " << hypo.id << ":" << model);
 
@@ -456,15 +461,16 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
         hyp.pose.pose.position.x = tf_msg.translation.x;
         hyp.pose.pose.position.y = tf_msg.translation.y;
         hyp.pose.pose.position.z = tf_msg.translation.z;
-
-        pcl::transformPointCloud(*sampled, *sampled, initial_guess);
-        sensor_msgs::PointCloud2 pcl_msg2;
-        pcl::toROSMsg(*sampled, pcl_msg2);
-        pcl_msg2.header = depth.header;
-        pub_cloud.publish(pcl_msg2);
+        
 
         if (config.publish_marker)
         {
+          pcl::transformPointCloud(*sampled, *sampled, initial_guess);
+          sensor_msgs::PointCloud2 pcl_msg2;
+          pcl::toROSMsg(*sampled, pcl_msg2);
+          pcl_msg2.header = depth.header;
+          pub_cloud.publish(pcl_msg2);
+
           visualization_msgs::Marker marker;
           marker.type = visualization_msgs::Marker::MESH_RESOURCE;
           marker.id = marker_id++;
@@ -485,7 +491,6 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
   }
 
   // Finished, publish debug messages
-
   if (config.publish_marker)
   {
     pub_marker.publish(markers);
