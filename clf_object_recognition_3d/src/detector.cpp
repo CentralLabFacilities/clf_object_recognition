@@ -366,7 +366,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
 
         auto model = model_provider->IDtoModel(hyp.id);
 
-        if (model != "" ) {
+        if (model == "" ) {
           ROS_WARN_STREAM_NAMED("detector", "  - unknown model for hypo: " << hypo.id << ":" << model);
           continue;
         }
