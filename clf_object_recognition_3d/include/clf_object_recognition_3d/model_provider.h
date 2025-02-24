@@ -8,7 +8,7 @@ class ModelProvider
 {
 public:
   ModelProvider(ros::NodeHandle nh);
-  bool EnsureWorldModels();
+  bool EnsureWorldModels(const std::string& prefix);
   std::string GetModelPath(std::string model_name);
   std::string IDtoObject(int id);
   std::string IDtoModel(int id);

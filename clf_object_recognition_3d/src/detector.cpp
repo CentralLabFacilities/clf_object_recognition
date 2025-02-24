@@ -75,7 +75,7 @@ Detector::Detector(ros::NodeHandle nh)
       ROS_WARN_THROTTLE_NAMED(5,"detector", "waiting for models...");
       ros::spinOnce();
     }
-    if(!model_provider->EnsureWorldModels()) {
+    if(!model_provider->EnsureWorldModels(config.ensure_models_prefix)) {
       ROS_ERROR_NAMED("detector", "required models are missing");
       ros::shutdown();
     }

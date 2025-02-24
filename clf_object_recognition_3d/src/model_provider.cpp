@@ -11,7 +11,7 @@ void ModelProvider::ModelCallback(const ecwm_msgs::ModelVisArrayPtr& msg)
   has_models = true;
 }
 
-bool ModelProvider::EnsureWorldModels()
+bool ModelProvider::EnsureWorldModels(const std::string& prefix)
 {
   std::vector<std::string> required_models;
   XmlRpc::XmlRpcValue list;
@@ -23,7 +23,10 @@ bool ModelProvider::EnsureWorldModels()
   }
   for (auto it = list.begin(); it != list.end(); it++) {
     ROS_DEBUG_STREAM("have model " << it->first << " is " << it->second);
-    required_models.push_back(it->second);
+    if (it->second.rfind(prefix, 0) == 0) { // pos=0 limits the search to the prefix
+      // model starts with prefix
+      required_models.push_back(it->second);
+    }
   }
 
   for (auto model : required_models) {
