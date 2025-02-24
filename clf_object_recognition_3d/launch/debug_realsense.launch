@@ -6,10 +6,10 @@
 
     <!--include file="$(find tiago_clf_launch)/launch/realsense.launch"/> -->
 
-    <arg name="object_models" value="$(find yolox_models)/config/bielefeld_models.yaml"/>
+    <arg name="object_models" value="$(find yolox_models)/config/clf_objects_w_dryFoodContainers_models.yaml"/>
     <arg name="config" value="$(find clf_object_recognition_yolox)/config/config.yaml"/>
-    <arg name="checkpoint" value="$(find yolox_models)/models/bielefeld/best_ckpt.pth" />
-    <arg name="exp" value="$(find yolox_models)/config/exp/bielefeld_exp.py"/>
+    <arg name="checkpoint" value="$(find yolox_models)/models/clf_objects_w_dryFoodContainers/best_ckpt.pth" />
+    <arg name="exp" value="$(find yolox_models)/config/exp/clf_objects_w_dryFoodContainers.py"/>
 
     <param name="/yolox/publish_detections" value="True"/>
     <param name="/yolox/publish_marker" value="True"/>
@@ -29,7 +29,20 @@
     </node>
 
     <include file="$(find ecwm_data)/launch/ecwm_data.launch">
-        <arg name="world" value="clf-robocup-big.yaml"/>
+        <arg name="world" value="clf_comfy.yaml"/>
+    </include>
+
+    <node pkg="clf_object_recognition_3d" type="3d_detector" output="screen" name="detect_3d">
+        <param name="image_topic" value="/camera/color/image_raw"/>
+        <param name="depth_topic" value="/camera/aligned_depth_to_color/image_raw"/>
+        <param name="info_topic" value="/camera/aligned_depth_to_color/camera_info"/>
+        <param name="detect_2d_topic" value="/yolox/recognize"/>
+        <param name="publish_detections" value="True"/>
+        <param name="publish_marker" value="True"/>
+        <param name="publish_cloud" value="True"/>
+	</node>
+
+    <include file="$(find tiago_clf_launch)/launch/realsense.launch">
     </include>
 
 </launch> 
