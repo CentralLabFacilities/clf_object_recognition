@@ -23,7 +23,7 @@ bool ModelProvider::EnsureWorldModels(const std::string& prefix)
   }
   for (auto it = list.begin(); it != list.end(); it++) {
     ROS_DEBUG_STREAM("have model " << it->first << " is " << it->second);
-    if (it->second.rfind(prefix, 0) == 0) { // pos=0 limits the search to the prefix
+    if (static_cast<std::string>(it->second).rfind(prefix, 0) == 0) { // pos=0 limits the search to the prefix
       // model starts with prefix
       required_models.push_back(it->second);
     }
