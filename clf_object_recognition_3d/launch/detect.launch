@@ -13,6 +13,8 @@
         <param name="detect_2d_topic" value="/yolox/recognize"/>
         <param name="reset_timeout" value="30"/>
         <param name="reset" value="true"/> <!-- reset camera -->
+        <param name="registration_max_correspondance_dist" value="0.01"/>
+        <param name="registration_transformation_rotation_epsilon" value="1.0"/>
 	</node>
 
 </launch> 
