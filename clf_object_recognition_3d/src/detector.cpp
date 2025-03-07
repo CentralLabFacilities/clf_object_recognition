@@ -451,13 +451,74 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
 
         Eigen::Matrix4f icp_transform = reg->getFinalTransformation();
         Eigen::Affine3f affine(icp_transform);
+        Eigen::Vector3f origin_z(0, 0, 1);
+        Eigen::Vector3f x = affine.linear().block(0,0, 3,1);
+        Eigen::Vector3f y = affine.linear().block(0,1, 3,1);
+        Eigen::Vector3f z = affine.linear().block(0,2, 3,1);
+
+        auto dist_x = std::sqrt((x-origin_z).squaredNorm());
+        auto dist_y = std::sqrt((y-origin_z).squaredNorm());
+        auto dist_z = std::sqrt((z-origin_z).squaredNorm());
+
+        std::vector<float> vec = {dist_x, dist_y, dist_z};
+        auto minIt = std::min_element( vec.begin(), vec.end() );
+        int minIndex = std::distance(vec.begin(), minIt);
+
+        Eigen::Vector3f vec_closest_z = affine.linear().block(0,minIndex, 3,1);
+        Eigen::Vector2f vz = vec_closest_z.head(2);
+        float angle_z = std::fmod(std::acos(vz.dot(Eigen::Vector2f::UnitX())), M_PI_2);
+
+        float sign = std::copysign(1.0, angle_z);
+
+        if (std::abs(angle_z) > M_PI_2) {
+          angle_z = (M_PI / 2 - std::abs(angle_z)) * sign;
+        } else {
+          angle_z = -angle_z;
+        }
+        
+        Eigen::Matrix3f rot_z;
+        rot_z = Eigen::AngleAxisf(angle_z, Eigen::Vector3f::UnitZ());
+
+        Eigen::Vector3f v;
+        v = rot_z * v;
+
+        float angle = std::fmod(std::acos(v.dot(Eigen::Vector3f::UnitZ())), M_PI_2);
+
+        if (std::abs(angle) > M_PI_2) {
+          angle = (M_PI / 2 - std::abs(angle)) * sign;
+        } else {
+          angle = -angle;
+        }
+        if (v[1,1] > 0) {
+          angle *= -1;
+        }
+
+        Eigen::Vector3f axis;
+
+        if (v[1] <= 0.0001) {
+          axis = Eigen::Vector3f::UnitX();
+        }
+        else {
+          axis = Eigen::Vector3f::UnitY();
+        }
+
+        float angle_y = std::acos(vec_closest_z.dot(Eigen::Vector3f::UnitX()));
+
+        Eigen::Matrix3f m;
+        m = Eigen::AngleAxisf(angle, axis);
+
+        Eigen::Matrix3f reconfigured_rotation = m * rot_z * affine.linear();
+        Eigen::Quaternionf q(reconfigured_rotation);
 
         geometry_msgs::Transform tf_msg;
         tf::transformEigenToMsg(affine.cast<double>(), tf_msg);
 
         ROS_DEBUG_STREAM_NAMED("detector", "    object at " << tf_msg.translation.x << ", " << tf_msg.translation.y
                                                             << ", " << tf_msg.translation.z);
-        hyp.pose.pose.orientation = tf_msg.rotation;
+        hyp.pose.pose.orientation.x = q.x();
+        hyp.pose.pose.orientation.y = q.y();
+        hyp.pose.pose.orientation.z = q.z();
+        hyp.pose.pose.orientation.w = q.w();
         hyp.pose.pose.position.x = tf_msg.translation.x;
         hyp.pose.pose.position.y = tf_msg.translation.y;
         hyp.pose.pose.position.z = tf_msg.translation.z;
