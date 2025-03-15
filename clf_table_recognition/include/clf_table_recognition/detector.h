@@ -10,11 +10,13 @@
 // message types in
 #include <sensor_msgs/PointCloud2.h>
 #include <clf_object_recognition_msgs/GetFloat.h>
+#include <clf_object_recognition_msgs/Door.h>
 
 // pcl types
 #include <pcl/PolygonMesh.h>
 #include <pcl/TextureMesh.h>
 #include <pcl/common/io.h>
+#include <pcl/filters/crop_box.h>
 
 #include <memory>
 
@@ -27,7 +29,9 @@ public:
 
 private:
   bool ServiceDetectTable(clf_object_recognition_msgs::GetFloat::Request& req,
-                       clf_object_recognition_msgs::GetFloat::Response& res);
+                        clf_object_recognition_msgs::GetFloat::Response& res);
+  bool ServiceIsDoorOpen(clf_object_recognition_msgs::Door::Request& req,
+                        clf_object_recognition_msgs::Door::Response& res);
 
   ros::NodeHandle nh_;
 

@@ -1,0 +1,6 @@
+# minimal confidence
+geometry_msgs/Point min_box_point
+geometry_msgs/Point max_box_point
+
+---
+bool is_open

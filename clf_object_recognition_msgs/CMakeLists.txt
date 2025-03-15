@@ -17,6 +17,8 @@ add_service_files(DIRECTORY srv FILES
     Detect2D.srv
     Detect2DImage.srv
     Detect3D.srv
+    GetFloat.srv
+    Door.srv
 )
 
 #add_action_files(DIRECTORY action FILES
