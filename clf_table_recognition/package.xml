@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>clf_table_recognition</name>
+  <version>0.0.1</version>
+  <description>clf_table_recognition</description>
+
+  <maintainer email="lruegeme@techfak.uni-bielefeld.de">Leroy Rügemer</maintainer>
+  <author>Leroy Ruegemer</author>
+
+  <license>Apache 2.0</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>clf_object_recognition_msgs</depend>
+  <depend>sensor_msgs</depend>
+
+  <export>
+  </export>
+</package>
