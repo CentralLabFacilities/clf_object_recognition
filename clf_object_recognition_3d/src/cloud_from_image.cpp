@@ -121,13 +121,16 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthArea(const vision_msgs::BoundingBox
 
   ROS_DEBUG_STREAM_NAMED("cloud", "cloud max size from bounding box: " << w * h);
 
-  int min_point_x = (int) (bbox.center.x - bbox.size_x / 2.0);
-  int min_point_y = (int) (bbox.center.y - bbox.size_y / 2.0);
+  // HACK we add/remove the outer points of the bounding box as we have problems with boxes at the image edge
+  int min_point_x = std::max((int) (bbox.center.x - bbox.size_x / 2.0) + 1, 1);
+  int min_point_y = std::max((int) (bbox.center.y - bbox.size_y / 2.0) + 1, 1);
+  int max_point_x = std::min((int) (bbox.center.x + bbox.size_x / 2.0) - 1, cv_ptr->image.size().width - 1);
+  int max_point_y = std::min((int) (bbox.center.y + bbox.size_y / 2.0) - 1, cv_ptr->image.size().height - 1);
   int num_point = 0;
 
-  for (int v = (int)(bbox.center.y - bbox.size_y / 2); v < (int)(bbox.center.y + bbox.size_y / 2); v++)
+  for (int v = min_point_y; v < max_point_y; v++)
   {
-    for (int u = (int)(bbox.center.x - bbox.size_x / 2); u < (int)(bbox.center.x + bbox.size_x / 2); u++)
+    for (int u = min_point_x; u < max_point_x; u++)
     {
       if(integers) {
         float depth = cv_ptr->image.at<uint16_t>(v, u);
