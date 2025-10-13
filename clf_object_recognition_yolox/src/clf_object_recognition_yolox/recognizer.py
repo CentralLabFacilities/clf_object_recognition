@@ -13,7 +13,7 @@ class Recognizer(object):
 		model.cuda()
 		model.eval()
 		
-		ckpt = torch.load(ckpt_file, map_location="cpu")
+		ckpt = torch.load(ckpt_file, map_location="cpu", weights_only=False)
 
 		if "model" in ckpt:
 			model.load_state_dict(ckpt["model"])
