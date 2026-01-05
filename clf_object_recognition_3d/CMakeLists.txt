@@ -34,7 +34,7 @@ find_package(catkin REQUIRED COMPONENTS
   
 )
 include_directories(${catkin_INCLUDE_DIRS})
-find_package(PCL REQUIRED)
+find_package(PCL 1.12.1 REQUIRED)
 include_directories(${PCL_INCLUDE_DIRS})
 
 catkin_python_setup()
