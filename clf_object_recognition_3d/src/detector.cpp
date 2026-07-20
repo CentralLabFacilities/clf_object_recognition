@@ -106,6 +106,8 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
   sensor_msgs::CameraInfo info;
   visualization_msgs::MarkerArray markers;
   int marker_id = 0;
+  bool use_masks = false;
+
 
   ROS_INFO_STREAM_NAMED("detector", "ServiceDetect3D() called " << req);
 
@@ -160,7 +162,6 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
     depth = sensor_msgs::Image(*depth_image_.get());
     ROS_INFO_STREAM_NAMED("detector", "ServiceDetect3D() got images ");
   }
-
   clf_object_recognition_msgs::Detect2DImage param;
   // Call Detect2DImage service
   {
