@@ -168,7 +168,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
     param.request.image = img;
     param.request.min_conf = req.min_conf;
     auto ok = srv_detect_2d.call(param);
-    bool use_masks = !param.response.masks.empty();
+    use_masks = !param.response.masks.empty();
     if (!ok)
     {
       ROS_ERROR_STREAM_NAMED("detector", "cant call detections ");
