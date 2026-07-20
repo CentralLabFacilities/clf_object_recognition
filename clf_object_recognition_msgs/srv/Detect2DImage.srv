@@ -5,3 +5,4 @@ float32 min_conf
 ---
 
 vision_msgs/Detection2D[] detections
+sensor_msgs/Image[] masks # Optional, can return masks if segmentation model is used

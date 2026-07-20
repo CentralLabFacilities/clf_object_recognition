@@ -1,0 +1,22 @@
+<launch>
+    <arg name="object_labels" default="$(find clf_object_recognition_yolox)/config/coco_labels.yaml"/>
+    <rosparam command="load" ns="object_labels" file="$(arg object_labels)"/>
+    <arg name="object_models" default="$(find clf_object_recognition_yolox)/config/coco_ecwm.yaml"/>
+    <rosparam command="load" ns="object_models" file="$(arg object_models)"/>
+
+    <arg name="config" default="$(find clf_object_recognition_yolox)/config/config.yaml"/>
+    <arg name="checkpoint" default="$(find clf_object_recognition_yolox)/../yolo26n-seg.pt" />
+    <arg name="image_topic" default="/camera/color/image_raw"/>
+
+    <node pkg="clf_object_recognition_yolox" type="yolo26_recognition_node" name="yolo26" output="screen">
+        <remap from="~input" to="$(arg image_topic)" />
+        <param name="checkpoint" value="$(arg checkpoint)"/>
+        <rosparam command="load" file="$(arg config)" />
+    </node>
+
+    <node name="yolox_detection_3d" pkg="clf_object_recognition_3d" type="simple_3d">
+		<param name="publish_detections" value="True"/>
+        <param name="detect_2d_topic" value="/yolo26/recognize"/>
+	</node>
+
+</launch> 

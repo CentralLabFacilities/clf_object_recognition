@@ -3,6 +3,7 @@ import torch
 from yolox.data.data_augment import ValTransform
 from yolox.exp import get_exp
 from yolox.utils import postprocess
+from ultralytics import YOLO
 
 class Recognizer(object):
 	def __init__(self, ckpt_file, exp, fp16=False):

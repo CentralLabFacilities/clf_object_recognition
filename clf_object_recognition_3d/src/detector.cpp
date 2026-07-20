@@ -50,7 +50,7 @@ Detector::Detector(ros::NodeHandle nh)
   // get configuration first
   ros::spinOnce();
 
-  srv_detect_2d = nh.serviceClient<clf_object_recognition_msgs::Detect2DImage>("/yolox/recognize_from_image");
+  srv_detect_2d = nh.serviceClient<clf_object_recognition_msgs::Detect2DImage>("/yolo26/recognize_from_image");
   srv_detect_3d = nh.advertiseService("simple_detections", &Detector::ServiceDetect3D, this);
 
   pub_detections_3d = nh.advertise<vision_msgs::Detection3DArray>("last_detection", 1);
@@ -167,12 +167,18 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
     param.request.image = img;
     param.request.min_conf = req.min_conf;
     auto ok = srv_detect_2d.call(param);
+    bool use_masks = !param.response.masks.empty();
     if (!ok)
     {
       ROS_ERROR_STREAM_NAMED("detector", "cant call detections ");
       return false;
     }
-    ROS_DEBUG_STREAM_NAMED("detector", "got " << param.response.detections.size() << " detections");
+    if (!use_masks){
+      ROS_DEBUG_STREAM_NAMED("detector", "got " << param.response.detections.size() << " detections and no masks (using only bboxes)");
+    }
+    else {
+      ROS_DEBUG_STREAM_NAMED("detector", "got " << param.response.detections.size() << " detections with" << param.response.masks.size() << "masks");
+    }
   }
 
   // transform base_link -> camera
@@ -185,7 +191,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
   {
     ROS_WARN_STREAM_NAMED("detector", ex.what());
     // wait 1 sec to make sure buffer is updated
-    // if somehow the yolox service call finished faster than joint update running with 100hz ?!
+    // if somehow the yolo26 service call finished faster than joint update running with 100hz ?!
     ros::Duration(1.0).sleep();
     try
     {
@@ -199,12 +205,28 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
     }
   }
 
-  for (auto& detection : param.response.detections)
+  for (size_t i = 0; i < param.response.detections.size(); ++i)
   {
+    auto& detection = param.response.detections[i];
+    const sensor_msgs::Image& mask = param.response.masks[i];
     vision_msgs::Detection3D d3d;
     // generate point cloud from incoming depth image for detection bounding box
-    pointcloud_type::Ptr cloud_from_depth_image = cloud::fromDepthArea(detection.bbox, depth, *camera_info_);
+    pointcloud_type::Ptr cloud_from_depth_image;
 
+    if (use_masks)
+    {
+        cloud_from_depth_image =
+            cloud::fromDepthMask(param.response.masks[i],
+                                depth,
+                                *camera_info_);
+    }
+    else
+    {
+        cloud_from_depth_image =
+            cloud::fromDepthArea(detection.bbox,
+                                depth,
+                                *camera_info_);
+    }
     // TODO cleanup cloud a bit
     // cloud_from_depth_image = cloud::cleanupCloud(cloud_from_depth_image)
 

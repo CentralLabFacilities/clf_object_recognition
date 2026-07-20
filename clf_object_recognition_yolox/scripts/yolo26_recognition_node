@@ -1,0 +1,187 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+
+# ROS
+import rospy
+
+import cv2
+from cv_bridge import CvBridge, CvBridgeError
+
+from clf_object_recognition_yolox import yolo26_recognizer, util
+from clf_object_recognition_msgs.srv import Detect2D, Detect2DImage
+
+from sensor_msgs.msg import Image as ImgMsg
+
+from dynamic_reconfigure.server import Server
+from clf_object_recognition_cfg.cfg import Yolo26Config
+
+import std_msgs.msg
+
+from ultralytics import YOLO
+
+class YOLO26Node():
+	def __init__(self, checkpoint, config, timeout = 10):
+		rospy.loginfo(logger_name="YOLO26Node", msg="initializing:")
+		rospy.loginfo(logger_name="YOLO26Node", msg=f" - checkpoint={checkpoint}")
+		rospy.loginfo(logger_name="YOLO26Node", msg=f" - timeout={timeout}")
+		
+		self.recognizer = yolo26_recognizer.Recognizer(checkpoint)
+
+		if rospy.has_param('/object_models'):
+			rospy.loginfo(logger_name="YOLO26Node", msg=f" building labels from models")
+			labels : dict = rospy.get_param('/object_models')
+			d = {int(k):(v) for k,v in labels.items()}
+			self.classes = ()
+			for id in sorted(d):
+				label_name = d[id].split('/')[-1]
+				self.classes = self.classes + (label_name,)
+				rospy.set_param('/object_labels/' + str(id), label_name)
+		else:
+			self.classes = self.recognizer.model.names
+			rospy.logwarn(logger_name="YOLO26Node", msg="no /object_models param found")
+
+		if "conf" in config:
+			self.default_conf = config.get("conf", 0.25)
+
+
+		self._bridge = CvBridge()
+
+		self.srv = rospy.Service('~recognize', Detect2D, self._recognize_srv_callback)
+		self.srv = rospy.Service('~recognize_from_image', Detect2DImage, self._recognize_srv_img_callback)
+		self.result_pub = rospy.Publisher('~last_detection', ImgMsg, queue_size=1)
+
+		self.reconf_srv = Server(Yolo26Config, self._reconfigure)
+
+		self.timeout=timeout
+
+		
+
+	def _reconfigure(self, config, level):
+		rospy.loginfo(logger_name="YOLO26Node", msg="Reconfigured")
+		self.config = config
+		return config
+
+
+	def _recognize_srv_callback(self, req):
+		rospy.loginfo(logger_name="YOLO26Node", msg=f"detect called: min_conf:{req.min_conf}")
+		if req.min_conf == 0.0:
+			req.min_conf = self.default_conf
+
+		try:
+			rospy.loginfo(logger_name="YOLO26Node", msg="service called, waiting to recieve a message from the camera")
+			img_msg = rospy.wait_for_message('~input', ImgMsg, timeout=self.timeout)
+		except rospy.ROSException as e:
+			rospy.logerr(logger_name="YOLO26Node", msg=e)
+			raise Exception("Could not get image in %is" % self.timeout)
+
+		try:
+			img = self._bridge.imgmsg_to_cv2(img_msg, "bgr8")
+		except CvBridgeError as e:
+			error_msg = "Could not convert to opencv image: %s" % e
+			rospy.logerr(logger_name="YOLO26Node", msg=error_msg)
+			raise Exception(error_msg)
+
+		(cls, scores, bboxes, masks) = self.recognizer.inference(img, req.min_conf)
+
+		h = std_msgs.msg.Header()
+		h.stamp = rospy.Time.now()
+
+		result = util.tensorsToVisionMessage(cls, scores, bboxes, img_msg.header, thresh = req.min_conf)
+
+		if self.config.save_image or self.config.publish_detections:
+			try:
+				for box, score, cls_id in zip(bboxes, scores, cls):
+					x1, y1, x2, y2 = map(int, box)
+
+					cv2.rectangle(img, (x1, y1), (x2, y2), (0,255,0), 2)
+
+					label = f"{self.classes[int(cls_id)]}: {score:.2f}"
+
+					cv2.putText(
+						img,
+						label,
+						(x1, y1-5),
+						cv2.FONT_HERSHEY_SIMPLEX,
+						0.5,
+						(0,255,0),
+						2
+					)
+				result_image = img
+				if self.config.save_image:
+					cv2.imwrite("/tmp/yolo26_output.jpg", result_image)
+				if self.config.publish_detections:
+					msg = self._bridge.cv2_to_imgmsg(result_image)
+					self.result_pub.publish(msg)
+			except Exception as e:
+				rospy.logerr(logger_name="YOLO26Node", msg=e)
+
+		rospy.loginfo(logger_name="YOLO26Node", msg=f"detected {len(result)} objects")
+		return {"detections": result}
+
+	def _recognize_srv_img_callback(self, req):
+		rospy.loginfo(logger_name="YOLO26Node", msg=f"detect (img) called: min_conf:{req.min_conf}")
+		if req.min_conf == 0.0:
+			req.min_conf = self.default_conf
+		try:
+			img = self._bridge.imgmsg_to_cv2(req.image, "bgr8")
+		except CvBridgeError as e:
+			error_msg = "Could not convert to opencv image: %s" % e
+			rospy.logerr(logger_name="YOLO26Node", msg=error_msg)
+			raise Exception(error_msg)
+
+		(cls, scores, bboxes, masks) = self.recognizer.inference(img, req.min_conf)
+
+		h = std_msgs.msg.Header()
+		h.stamp = rospy.Time.now()
+
+		result = util.tensorsToVisionMessage(cls, scores, bboxes, req.image.header, thresh = req.min_conf)
+
+		if self.config.save_image or self.config.publish_detections:
+			try:
+				for box, score, cls_id in zip(bboxes, scores, cls):
+					x1, y1, x2, y2 = map(int, box)
+
+					cv2.rectangle(img, (x1, y1), (x2, y2), (0,255,0), 2)
+
+					label = f"{self.classes[int(cls_id)]}: {score:.2f}"
+
+					cv2.putText(
+						img,
+						label,
+						(x1, y1-5),
+						cv2.FONT_HERSHEY_SIMPLEX,
+						0.5,
+						(0,255,0),
+						2
+					)
+				result_image = img
+				if self.config.save_image:
+					cv2.imwrite("/tmp/yolo26_output.jpg", result_image)
+				if self.config.publish_detections:
+					msg = self._bridge.cv2_to_imgmsg(result_image)
+					self.result_pub.publish(msg)
+			except Exception as e:
+				rospy.logerr(logger_name="YOLO26Node", msg=e)
+
+		rospy.logdebug(logger_name="YOLO26Node", msg=f"detected {len(result)} objects")
+		return {"detections": result}
+
+if __name__ == '__main__':
+
+	# Start ROS node
+	rospy.init_node('yolo26')
+	
+	try:
+		_checkpoint = os.path.expanduser(rospy.get_param("~checkpoint"))
+		_config = rospy.get_param("~")
+	except KeyError as e:
+		rospy.logerr(logger_name="YOLO26Node", msg="Parameter %s not found" % e)
+		sys.exit(1)
+
+	node = YOLO26Node(_checkpoint, _config)
+
+	rospy.loginfo(logger_name="YOLO26Node", msg="\yolo26 running")
+
+	rospy.spin()
