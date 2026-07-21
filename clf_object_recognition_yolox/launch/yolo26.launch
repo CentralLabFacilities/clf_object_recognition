@@ -5,7 +5,7 @@
     <rosparam command="load" ns="object_models" file="$(arg object_models)"/>
 
     <arg name="config" default="$(find clf_object_recognition_yolox)/config/config.yaml"/>
-    <arg name="checkpoint" default="$(find clf_object_recognition_yolox)/../yolo26n-seg.pt" />
+    <arg name="checkpoint" default="$(find clf_object_recognition_yolox)/../yolo26x-seg.pt" />
     <arg name="image_topic" default="/camera/color/image_raw"/>
 
     <node pkg="clf_object_recognition_yolox" type="yolo26_recognition_node" name="yolo26" output="screen">
