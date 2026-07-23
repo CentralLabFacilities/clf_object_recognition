@@ -12,6 +12,7 @@ catkin_package()
 
 install(PROGRAMS
   scripts/yolox_recognition_node
+  scripts/yolo26_recognition_node
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
