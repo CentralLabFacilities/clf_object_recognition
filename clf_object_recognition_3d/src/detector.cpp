@@ -175,10 +175,10 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
       return false;
     }
     if (!use_masks){
-      ROS_INFO_STREAM_NAMED("detector", "got " << param.response.detections.size() << " detections and no masks (using only bboxes)");
+      ROS_FATAl_STREAM_NAMED("detector", "got " << param.response.detections.size() << " detections and no masks (using only bboxes)");
     }
     else {
-      ROS_INFO_STREAM_NAMED("detector", "got " << param.response.detections.size() << " detections with" << param.response.masks.size() << "masks");
+      ROS_FATAL_STREAM_NAMED("detector", "got " << param.response.detections.size() << " detections with" << param.response.masks.size() << "masks");
     }
   }
 
