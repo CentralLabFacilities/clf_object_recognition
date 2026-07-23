@@ -5,6 +5,7 @@ import sys
 
 # ROS
 import rospy
+import numpy as np
 
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
@@ -89,8 +90,8 @@ class YOLO26Node():
 
 		if masks is not None:
 			for mask in masks:
-				mask_msg = self._bridge.cv2_to_imgmsg(mask, encoding="mono8")
-				mask_msg.header = req.image.header
+				mask_msg = self._bridge.cv2_to_imgmsg(mask.astype(np.uint8), encoding="mono8")
+				mask_msg.header = img_msg.header
 				mask_msgs.append(mask_msg)
 
 		h = std_msgs.msg.Header()
