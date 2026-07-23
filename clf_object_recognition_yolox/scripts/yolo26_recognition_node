@@ -182,6 +182,6 @@ if __name__ == '__main__':
 
 	node = YOLO26Node(_checkpoint, _config)
 
-	rospy.loginfo(logger_name="YOLO26Node", msg="\yolo26 running")
+	rospy.loginfo(logger_name="YOLO26Node", msg="\nyolo26 running")
 
 	rospy.spin()
