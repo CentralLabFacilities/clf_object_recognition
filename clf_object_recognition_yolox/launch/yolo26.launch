@@ -14,7 +14,7 @@
         <rosparam command="load" file="$(arg config)" />
     </node>
 
-    <node name="yolox_detection_3d" pkg="clf_object_recognition_3d" type="simple_3d">
+    <node name="yolox_detection_3d" pkg="clf_object_recognition_3d" type="3d_detector">
 		<param name="publish_detections" value="True"/>
         <param name="detect_2d_topic" value="/yolo26/recognize"/>
 	</node>
