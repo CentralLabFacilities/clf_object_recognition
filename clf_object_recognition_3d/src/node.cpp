@@ -8,6 +8,8 @@ int main(int argc, char** argv)
   ros::NodeHandle nh("detect_3d");
 
   Detector detect(nh);
+  ros::spinOnce();
+  detect.init();
 
   ros::spin();
 

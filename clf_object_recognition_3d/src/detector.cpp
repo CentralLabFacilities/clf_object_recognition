@@ -42,34 +42,37 @@ inline bool validateFloats(double val)
 }
 
 Detector::Detector(ros::NodeHandle nh)
-  :  it_(nh_),
+  :  it_(nh),
   sync_( MySyncPolicy( 10 ), image_sub_, depth_image_sub_, camera_info_sub_), tf_listener(tf_buffer)
 {
+  nh_ = nh;
   auto f = [this](auto&& PH1, auto&& PH2) { ReconfigureCallback(PH1, PH2); };
   reconfigure_server.setCallback(f);
   // get configuration first
-  ros::spinOnce();
+}
 
-  srv_detect_2d = nh.serviceClient<clf_object_recognition_msgs::Detect2DImage>("/yolo26/recognize_from_image");
-  srv_detect_3d = nh.advertiseService("simple_detections", &Detector::ServiceDetect3D, this);
+void Detector::init() 
+{
+  srv_detect_2d = nh_.serviceClient<clf_object_recognition_msgs::Detect2DImage>("/yolo26/recognize_from_image");
+  srv_detect_3d = nh_.advertiseService("simple_detections", &Detector::ServiceDetect3D, this);
 
-  pub_detections_3d = nh.advertise<vision_msgs::Detection3DArray>("last_detection", 1);
-  pub_marker = nh.advertise<visualization_msgs::MarkerArray>("objects", 1);
-  pub_cloud = nh.advertise<sensor_msgs::PointCloud2>("cloud", 1);
+  pub_detections_3d = nh_.advertise<vision_msgs::Detection3DArray>("last_detection", 1);
+  pub_marker = nh_.advertise<visualization_msgs::MarkerArray>("objects", 1);
+  pub_cloud = nh_.advertise<sensor_msgs::PointCloud2>("cloud", 1);
 
-  reset_client_ = nh.serviceClient<std_srvs::Empty>(config.reset_topic);
+  reset_client_ = nh_.serviceClient<std_srvs::Empty>(config.reset_topic);
 
   // vision_msgs::Detection3DArray
 
   // subscribe to camera topics
   image_sub_.subscribe(it_, config.image_topic, 1);
   depth_image_sub_.subscribe(it_, config.depth_topic, 1);
-  camera_info_sub_.subscribe(nh, config.info_topic, 1);
+  camera_info_sub_.subscribe(nh_, config.info_topic, 1);
 
   // sync incoming camera messages
   sync_.registerCallback(boost::bind(&Detector::Callback, this, _1, _2, _3));
 
-  model_provider = std::make_unique<ModelProvider>(nh);
+  model_provider = std::make_unique<ModelProvider>(nh_);
   if(config.ensure_models) {
     while (!model_provider->has_models) {
       ROS_WARN_THROTTLE_NAMED(5,"detector", "waiting for models...");
@@ -164,23 +167,25 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
   }
   clf_object_recognition_msgs::Detect2DImage param;
   // Call Detect2DImage service
+  param.request.image = img;
+  param.request.min_conf = req.min_conf;
+  auto ok = srv_detect_2d.call(param);
+  if (!ok)
   {
-    param.request.image = img;
-    param.request.min_conf = req.min_conf;
-    auto ok = srv_detect_2d.call(param);
-    use_masks = !param.response.masks.empty();
-    if (!ok)
-    {
-      ROS_ERROR_STREAM_NAMED("detector", "cant call detections ");
-      return false;
-    }
-    if (!use_masks){
-      ROS_FATAL_STREAM_NAMED("detector", "got " << param.response.detections.size() << " detections and no masks (using only bboxes)");
-    }
-    else {
-      ROS_FATAL_STREAM_NAMED("detector", "got " << param.response.detections.size() << " detections with" << param.response.masks.size() << "masks");
-    }
+    ROS_ERROR_STREAM_NAMED("detector", "cant call detections ");
+    return false;
   }
+
+  use_masks = !param.response.masks.empty();
+  if (!use_masks){
+    std::cout << "no masks" << std::endl;
+    ROS_FATAL_STREAM_NAMED("detector", "got " << param.response.detections.size() << " detections and no masks (using only bboxes)");
+  }
+  else {
+    std::cout << "use masks" << std::endl;
+    ROS_FATAL_STREAM_NAMED("detector", "got " << param.response.detections.size() << " detections with" << param.response.masks.size() << "masks");
+  }
+  
 
   // transform base_link -> camera
   geometry_msgs::TransformStamped tf_base_to_cam;

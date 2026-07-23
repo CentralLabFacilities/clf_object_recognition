@@ -48,6 +48,7 @@ class Detector
 {
 public:
   Detector(ros::NodeHandle nh);
+  void init();
 
 private:
   void ReconfigureCallback(const clf_object_recognition_cfg::Detect3dConfig& config, uint32_t level);
