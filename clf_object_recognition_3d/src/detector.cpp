@@ -175,7 +175,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
       return false;
     }
     if (!use_masks){
-      ROS_FATAl_STREAM_NAMED("detector", "got " << param.response.detections.size() << " detections and no masks (using only bboxes)");
+      ROS_FATAL_STREAM_NAMED("detector", "got " << param.response.detections.size() << " detections and no masks (using only bboxes)");
     }
     else {
       ROS_FATAL_STREAM_NAMED("detector", "got " << param.response.detections.size() << " detections with" << param.response.masks.size() << "masks");
@@ -243,7 +243,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
     auto centroid_size = pcl::compute3DCentroid(*cloud_from_depth_image, centroid);
     if (centroid_size == 0)
     {
-      ROS_ERROR_STREAM_NAMED("detector", "centroid before filter is invalid");
+      ROS_FATAL_STREAM_NAMED("detector", "centroid before filter is invalid");
     } else {
       ROS_DEBUG_STREAM_NAMED("detector", "centroid before filter " << centroid[0] << "   " << centroid[1] << "   " << centroid[2]);
     }
