@@ -85,6 +85,14 @@ class YOLO26Node():
 
 		(cls, scores, bboxes, masks) = self.recognizer.inference(img, req.min_conf)
 
+		mask_msgs = []
+
+		if masks is not None:
+			for mask in masks:
+				mask_msg = self._bridge.cv2_to_imgmsg(mask, encoding="mono8")
+				mask_msg.header = req.image.header
+				mask_msgs.append(mask_msg)
+
 		h = std_msgs.msg.Header()
 		h.stamp = rospy.Time.now()
 
@@ -118,7 +126,10 @@ class YOLO26Node():
 				rospy.logerr(logger_name="YOLO26Node", msg=e)
 
 		rospy.loginfo(logger_name="YOLO26Node", msg=f"detected {len(result)} objects")
-		return {"detections": result}
+		return {
+			"detections": result,
+			"masks": mask_msgs
+		  }
 
 	def _recognize_srv_img_callback(self, req):
 		rospy.loginfo(logger_name="YOLO26Node", msg=f"detect (img) called: min_conf:{req.min_conf}")
@@ -132,6 +143,14 @@ class YOLO26Node():
 			raise Exception(error_msg)
 
 		(cls, scores, bboxes, masks) = self.recognizer.inference(img, req.min_conf)
+
+		mask_msgs = []
+
+		if masks is not None:
+			for mask in masks:
+				mask_msg = self._bridge.cv2_to_imgmsg(mask, encoding="mono8")
+				mask_msg.header = req.image.header
+				mask_msgs.append(mask_msg)
 
 		h = std_msgs.msg.Header()
 		h.stamp = rospy.Time.now()
@@ -166,7 +185,10 @@ class YOLO26Node():
 				rospy.logerr(logger_name="YOLO26Node", msg=e)
 
 		rospy.logdebug(logger_name="YOLO26Node", msg=f"detected {len(result)} objects")
-		return {"detections": result}
+		return {
+			"detections": result,
+			"masks": mask_msgs
+			}
 
 if __name__ == '__main__':
 
