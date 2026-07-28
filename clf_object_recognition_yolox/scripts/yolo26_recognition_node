@@ -22,6 +22,38 @@ import std_msgs.msg
 
 from ultralytics import YOLO
 
+def draw_segmentations(masks, IMAGE):
+
+	img = IMAGE
+	orig = img.copy()
+	h, w = img.shape[:2]
+
+	if masks is not None:
+		for i, mask in enumerate(masks):
+			# Convert to binary mask
+			mask_u8 = (mask > 0.5).astype(np.uint8)
+
+			print(
+				f"Mask {i}: shape={mask_u8.shape}, "
+				f"pixels={mask_u8.sum()}"
+			)
+
+			# Resize mask to original image size
+			mask_u8 = cv2.resize(
+				mask_u8,
+				(w, h),
+				interpolation=cv2.INTER_NEAREST
+			)
+
+			# Random color per instance
+			color = np.random.randint(0, 255, 3, dtype=np.uint8)
+
+			colored_mask = np.zeros_like(orig, dtype=np.uint8)
+			colored_mask[mask_u8 > 0] = color
+
+			# Blend with original image
+			return cv2.addWeighted(img, 1.0, colored_mask, 0.4, 0)
+
 class YOLO26Node():
 	def __init__(self, checkpoint, config, timeout = 10):
 		rospy.loginfo(logger_name="YOLO26Node", msg="initializing:")
@@ -176,7 +208,10 @@ class YOLO26Node():
 						(0,255,0),
 						2
 					)
-				result_image = img
+				if masks is not None:
+					result_image = draw_segmentations(masks, img)
+				else:
+					result_image = img
 				if self.config.save_image:
 					cv2.imwrite("/tmp/yolo26_output.jpg", result_image)
 				if self.config.publish_detections:
