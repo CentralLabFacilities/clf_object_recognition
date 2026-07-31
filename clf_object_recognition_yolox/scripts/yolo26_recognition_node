@@ -155,6 +155,7 @@ class YOLO26Node():
 					result_image = img
 				if self.config.save_image:
 					cv2.imwrite("/tmp/yolo26_output.jpg", result_image)
+				self.config.publish_detections = True # DEBUG LINE, REMOVE IF YOU CAN SEE IT
 				if self.config.publish_detections:
 					msg = self._bridge.cv2_to_imgmsg(result_image)
 					self.result_pub.publish(msg)
@@ -217,6 +218,7 @@ class YOLO26Node():
 					result_image = img
 				if self.config.save_image:
 					cv2.imwrite("/tmp/yolo26_output.jpg", result_image)
+				self.config.publish_detections = True # DEBUG LINE, REMOVE IF YOU CAN SEE IT
 				if self.config.publish_detections:
 					msg = self._bridge.cv2_to_imgmsg(result_image)
 					self.result_pub.publish(msg)
