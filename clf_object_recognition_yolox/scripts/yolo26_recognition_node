@@ -149,7 +149,10 @@ class YOLO26Node():
 						(0,255,0),
 						2
 					)
-				result_image = img
+				if masks is not None:
+					result_image = draw_segmentations(masks, img)
+				else:
+					result_image = img
 				if self.config.save_image:
 					cv2.imwrite("/tmp/yolo26_output.jpg", result_image)
 				if self.config.publish_detections:
