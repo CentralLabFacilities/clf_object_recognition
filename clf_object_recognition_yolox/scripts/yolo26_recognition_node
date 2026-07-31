@@ -22,37 +22,23 @@ import std_msgs.msg
 
 from ultralytics import YOLO
 
-def draw_segmentations(masks, IMAGE):
+def draw_segmentations(masks, image):
 
-	img = IMAGE
-	orig = img.copy()
-	h, w = img.shape[:2]
+    h, w = image.shape[:2]
+    overlay = np.zeros_like(image, dtype=np.uint8)
 
-	if masks is not None:
-		for i, mask in enumerate(masks):
-			# Convert to binary mask
-			mask_u8 = (mask > 0.5).astype(np.uint8)
+    if masks is not None:
+        for mask in masks:
+            mask_u8 = cv2.resize(
+                (mask > 0.5).astype(np.uint8),
+                (w, h),
+                interpolation=cv2.INTER_NEAREST
+            )
 
-			print(
-				f"Mask {i}: shape={mask_u8.shape}, "
-				f"pixels={mask_u8.sum()}"
-			)
+            color = np.random.randint(0, 255, 3, dtype=np.uint8)
+            overlay[mask_u8 > 0] = color
 
-			# Resize mask to original image size
-			mask_u8 = cv2.resize(
-				mask_u8,
-				(w, h),
-				interpolation=cv2.INTER_NEAREST
-			)
-
-			# Random color per instance
-			color = np.random.randint(0, 255, 3, dtype=np.uint8)
-
-			colored_mask = np.zeros_like(orig, dtype=np.uint8)
-			colored_mask[mask_u8 > 0] = color
-
-			# Blend with original image
-			return cv2.addWeighted(img, 1.0, colored_mask, 0.4, 0)
+    return cv2.addWeighted(image, 1.0, overlay, 0.4, 0)
 
 class YOLO26Node():
 	def __init__(self, checkpoint, config, timeout = 10):
@@ -155,7 +141,6 @@ class YOLO26Node():
 					result_image = img
 				if self.config.save_image:
 					cv2.imwrite("/tmp/yolo26_output.jpg", result_image)
-				self.config.publish_detections = True # DEBUG LINE, REMOVE IF YOU CAN SEE IT
 				if self.config.publish_detections:
 					msg = self._bridge.cv2_to_imgmsg(result_image)
 					self.result_pub.publish(msg)
@@ -218,7 +203,6 @@ class YOLO26Node():
 					result_image = img
 				if self.config.save_image:
 					cv2.imwrite("/tmp/yolo26_output.jpg", result_image)
-				self.config.publish_detections = True # DEBUG LINE, REMOVE IF YOU CAN SEE IT
 				if self.config.publish_detections:
 					msg = self._bridge.cv2_to_imgmsg(result_image)
 					self.result_pub.publish(msg)
