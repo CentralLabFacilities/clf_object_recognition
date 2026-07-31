@@ -108,7 +108,12 @@ class YOLO26Node():
 
 		if masks is not None:
 			for mask in masks:
-				mask_msg = self._bridge.cv2_to_imgmsg(mask.astype(np.uint8), encoding="mono8")
+				mask_resized = cv2.resize(
+					(mask > 0.5).astype(np.uint8),
+					(img.shape[1], img.shape[0]),
+					interpolation=cv2.INTER_NEAREST
+				)
+				mask_msg = self._bridge.cv2_to_imgmsg(mask_resized, encoding="mono8")
 				mask_msg.header = img_msg.header
 				mask_msgs.append(mask_msg)
 
@@ -170,7 +175,12 @@ class YOLO26Node():
 
 		if masks is not None:
 			for mask in masks:
-				mask_msg = self._bridge.cv2_to_imgmsg(mask, encoding="mono8")
+				mask_resized = cv2.resize(
+					(mask > 0.5).astype(np.uint8),
+					(img.shape[1], img.shape[0]),
+					interpolation=cv2.INTER_NEAREST
+				)
+				mask_msg = self._bridge.cv2_to_imgmsg(mask_resized, encoding="mono8")
 				mask_msg.header = req.image.header
 				mask_msgs.append(mask_msg)
 
