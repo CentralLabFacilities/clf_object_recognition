@@ -219,7 +219,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
     // generate point cloud from incoming depth image for detection bounding box
     pointcloud_type::Ptr cloud_from_depth_image;
 
-    if (use_masks)
+    if (use_masks && config.use_masks)
     {
         cloud_from_depth_image =
             cloud::fromDepthMask(param.response.masks[i],
