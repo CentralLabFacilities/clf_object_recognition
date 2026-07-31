@@ -10,13 +10,16 @@
 
 
     <node pkg="clf_object_recognition_yolox" type="yolo26_recognition_node" name="yolo26" output="screen">
+    	<param name="publish_detections" value="True"/>
         <remap from="~input" to="$(arg image_topic)" />
         <param name="checkpoint" value="$(arg checkpoint)"/>
         <rosparam command="load" file="$(arg config)" />
     </node>
 
     <node name="yolox_detection_3d" pkg="clf_object_recognition_3d" type="3d_detector" output="screen">
+        <remap from="/yolox/recognize_from_image" to="/yolo26/recognize_from_image" />
 		<param name="publish_detections" value="True"/>
+        <param name="publish_marker" value="True"/>
         <param name="detect_2d_topic" value="/yolo26/recognize"/>
 	</node>
 

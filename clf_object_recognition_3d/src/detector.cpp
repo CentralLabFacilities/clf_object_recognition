@@ -53,7 +53,7 @@ Detector::Detector(ros::NodeHandle nh)
 
 void Detector::init() 
 {
-  srv_detect_2d = nh_.serviceClient<clf_object_recognition_msgs::Detect2DImage>("/yolo26/recognize_from_image");
+  srv_detect_2d = nh_.serviceClient<clf_object_recognition_msgs::Detect2DImage>("/yolox/recognize_from_image");
   srv_detect_3d = nh_.advertiseService("simple_detections", &Detector::ServiceDetect3D, this);
 
   pub_detections_3d = nh_.advertise<vision_msgs::Detection3DArray>("last_detection", 1);
