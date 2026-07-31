@@ -515,6 +515,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
         d3d.results.push_back(hyp);
       }
       res.detections.push_back(d3d);
+      res.masks.push_back(mask)
     }
   }
 
