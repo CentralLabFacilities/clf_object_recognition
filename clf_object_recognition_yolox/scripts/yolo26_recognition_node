@@ -228,7 +228,7 @@ class YOLO26Node():
 if __name__ == '__main__':
 
 	# Start ROS node
-	rospy.init_node('yolo26')
+	rospy.init_node('yolox')
 	
 	try:
 		_checkpoint = os.path.expanduser(rospy.get_param("~checkpoint"))

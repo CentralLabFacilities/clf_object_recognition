@@ -8,7 +8,7 @@
     <arg name="checkpoint" default="$(find yolox_models)/models/yolo26/yolo26x-seg.pt" />
     <arg name="image_topic" default="/camera/color/image_raw"/>
 
-    <node pkg="clf_object_recognition_yolox" type="yolo26_recognition_node" name="yolo26" output="screen">
+    <node pkg="clf_object_recognition_yolox" type="yolo26_recognition_node" name="yolox" output="screen">
     	<param name="publish_detections" value="True"/>
         <remap from="~input" to="$(arg image_topic)" />
         <param name="checkpoint" value="$(arg checkpoint)"/>
@@ -17,10 +17,9 @@
 
     <node name="yolox_detection_3d" pkg="clf_object_recognition_3d" type="3d_detector" output="screen">
         <param name="info_topic" value="/camera/aligned_depth_to_color/camera_info"/>
-        <remap from="/yolox/recognize_from_image" to="/yolo26/recognize_from_image" />
 		<param name="publish_detections" value="True"/>
         <param name="publish_marker" value="True"/>
-        <param name="detect_2d_topic" value="/yolo26/recognize"/>
+        <param name="detect_2d_topic" value="/yolox/recognize"/>
 	</node>
 
 </launch> 
