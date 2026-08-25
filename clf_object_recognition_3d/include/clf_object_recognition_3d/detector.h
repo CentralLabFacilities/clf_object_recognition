@@ -80,7 +80,8 @@ private:
 
   // publisher
   ros::Publisher pub_detections_3d;
-  ros::Publisher pub_cloud;
+  ros::Publisher pub_object_cloud;
+  ros::Publisher pub_filtered_cloud;
   ros::Publisher pub_marker;
 
   // sync with exact policy

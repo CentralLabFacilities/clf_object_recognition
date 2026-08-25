@@ -58,7 +58,8 @@ void Detector::init()
 
   pub_detections_3d = nh_.advertise<vision_msgs::Detection3DArray>("last_detection", 1);
   pub_marker = nh_.advertise<visualization_msgs::MarkerArray>("objects", 1);
-  pub_cloud = nh_.advertise<sensor_msgs::PointCloud2>("cloud", 1);
+  pub_object_cloud = nh_.advertise<sensor_msgs::PointCloud2>("cloud", 1);
+  pub_filtered_cloud = nh_.advertise<sensor_msgs::PointCloud2>("filtered_cloud", 1);
 
   reset_client_ = nh_.serviceClient<std_srvs::Empty>(config.reset_topic);
 
@@ -311,6 +312,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
 
     if (req.skip_icp)
     {
+      // if we skip icp, we just return the centroid as pose
       if (centroid_size == 0)
       {
         // We are fine with undefined points
@@ -381,8 +383,9 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
         res.masks.push_back(mask);
       }
     }
-    else // !req.skip.icp
+    else // req.skip.icp 
     {
+      // do icp, we need to fit model to the point cloud
       for (auto hypo : detection.results)
       {
         if(config.matcher_filter_models) {
@@ -496,12 +499,6 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
 
         if (config.publish_marker)
         {
-          pcl::transformPointCloud(*sampled, *sampled, initial_guess);
-          sensor_msgs::PointCloud2 pcl_msg2;
-          pcl::toROSMsg(*sampled, pcl_msg2);
-          pcl_msg2.header = depth.header;
-          pub_cloud.publish(pcl_msg2);
-
           visualization_msgs::Marker marker;
           marker.type = visualization_msgs::Marker::MESH_RESOURCE;
           marker.id = marker_id++;
@@ -513,6 +510,17 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
           marker.pose = hyp.pose.pose;
           marker.mesh_resource = model_path_dae;
           markers.markers.push_back(marker);
+        }
+        if(config.publish_cloud) 
+        {
+          pcl::transformPointCloud(*sampled, *sampled, initial_guess);
+          sensor_msgs::PointCloud2 pcl_msg2;
+          pcl::toROSMsg(*sampled, pcl_msg2);
+          pcl_msg2.header = depth.header;
+          pub_object_cloud.publish(pcl_msg2);
+
+          pcl::toROSMsg(*cloud_from_depth_image, pcl_msg2);
+          pub_filtered_cloud.publish(pcl_msg2);
         }
 
         d3d.results.push_back(hyp);
