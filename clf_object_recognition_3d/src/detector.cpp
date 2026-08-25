@@ -520,6 +520,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
           pub_object_cloud.publish(pcl_msg2);
 
           pcl::toROSMsg(*cloud_from_depth_image, pcl_msg2);
+          pcl_msg2.header = depth.header;
           pub_filtered_cloud.publish(pcl_msg2);
         }
 
