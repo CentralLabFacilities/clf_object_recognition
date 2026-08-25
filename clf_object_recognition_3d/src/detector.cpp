@@ -490,7 +490,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
         tf::transformEigenToMsg(affine.cast<double>(), tf_msg);
 
         ROS_DEBUG_STREAM_NAMED("detector", "    object at " << tf_msg.translation.x << ", " << tf_msg.translation.y
-                                                            << ", " << tf_msg.translation.z);
+                                                            << ", " << tf_msg.translation.z << ", " << tf_msg.rotation.x << ", " << tf_msg.rotation.y << ", " << tf_msg.rotation.z << ", " << tf_msg.rotation.w);
         hyp.pose.pose.orientation = tf_msg.rotation;
         hyp.pose.pose.position.x = tf_msg.translation.x;
         hyp.pose.pose.position.y = tf_msg.translation.y;
