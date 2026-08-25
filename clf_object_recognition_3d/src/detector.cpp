@@ -309,7 +309,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
     d3d.bbox.size.y = 0.1;
     d3d.bbox.size.z = 0.1;
 
-    if (!req.skip_icp)
+    if (req.skip_icp)
     {
       if (centroid_size == 0)
       {
@@ -381,7 +381,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
         res.masks.push_back(mask);
       }
     }
-    else // req.skip.icp
+    else // !req.skip.icp
     {
       for (auto hypo : detection.results)
       {
