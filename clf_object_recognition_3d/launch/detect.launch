@@ -10,7 +10,7 @@
         <param name="image_topic" value="$(arg image_topic)"/>
         <param name="depth_topic" value="$(arg depth_topic)"/>
         <param name="info_topic" value="$(arg info_topic)"/>
-        <param name="detect_2d_topic" value="/yolox/recognize"/>
+        <param name="detect_2d_topic" value="/yolo26/recognize"/>
         <param name="reset_timeout" value="30"/>
         <param name="reset" value="true"/> <!-- reset camera -->
         <param name="registration_max_correspondance_dist" value="0.01"/>

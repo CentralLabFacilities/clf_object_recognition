@@ -2,7 +2,7 @@
 <package format="2">>
   <name>clf_object_recognition_yolox</name>
   <version>0.0.0</version>
-  <description>Object recognition with yolox</description>
+  <description>Object recognition with yolox or yolo26</description>
 
   <maintainer email="lruegeme@techfak.uni-bielefeld.de">Leroy Rügemer</maintainer>
 
