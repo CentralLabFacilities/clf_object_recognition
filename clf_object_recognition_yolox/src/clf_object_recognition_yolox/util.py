@@ -9,7 +9,7 @@ def tensorsToVisionMessage(ids, scores, boxes, header, thresh = 0.35):
 		score = scores[i]
 		if score < thresh:
 			# tensor is sorted by scores
-			break
+			continue
 
 		msg = Detection2D()
 		msg.header = header

@@ -10,6 +10,7 @@ find_package(catkin REQUIRED
 generate_dynamic_reconfigure_options(
   cfg/Yolox.cfg
   cfg/Detect3d.cfg
+  cfg/Yolo26.cfg
 )
 
 catkin_package()

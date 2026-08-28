@@ -42,34 +42,38 @@ inline bool validateFloats(double val)
 }
 
 Detector::Detector(ros::NodeHandle nh)
-  :  it_(nh_),
+  :  it_(nh),
   sync_( MySyncPolicy( 10 ), image_sub_, depth_image_sub_, camera_info_sub_), tf_listener(tf_buffer)
 {
+  nh_ = nh;
   auto f = [this](auto&& PH1, auto&& PH2) { ReconfigureCallback(PH1, PH2); };
   reconfigure_server.setCallback(f);
   // get configuration first
-  ros::spinOnce();
+}
 
-  srv_detect_2d = nh.serviceClient<clf_object_recognition_msgs::Detect2DImage>("/yolox/recognize_from_image");
-  srv_detect_3d = nh.advertiseService("simple_detections", &Detector::ServiceDetect3D, this);
+void Detector::init() 
+{
+  srv_detect_2d = nh_.serviceClient<clf_object_recognition_msgs::Detect2DImage>("/yolo26/recognize_from_image");
+  srv_detect_3d = nh_.advertiseService("simple_detections", &Detector::ServiceDetect3D, this);
 
-  pub_detections_3d = nh.advertise<vision_msgs::Detection3DArray>("last_detection", 1);
-  pub_marker = nh.advertise<visualization_msgs::MarkerArray>("objects", 1);
-  pub_cloud = nh.advertise<sensor_msgs::PointCloud2>("cloud", 1);
+  pub_detections_3d = nh_.advertise<vision_msgs::Detection3DArray>("last_detection", 1);
+  pub_marker = nh_.advertise<visualization_msgs::MarkerArray>("objects", 1);
+  pub_object_cloud = nh_.advertise<sensor_msgs::PointCloud2>("cloud", 1);
+  pub_filtered_cloud = nh_.advertise<sensor_msgs::PointCloud2>("filtered_cloud", 1);
 
-  reset_client_ = nh.serviceClient<std_srvs::Empty>(config.reset_topic);
+  reset_client_ = nh_.serviceClient<std_srvs::Empty>(config.reset_topic);
 
   // vision_msgs::Detection3DArray
 
   // subscribe to camera topics
   image_sub_.subscribe(it_, config.image_topic, 1);
   depth_image_sub_.subscribe(it_, config.depth_topic, 1);
-  camera_info_sub_.subscribe(nh, config.info_topic, 1);
+  camera_info_sub_.subscribe(nh_, config.info_topic, 1);
 
   // sync incoming camera messages
   sync_.registerCallback(boost::bind(&Detector::Callback, this, _1, _2, _3));
 
-  model_provider = std::make_unique<ModelProvider>(nh);
+  model_provider = std::make_unique<ModelProvider>(nh_);
   if(config.ensure_models) {
     while (!model_provider->has_models) {
       ROS_WARN_THROTTLE_NAMED(5,"detector", "waiting for models...");
@@ -106,6 +110,8 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
   sensor_msgs::CameraInfo info;
   visualization_msgs::MarkerArray markers;
   int marker_id = 0;
+  bool use_masks = false;
+
 
   ROS_INFO_STREAM_NAMED("detector", "ServiceDetect3D() called " << req);
 
@@ -160,20 +166,27 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
     depth = sensor_msgs::Image(*depth_image_.get());
     ROS_INFO_STREAM_NAMED("detector", "ServiceDetect3D() got images ");
   }
-
   clf_object_recognition_msgs::Detect2DImage param;
   // Call Detect2DImage service
+  param.request.image = img;
+  param.request.min_conf = req.min_conf;
+  auto ok = srv_detect_2d.call(param);
+  if (!ok)
   {
-    param.request.image = img;
-    param.request.min_conf = req.min_conf;
-    auto ok = srv_detect_2d.call(param);
-    if (!ok)
-    {
-      ROS_ERROR_STREAM_NAMED("detector", "cant call detections ");
-      return false;
-    }
-    ROS_DEBUG_STREAM_NAMED("detector", "got " << param.response.detections.size() << " detections");
+    ROS_ERROR_STREAM_NAMED("detector", "cant call detections ");
+    return false;
   }
+
+  use_masks = !param.response.masks.empty();
+  if (!use_masks){
+    std::cout << "no masks" << std::endl;
+    ROS_FATAL_STREAM_NAMED("detector", "got " << param.response.detections.size() << " detections and no masks (using only bboxes)");
+  }
+  else {
+    std::cout << "use masks" << std::endl;
+    ROS_FATAL_STREAM_NAMED("detector", "got " << param.response.detections.size() << " detections with" << param.response.masks.size() << "masks");
+  }
+  
 
   // transform base_link -> camera
   geometry_msgs::TransformStamped tf_base_to_cam;
@@ -185,7 +198,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
   {
     ROS_WARN_STREAM_NAMED("detector", ex.what());
     // wait 1 sec to make sure buffer is updated
-    // if somehow the yolox service call finished faster than joint update running with 100hz ?!
+    // if somehow the yolo26 service call finished faster than joint update running with 100hz ?!
     ros::Duration(1.0).sleep();
     try
     {
@@ -199,12 +212,28 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
     }
   }
 
-  for (auto& detection : param.response.detections)
+  for (size_t i = 0; i < param.response.detections.size(); ++i)
   {
+    auto& detection = param.response.detections[i];
+    const sensor_msgs::Image& mask = param.response.masks[i];
     vision_msgs::Detection3D d3d;
     // generate point cloud from incoming depth image for detection bounding box
-    pointcloud_type::Ptr cloud_from_depth_image = cloud::fromDepthArea(detection.bbox, depth, *camera_info_);
+    pointcloud_type::Ptr cloud_from_depth_image;
 
+    if (use_masks && config.use_masks)
+    {
+        cloud_from_depth_image =
+            cloud::fromDepthMask(param.response.masks[i],
+                                depth,
+                                *camera_info_);
+    }
+    else
+    {
+        cloud_from_depth_image =
+            cloud::fromDepthArea(detection.bbox,
+                                depth,
+                                *camera_info_);
+    }
     // TODO cleanup cloud a bit
     // cloud_from_depth_image = cloud::cleanupCloud(cloud_from_depth_image)
 
@@ -220,7 +249,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
     auto centroid_size = pcl::compute3DCentroid(*cloud_from_depth_image, centroid);
     if (centroid_size == 0)
     {
-      ROS_ERROR_STREAM_NAMED("detector", "centroid before filter is invalid");
+      ROS_FATAL_STREAM_NAMED("detector", "centroid before filter is invalid");
     } else {
       ROS_DEBUG_STREAM_NAMED("detector", "centroid before filter " << centroid[0] << "   " << centroid[1] << "   " << centroid[2]);
     }
@@ -283,6 +312,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
 
     if (req.skip_icp)
     {
+      // if we skip icp, we just return the centroid as pose
       if (centroid_size == 0)
       {
         // We are fine with undefined points
@@ -349,9 +379,13 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
         d3d.results.push_back(hyp);
       }
       res.detections.push_back(d3d);
+      if(use_masks && config.use_masks) {
+        res.masks.push_back(mask);
+      }
     }
-    else // req.skip.icp
+    else // req.skip.icp 
     {
+      // do icp, we need to fit model to the point cloud
       for (auto hypo : detection.results)
       {
         if(config.matcher_filter_models) {
@@ -456,7 +490,7 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
         tf::transformEigenToMsg(affine.cast<double>(), tf_msg);
 
         ROS_DEBUG_STREAM_NAMED("detector", "    object at " << tf_msg.translation.x << ", " << tf_msg.translation.y
-                                                            << ", " << tf_msg.translation.z);
+                                                            << ", " << tf_msg.translation.z << ", " << tf_msg.rotation.x << ", " << tf_msg.rotation.y << ", " << tf_msg.rotation.z << ", " << tf_msg.rotation.w);
         hyp.pose.pose.orientation = tf_msg.rotation;
         hyp.pose.pose.position.x = tf_msg.translation.x;
         hyp.pose.pose.position.y = tf_msg.translation.y;
@@ -465,12 +499,6 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
 
         if (config.publish_marker)
         {
-          pcl::transformPointCloud(*sampled, *sampled, initial_guess);
-          sensor_msgs::PointCloud2 pcl_msg2;
-          pcl::toROSMsg(*sampled, pcl_msg2);
-          pcl_msg2.header = depth.header;
-          pub_cloud.publish(pcl_msg2);
-
           visualization_msgs::Marker marker;
           marker.type = visualization_msgs::Marker::MESH_RESOURCE;
           marker.id = marker_id++;
@@ -483,10 +511,25 @@ bool Detector::ServiceDetect3D(clf_object_recognition_msgs::Detect3D::Request& r
           marker.mesh_resource = model_path_dae;
           markers.markers.push_back(marker);
         }
+        if(config.publish_cloud) 
+        {
+          pcl::transformPointCloud(*sampled, *sampled, initial_guess);
+          sensor_msgs::PointCloud2 pcl_msg2;
+          pcl::toROSMsg(*sampled, pcl_msg2);
+          pcl_msg2.header = depth.header;
+          pub_object_cloud.publish(pcl_msg2);
+
+          pcl::toROSMsg(*cloud_from_depth_image, pcl_msg2);
+          pcl_msg2.header = depth.header;
+          pub_filtered_cloud.publish(pcl_msg2);
+        }
 
         d3d.results.push_back(hyp);
       }
       res.detections.push_back(d3d);
+      if(use_masks && config.use_masks) {
+        res.masks.push_back(mask);
+      }
     }
   }
 

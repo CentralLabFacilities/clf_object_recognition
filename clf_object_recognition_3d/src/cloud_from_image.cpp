@@ -62,7 +62,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthImage(const sensor_msgs::Image& dep
       else
       {
         float depth = cv_ptr->image.at<float>(v, u);
-        if (depth != 0 || std::isnan(depth))
+        if (depth != 0 && !std::isnan(depth))        
         {
           auto& pt = cloud->points[num_point++];
           pt.x = (u - camera.cx()) * depth * constant_x;
@@ -145,7 +145,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthArea(const vision_msgs::BoundingBox
       } else {
         float depth = cv_ptr->image.at<float>(v, u);
       
-        if (depth != 0 || std::isnan(depth))
+        if (depth != 0 && !std::isnan(depth))
         {
           auto& pt = cloud->points[num_point++];
           pt.x = (u - camera.cx()) * depth * constant_x;
@@ -161,6 +161,93 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthArea(const vision_msgs::BoundingBox
   ROS_DEBUG_STREAM_NAMED("cloud", "cloud after resize: " << num_point);
 
   return cloud;
+}
+
+pcl::PointCloud<pcl::PointXYZ>::Ptr fromDepthMask(const sensor_msgs::Image& mask,
+                                                  const sensor_msgs::Image& depth, sensor_msgs::CameraInfo info,
+                                                  double depth_scaling)
+{
+    ROS_DEBUG_STREAM_NAMED("cloud", "fromDepthMask");
+
+    image_geometry::PinholeCameraModel camera;
+    camera.fromCameraInfo(info);
+
+    // Depth image
+    cv_bridge::CvImagePtr depth_ptr;
+    bool integers = true;
+
+    if (depth.encoding == sensor_msgs::image_encodings::MONO8)
+    {
+        depth_ptr = cv_bridge::toCvCopy(depth, sensor_msgs::image_encodings::TYPE_8UC1);
+    }
+    else if (depth.encoding == sensor_msgs::image_encodings::TYPE_32FC1)
+    {
+        depth_ptr = cv_bridge::toCvCopy(depth, sensor_msgs::image_encodings::TYPE_32FC1);
+        integers = false;
+        depth_scaling = 1;
+    }
+    else
+    {
+        depth_ptr = cv_bridge::toCvCopy(depth, sensor_msgs::image_encodings::TYPE_16UC1);
+    }
+
+    // Mask image
+    auto mask_ptr =
+        cv_bridge::toCvCopy(mask, sensor_msgs::image_encodings::MONO8);
+
+    float constant_x = depth_scaling / camera.fx();
+    float constant_y = depth_scaling / camera.fy();
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>());
+    cloud->header.stamp = ros::Time(depth.header.stamp).toSec();
+    cloud->header.frame_id = depth.header.frame_id;
+    cloud->is_dense = true;
+
+    // Worst case: every pixel belongs to the mask
+    cloud->points.reserve(mask_ptr->image.rows * mask_ptr->image.cols);
+
+    for (int v = 0; v < mask_ptr->image.rows; ++v)
+    {
+        for (int u = 0; u < mask_ptr->image.cols; ++u)
+        {
+            // Skip pixels outside the object
+            if (mask_ptr->image.at<uint8_t>(v, u) == 0)
+                continue;
+
+            if (integers)
+            {
+                float d = depth_ptr->image.at<uint16_t>(v, u);
+
+                if (d != 0 && d != std::numeric_limits<uint16_t>::max())
+                {
+                    pcl::PointXYZ pt;
+                    pt.x = (u - camera.cx()) * d * constant_x;
+                    pt.y = (v - camera.cy()) * d * constant_y;
+                    pt.z = d * depth_scaling;
+
+                    cloud->points.push_back(pt);
+                }
+            }
+            else
+            {
+                float d = depth_ptr->image.at<float>(v, u);
+
+                if (!std::isnan(d) && d != 0.0f)
+                {
+                    pcl::PointXYZ pt;
+                    pt.x = (u - camera.cx()) * d * constant_x;
+                    pt.y = (v - camera.cy()) * d * constant_y;
+                    pt.z = d;
+
+                    cloud->points.push_back(pt);
+                }
+            }
+        }
+    }
+
+    ROS_DEBUG_STREAM_NAMED("cloud", "cloud size: " << cloud->size());
+
+    return cloud;
 }
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr oldFromDepth(const sensor_msgs::Image& depth_msg, const vision_msgs::BoundingBox2D& bbox,

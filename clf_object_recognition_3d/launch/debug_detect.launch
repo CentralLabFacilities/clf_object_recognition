@@ -6,7 +6,7 @@
         <param name="image_topic" value="/camera/color/image_raw"/>
         <param name="depth_topic" value="/camera/aligned_depth_to_color/image_raw"/>
         <param name="info_topic" value="/camera/aligned_depth_to_color/camera_info"/>
-        <param name="detect_2d_topic" value="/yolox/recognize"/>
+        <param name="detect_2d_topic" value="/yolo26/recognize"/>
         <param name="publish_detections" value="True"/>
         <param name="publish_marker" value="True"/>
         <param name="publish_cloud" value="True"/>

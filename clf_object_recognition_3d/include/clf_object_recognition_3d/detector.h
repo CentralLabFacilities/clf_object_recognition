@@ -48,6 +48,7 @@ class Detector
 {
 public:
   Detector(ros::NodeHandle nh);
+  void init();
 
 private:
   void ReconfigureCallback(const clf_object_recognition_cfg::Detect3dConfig& config, uint32_t level);
@@ -79,7 +80,8 @@ private:
 
   // publisher
   ros::Publisher pub_detections_3d;
-  ros::Publisher pub_cloud;
+  ros::Publisher pub_object_cloud;
+  ros::Publisher pub_filtered_cloud;
   ros::Publisher pub_marker;
 
   // sync with exact policy
