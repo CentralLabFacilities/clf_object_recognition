@@ -5,12 +5,13 @@
     <arg name="image_topic" default="/xtion/rgb/image_raw"/>
     <arg name="depth_topic" default="/xtion/depth_registered/image_raw"/>
     <arg name="info_topic" default="/xtion/depth_registered/camera_info"/>
+    <arg name="detect_2d_topic" default="/yolox/recognize_from_image"/>
 
     <node pkg="clf_object_recognition_3d" type="3d_detector" output="screen" name="detect_3d">
         <param name="image_topic" value="$(arg image_topic)"/>
         <param name="depth_topic" value="$(arg depth_topic)"/>
         <param name="info_topic" value="$(arg info_topic)"/>
-        <param name="detect_2d_topic" value="/yolo26/recognize"/>
+        <param name="detect_2d_topic" value="$(arg detect_2d_topic)"/>
         <param name="reset_timeout" value="30"/>
         <param name="reset" value="true"/> <!-- reset camera -->
         <param name="registration_max_correspondance_dist" value="0.01"/>

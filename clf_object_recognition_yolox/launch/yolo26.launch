@@ -15,4 +15,4 @@
         <param name="checkpoint" value="$(arg checkpoint)"/>
         <rosparam command="load" file="$(arg config)" />
     </node>
-</launch> 
+</launch>
